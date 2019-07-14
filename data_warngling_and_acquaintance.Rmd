@@ -1,0 +1,167 @@
+---
+title: "Data wrangling for Mediterranean dataset (Medata)"
+author: "Shira Salingre"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+```
+
+Medata is made up of fish census surveys conducted along the Mediterranean sea and collated into a unified dataset that includes information on the sites and the fish.
+
+```{r upload raw data and review it}
+raw_med <- read.csv("med_raw.csv", na.strings = c("", "NA")) # na.string() is used to make sure all blanks and all NAs are counted as NA.
+summary(raw_med) # examine raw data and see if there are errors.
+
+```
+
+'raw_med' is quite an extensive dataset and it includes all data collected, in a long format (so each species in each site has its own row). Though it is called "raw data", it had actually already undergo a series of validations (which are not done yet!).
+
+**`data.origin`**
+
+* azz_asi = Azzuro
+* azz_malta = Azzuro
+* Belmaker = Belmaker
+* Claudet = Claudet
+* rilov = Rilov
+* Sala - PEW = Sala
+
+**`country`**
+
+Still needs filled up #ToDo
+
+**`site`**
+
+322 NAs - needs completing #ToDo
+`sites` (next code chunk) lists the site names
+They should all be strings but some are numbers #ToDo
+
+**`lon` and `lat` - coordinates**
+
+1258 NAs - needs completing (many are *Linosa* site, which I don't have the coordinates for at the moment)
+`locations` (next code chunk) lists the site names with their coordinates
+
+**`trans`** = transect
+
+number of transect.
+They should all be integers but some are strings #ToDo
+
+**`species`** = species scientific name
+
+capital letter in the genus name, genus and species names are separated with a dot (.)
+Some are not species but genus (followed by `spp.`) and some are families (one word, -dae suffix)
+
+**`sp.length`**
+
+The length of the fish in centimetres [integer]
+
+**`sp.n`**
+
+fish count - how many individuals of this species were observed? [integer]
+
+**`season`**
+
+The season in which the survey was conducted [Autumn, Spring, Summer, Winter]
+
+**`protection`** 
+
+Inside MPA = `YES`
+Outside MPA = `NO`
+
+322 NAs #ToDo
+
+**`enforcement`**
+
+Type of enforcement:
+
+1 = 
+2 =
+3 =
+
+322 NA's (Maybe these are the same NAs of `protection`) #ToDo
+
+**`total.mpa.ha`**
+
+Total MPA area in hactare. [numeric]
+many NAs! #ToDo 
+
+
+**`size.notake`**
+
+Area size of no-take zone (in ha?) #ToDO
+
+**`yr.creation`**
+
+MPA establishing year.
+12773 NAs #ToDo
+
+**`age.reserve.yr`**
+
+The age of the MPA in years (corresponds to `yr.creation`)
+12773 NAs #ToDo
+
+**`rug`**
+
+Rugosity [numeric]
+Units? Values meaning? #ToDo
+33652 NAs (most of the data)
+
+**`depth`**
+
+Depth of survey in metres [numeric]
+8838 NAs - Maybe I can complete some with bathymetry maps? #ToDo
+
+**`tmax`, `tmin`, `tmean`**
+
+Temperature: maximum, minimum and mean
+taken from...??? #ToDo
+Some missing values (NAs)
+
+**`a`**
+
+??? #ToDo
+14856 NAs
+
+**`b`**
+??? #ToDo
+14856 NAs
+
+
+```{r create lists of variables}
+
+# create a sites list from all unique sites:
+sites <- raw_med %>%
+  distinct(site)
+
+# same for locations (this one includes lon and lat)
+locations <- raw_med %>%
+  distinct(lon, lat, site)
+
+# and one more for species
+species <- raw_med %>% 
+  distinct(species)
+
+```
+
+
+Many analyses require species matrix made up of rows and columns where each row is a site (or an environmental factor/covariate) and each column is a species.
+
+```{r create species matrix}
+
+med_mat <- raw_med %>% 
+  group_by(species) %>% 
+  mutate(grouped_id = row_number()) %>% # these two rows (group_by() and mutate()) are a workaround an error dplyr throws when there are multiple keys, i.e. the species, which is the column we'd like to spread, is not unique)
+  spread(species, sp.n) %>% 
+  select(-sp.length, -a, -b, -grouped_id) # these are irrelevant in this case but make sure to consider if you do need these variables
+head(med_mat)
+# last column of metadata is 18
+# species are in cols (19:ncol(.))
+
+# check it out:
+str(med_mat)
+# or glimpse(med_master)
+# or head(med_master)
+```
+
