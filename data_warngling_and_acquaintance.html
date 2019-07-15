@@ -192,57 +192,58 @@ $(document).ready(function () {
 
 <p>Medata is made up of fish census surveys conducted along the Mediterranean sea and collated into a unified dataset that includes information on the sites and the fish.</p>
 <pre class="r"><code>raw_med &lt;- read.csv(&quot;med_raw.csv&quot;, na.strings = c(&quot;&quot;, &quot;NA&quot;)) # na.string() is used to make sure all blanks and all NAs are counted as NA.
-summary(raw_med) # examine raw data and see if there are errors.</code></pre>
+summary(raw_med) # examine raw data and check for errors.</code></pre>
 <pre><code>##      data.origin       country               site            lon        
 ##  azz_asi   : 3875   Croatia: 3508   ASINARA_add: 3033   Min.   : 1.159  
-##  azz_malt  : 4179   France : 3617   Gdor       : 2941   1st Qu.: 8.149  
+##  azz_malt  : 4179   France : 3617   Gdor       : 2941   1st Qu.: 8.204  
 ##  Belmaker  :20575   Israel :10324   Achziv     : 2900   Median :14.324  
-##  claudet   : 1821   Sicily : 3126   Shikmona   : 2373   Mean   :17.408  
-##  rilov     : 2788   NA's   :30885   Habonim    : 2110   3rd Qu.:32.799  
-##  Sala - PEW:18222                   (Other)    :37781   Max.   :35.076  
+##  Sala - PEW: 9111   Sicily : 3126   Shikmona   : 2373   Mean   :18.055  
+##                     NA's   :17165   Habonim    : 2110   3rd Qu.:34.867  
+##                                     (Other)    :24061   Max.   :35.076  
 ##                                     NA's       :  322   NA's   :1258    
-##       lat                  trans                    species     
-##  Min.   :32.42   TORRE GUACETO:  588   Coris.julis      : 7389  
-##  1st Qu.:35.19   Cap Peyrefite:  530   Thalassoma.pavo  : 6565  
-##  Median :39.15   CARLOFORTE   :  472   Diplodus.vulgaris: 3910  
-##  Mean   :38.47   OTRANTO      :  446   Diplodus.sargus  : 3648  
-##  3rd Qu.:42.04   PORTO CESAREO:  441   Symphodus.tinca  : 3619  
-##  Max.   :44.94   TAVOLARA     :  436   Chromis.chromis  : 3416  
-##  NA's   :1258    (Other)      :48547   (Other)          :22913  
-##    sp.length           sp.n             season      protection  
-##  Min.   :  0.00   Min.   :    0.00   Autumn:15723   NO  :20054  
-##  1st Qu.:  8.00   1st Qu.:    1.00   Spring: 5844   YES :31084  
-##  Median : 10.00   Median :    1.00   Summer:29736   NA's:  322  
-##  Mean   : 11.91   Mean   :   14.33   Winter:  157               
-##  3rd Qu.: 15.00   3rd Qu.:    4.00                              
-##  Max.   :150.00   Max.   :10000.00                              
-##  NA's   :1045                                                   
-##   enforcement     total.mpa.ha       size.notake     yr.creation   
-##  Min.   :0.000   Min.   :    84.4   Min.   :   18   Min.   :1960   
-##  1st Qu.:0.000   1st Qu.:   519.2   1st Qu.:   94   1st Qu.:1968   
-##  Median :1.000   Median :  1000.0   Median :  438   Median :1997   
-##  Mean   :1.269   Mean   :  7443.8   Mean   : 2630   Mean   :1988   
-##  3rd Qu.:2.000   3rd Qu.:  3056.0   3rd Qu.: 2651   3rd Qu.:2002   
-##  Max.   :3.000   Max.   :207000.0   Max.   :15000   Max.   :2008   
-##  NA's   :322     NA's   :19455      NA's   :23072   NA's   :12773  
-##  age.reserve.yr       rug            depth             tmax      
-##  Min.   : 1.00   Min.   :1.00    Min.   : 1.500   Min.   :22.07  
-##  1st Qu.: 9.00   1st Qu.:1.22    1st Qu.: 7.750   1st Qu.:24.58  
-##  Median :15.00   Median :1.37    Median :10.000   Median :25.95  
-##  Mean   :24.29   Mean   :1.41    Mean   : 9.637   Mean   :25.73  
-##  3rd Qu.:49.00   3rd Qu.:1.57    3rd Qu.:10.000   3rd Qu.:28.00  
-##  Max.   :57.00   Max.   :2.39    Max.   :30.000   Max.   :28.98  
-##  NA's   :12773   NA's   :33652   NA's   :8838     NA's   :1258   
-##       tmin           tmean             a               b        
-##  Min.   : 9.00   Min.   :16.01   Min.   :0.000   Min.   :2.611  
-##  1st Qu.:12.52   1st Qu.:18.00   1st Qu.:0.009   1st Qu.:2.965  
-##  Median :13.15   Median :19.00   Median :0.014   Median :3.060  
-##  Mean   :13.86   Mean   :19.34   Mean   :0.014   Mean   :3.018  
-##  3rd Qu.:15.95   3rd Qu.:22.00   3rd Qu.:0.017   3rd Qu.:3.111  
-##  Max.   :17.00   Max.   :22.27   Max.   :0.048   Max.   :3.393  
-##  NA's   :1258    NA's   :14978   NA's   :14856   NA's   :14856</code></pre>
+##       lat            trans                   species        sp.length     
+##  Min.   :32.42   Min.   :   1   Coris.julis      : 5510   Min.   :  0.00  
+##  1st Qu.:33.05   1st Qu.:1085   Thalassoma.pavo  : 5477   1st Qu.:  8.00  
+##  Median :38.80   Median :1604   Diplodus.vulgaris: 2673   Median : 10.00  
+##  Mean   :38.15   Mean   :1459   Diplodus.sargus  : 2612   Mean   : 11.53  
+##  3rd Qu.:41.83   3rd Qu.:2103   Symphodus.tinca  : 2501   3rd Qu.: 15.00  
+##  Max.   :44.94   Max.   :2392   Chromis.chromis  : 2406   Max.   :150.00  
+##  NA's   :1258                   (Other)          :16561   NA's   :842     
+##       sp.n             season      protection    enforcement   
+##  Min.   :    0.00   Autumn:13060   NO  :13544   Min.   :0.000  
+##  1st Qu.:    1.00   Spring: 5318   YES :23874   1st Qu.:0.000  
+##  Median :    1.00   Summer:19362   NA's:  322   Median :1.000  
+##  Mean   :   15.94                               Mean   :1.311  
+##  3rd Qu.:    4.00                               3rd Qu.:2.000  
+##  Max.   :10000.00                               Max.   :3.000  
+##                                                 NA's   :322    
+##   total.mpa.ha       size.notake       yr.creation   age.reserve.yr
+##  Min.   :    84.4   Min.   :   18.0   Min.   :1960   Min.   : 1.0  
+##  1st Qu.:   519.2   1st Qu.:  167.7   1st Qu.:1968   1st Qu.: 9.0  
+##  Median :  1000.0   Median :  519.2   Median :1997   Median :15.0  
+##  Mean   :  6028.3   Mean   : 3311.6   Mean   :1988   Mean   :25.5  
+##  3rd Qu.:  2375.0   3rd Qu.: 2651.0   3rd Qu.:2002   3rd Qu.:49.0  
+##  Max.   :207000.0   Max.   :15000.0   Max.   :2008   Max.   :57.0  
+##  NA's   :11986      NA's   :15603     NA's   :6263   NA's   :6263  
+##      depth             tmax            tmin           tmean      
+##  Min.   : 1.500   Min.   :22.08   Min.   : 9.00   Min.   :16.01  
+##  1st Qu.: 6.000   1st Qu.:24.58   1st Qu.:12.74   1st Qu.:18.00  
+##  Median :10.000   Median :26.00   Median :13.30   Median :19.00  
+##  Mean   : 9.587   Mean   :25.89   Mean   :14.00   Mean   :19.34  
+##  3rd Qu.:11.000   3rd Qu.:28.37   3rd Qu.:16.79   3rd Qu.:22.00  
+##  Max.   :30.000   Max.   :28.98   Max.   :17.00   Max.   :22.27  
+##  NA's   :8838     NA's   :1258    NA's   :1258    NA's   :1258   
+##        a                b        
+##  Min.   :0.0005   Min.   :2.611  
+##  1st Qu.:0.0092   1st Qu.:2.965  
+##  Median :0.0138   Median :3.060  
+##  Mean   :0.0144   Mean   :3.018  
+##  3rd Qu.:0.0165   3rd Qu.:3.111  
+##  Max.   :0.0480   Max.   :3.393  
+##  NA's   :1136     NA's   :1136</code></pre>
 <p>‘raw_med’ is quite an extensive dataset and it includes all data collected, in a long format (so each species in each site has its own row). Though it is called “raw data”, it had actually already undergo a series of validations (which are not done yet!).</p>
 <p><strong><code>data.origin</code></strong></p>
+<p><em>fct</em></p>
 <ul>
 <li>azz_asi = Azzuro</li>
 <li>azz_malta = Azzuro</li>
@@ -252,45 +253,68 @@ summary(raw_med) # examine raw data and see if there are errors.</code></pre>
 <li>Sala - PEW = Sala</li>
 </ul>
 <p><strong><code>country</code></strong></p>
-<p>Still needs filled up #ToDo</p>
+<p><em>fct</em></p>
+<div id="todo-find-code-to-retrieve-country-by-coordinates" class="section level1">
+<h1>ToDo: find code to retrieve country by coordinates</h1>
 <p><strong><code>site</code></strong></p>
-<p>322 NAs - needs completing #ToDo <code>sites</code> (next code chunk) lists the site names They should all be strings but some are numbers #ToDo</p>
+<p><em>fct</em></p>
+</div>
+<div id="todo-change-blanks-to-banyuls_unknown-make-sure-its-all-france-and-same-coords" class="section level1">
+<h1>ToDo: change blanks to “Banyuls_Unknown” (make sure it’s all France and same coords)</h1>
+<p><code>sites</code> (next code chunk) lists the site names</p>
 <p><strong><code>lon</code> and <code>lat</code> - coordinates</strong></p>
-<p>1258 NAs - needs completing (many are <em>Linosa</em> site, which I don’t have the coordinates for at the moment) <code>locations</code> (next code chunk) lists the site names with their coordinates</p>
+<p><em>num</em></p>
+</div>
+<div id="todo-1258-nas---needs-completing-many-are-linosa-site-no-coords-should-we-take-approx." class="section level1">
+<h1>ToDo 1258 NAs - needs completing (many are <em>Linosa</em> site, no coords, should we take approx.?)</h1>
+<p><code>locations</code> (next code chunk) lists the site names with their coordinates</p>
 <p><strong><code>trans</code></strong> = transect</p>
-<p>number of transect. They should all be integers but some are strings #ToDo</p>
+<p><em>int</em></p>
+<p>number of transect.</p>
 <p><strong><code>species</code></strong> = species scientific name</p>
+<p><em>fct</em></p>
 <p>capital letter in the genus name, genus and species names are separated with a dot (.) Some are not species but genus (followed by <code>spp.</code>) and some are families (one word, -dae suffix)</p>
 <p><strong><code>sp.length</code></strong></p>
-<p>The length of the fish in centimetres [integer]</p>
+<p><em>num</em></p>
+<p>The length of the fish in cm</p>
 <p><strong><code>sp.n</code></strong></p>
-<p>fish count - how many individuals of this species were observed? [integer]</p>
+<p><em>int</em></p>
+<p>fish count - how many individuals of this species were observed?</p>
 <p><strong><code>season</code></strong></p>
-<p>The season in which the survey was conducted [Autumn, Spring, Summer, Winter]</p>
+<p><em>fct</em>; levels: <code>Autumn</code>, <code>Spring</code>, <code>Summer</code> The season in which the survey was conducted</p>
 <p><strong><code>protection</code></strong></p>
+<p><em>fct</em></p>
 <p>Inside MPA = <code>YES</code> Outside MPA = <code>NO</code></p>
-<p>322 NAs #ToDo</p>
 <p><strong><code>enforcement</code></strong></p>
 <p>Type of enforcement:</p>
-<p>1 = 2 = 3 =</p>
-<p>322 NA’s (Maybe these are the same NAs of <code>protection</code>) #ToDo</p>
+<p><em>int</em> with 3 levels:</p>
+<ul>
+<li><code>1</code> = Minimal protection</li>
+<li><code>2</code> = Medium protection</li>
+<li><code>3</code> = Fully protected</li>
+</ul>
+<p>Complements <code>protection</code></p>
 <p><strong><code>total.mpa.ha</code></strong></p>
-<p>Total MPA area in hactare. [numeric] many NAs! #ToDo</p>
+<p><em>num</em> Total MPA area in hactare # ToDo: complete NAs</p>
 <p><strong><code>size.notake</code></strong></p>
-<p>Area size of no-take zone (in ha?) #ToDO</p>
+<p><em>num</em> Area size of no-take zone (in ha) # ToDo: complete NAs</p>
 <p><strong><code>yr.creation</code></strong></p>
-<p>MPA establishing year. 12773 NAs #ToDo</p>
+<p><em>int</em></p>
+<p>MPA establishing year. # ToDo: complete NAs</p>
 <p><strong><code>age.reserve.yr</code></strong></p>
-<p>The age of the MPA in years (corresponds to <code>yr.creation</code>) 12773 NAs #ToDo</p>
-<p><strong><code>rug</code></strong></p>
-<p>Rugosity [numeric] Units? Values meaning? #ToDo 33652 NAs (most of the data)</p>
+<p><em>int</em></p>
+<p>The age of the MPA in years (corresponds to <code>yr.creation</code>) # ToDo: complete NAs</p>
 <p><strong><code>depth</code></strong></p>
-<p>Depth of survey in metres [numeric] 8838 NAs - Maybe I can complete some with bathymetry maps? #ToDo</p>
+<p><em>num</em></p>
+<p>Depth of survey in metres # ToDo: complete NAs from abthymetry maps?</p>
 <p><strong><code>tmax</code>, <code>tmin</code>, <code>tmean</code></strong></p>
-<p>Temperature: maximum, minimum and mean taken from…??? #ToDo Some missing values (NAs)</p>
+<p>Temperature: maximum, minimum and mean taken from GMED # ToDo: complete NAs from GMED</p>
 <p><strong><code>a</code></strong></p>
-<p>??? #ToDo 14856 NAs</p>
-<p><strong><code>b</code></strong> ??? #ToDo 14856 NAs</p>
+<p><em>num</em></p>
+<p>species length-weight relationship constant</p>
+<p><strong><code>b</code></strong></p>
+<p><em>num</em></p>
+<p>species length-weight relationship constant</p>
 <pre class="r"><code># create a sites list from all unique sites:
 sites &lt;- raw_med %&gt;%
   distinct(site)
@@ -308,168 +332,64 @@ species &lt;- raw_med %&gt;%
   mutate(grouped_id = row_number()) %&gt;% # these two rows (group_by() and mutate()) are a workaround an error dplyr throws when there are multiple keys, i.e. the species, which is the column we'd like to spread, is not unique)
   spread(species, sp.n) %&gt;% 
   select(-sp.length, -a, -b, -grouped_id) # these are irrelevant in this case but make sure to consider if you do need these variables
+med_mat[, 18:136][is.na(med_mat[, 18:136])] &lt;- 0 # change NAs to 0s only for species
 head(med_mat)</code></pre>
-<pre><code>## # A tibble: 6 x 138
+<pre><code>## # A tibble: 6 x 136
 ##   data.origin country site    lon   lat trans season protection enforcement
-##   &lt;fct&gt;       &lt;fct&gt;   &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt; &lt;fct&gt;  &lt;fct&gt;            &lt;int&gt;
-## 1 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1 1     Autumn YES                  2
-## 2 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1 1     Autumn YES                  2
-## 3 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1 1     Autumn YES                  2
-## 4 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1 1     Autumn YES                  2
-## 5 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1 1     Autumn YES                  2
-## 6 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1 1     Autumn YES                  2
-## # ... with 129 more variables: total.mpa.ha &lt;dbl&gt;, size.notake &lt;dbl&gt;,
-## #   yr.creation &lt;int&gt;, age.reserve.yr &lt;int&gt;, rug &lt;dbl&gt;, depth &lt;dbl&gt;,
-## #   tmax &lt;dbl&gt;, tmin &lt;dbl&gt;, tmean &lt;dbl&gt;, Abudefduf.saxatilis &lt;int&gt;,
-## #   Anthias.anthias &lt;int&gt;, Apogon.imberbis &lt;int&gt;, Atherina.boyeri &lt;int&gt;,
-## #   Balistes.capriscus &lt;int&gt;, Belone.belone &lt;int&gt;, Belonidae.sp. &lt;int&gt;,
-## #   Boops.boops &lt;int&gt;, Caranx.crysos &lt;int&gt;,
-## #   Cheilodipterus.novemstriatus &lt;int&gt;, Chelon.labrosus &lt;int&gt;,
-## #   Chromis.chromis &lt;int&gt;, Clupeidae &lt;int&gt;, Conger.conger &lt;int&gt;,
-## #   Coris.julis &lt;int&gt;, Ctenolabrus.rupestris &lt;int&gt;,
-## #   Dactylopterus.volitans &lt;int&gt;, Dasyatis.pastinaca &lt;int&gt;,
-## #   Dentex.dentex &lt;int&gt;, Dicentrarchus.labrax &lt;int&gt;,
-## #   Dicentrarchus.punctatus &lt;int&gt;, Diplodus.annularis &lt;int&gt;,
-## #   Diplodus.cervinus &lt;int&gt;, Diplodus.puntazzo &lt;int&gt;,
-## #   Diplodus.sargus &lt;int&gt;, Diplodus.vulgaris &lt;int&gt;,
-## #   Epinephelus.aeneus &lt;int&gt;, Epinephelus.caninus &lt;int&gt;,
-## #   Epinephelus.costae &lt;int&gt;, Epinephelus.marginatus &lt;int&gt;,
-## #   Fistularia.commersonii &lt;int&gt;, Gobius.auratus &lt;int&gt;,
-## #   Gobius.bucchichi &lt;int&gt;, Gobius.cobitis &lt;int&gt;, Gobius.cruentatus &lt;int&gt;,
-## #   Gobius.geniporus &lt;int&gt;, Gobius.paganellus &lt;int&gt;,
-## #   Gobius.vittatus &lt;int&gt;, Gobius.xanthocephalus &lt;int&gt;,
-## #   Herklotsichthys.punctatus &lt;int&gt;, Labridae.sp. &lt;int&gt;,
-## #   Labrus.merula &lt;int&gt;, Labrus.mixtus &lt;int&gt;, Labrus.viridis &lt;int&gt;,
-## #   Lagocephalus.sceleratus &lt;int&gt;, Lagocephalus.spadiceus &lt;int&gt;,
-## #   Lichia.amia &lt;int&gt;, Lithognathus.mormyrus &lt;int&gt;, Liza.aurata &lt;int&gt;,
-## #   Mugil.cephalus &lt;int&gt;, Mullus.barbatus &lt;int&gt;, Mullus.surmuletus &lt;int&gt;,
-## #   Muraena.helena &lt;int&gt;, Mycteroperca.rubra &lt;int&gt;,
-## #   Myliobatis.aquila &lt;int&gt;, Oblada.melanura &lt;int&gt;,
-## #   Oedalechilus.labeo &lt;int&gt;, Pagellus.acarne &lt;int&gt;,
-## #   Pagrus.caeruleostictus &lt;int&gt;, Pagrus.pagrus &lt;int&gt;,
-## #   Parablennius.gattorugine &lt;int&gt;, Parablennius.incognitus &lt;int&gt;,
-## #   Parablennius.pilicornis &lt;int&gt;, Parablennius.rouxi &lt;int&gt;,
-## #   Parablennius.sanguinolentus &lt;int&gt;, Parablennius.tentacularis &lt;int&gt;,
-## #   Parablennius.zvonimiri &lt;int&gt;, Parupeneus.forsskali &lt;int&gt;,
-## #   Pempheris.vanicolensis &lt;int&gt;, Phycis.phycis &lt;int&gt;,
-## #   Plotosus.lineatus &lt;int&gt;, Pomadasys.incisus &lt;int&gt;,
-## #   Pomatomus.saltatrix &lt;int&gt;, Pomatoschistus.quagga &lt;int&gt;,
-## #   Pseudocaranx.dentex &lt;int&gt;, Pteragogus.pelycus &lt;int&gt;,
-## #   Sardina.pilchardus &lt;int&gt;, Sargocentron.rubrum &lt;int&gt;,
-## #   Sarpa.salpa &lt;int&gt;, Scartella.cristata &lt;int&gt;, Scarus.ghobban &lt;int&gt;,
-## #   Sciaena.umbra &lt;int&gt;, Scorpaena.maderensis &lt;int&gt;,
-## #   Scorpaena.notata &lt;int&gt;, Scorpaena.porcus &lt;int&gt;,
-## #   Scorpaena.scrofa &lt;int&gt;, Seriola.dumerili &lt;int&gt;,
-## #   Serranus.cabrilla &lt;int&gt;, Serranus.hepatus &lt;int&gt;,
-## #   Serranus.scriba &lt;int&gt;, Siganus.luridus &lt;int&gt;, ...</code></pre>
-<pre class="r"><code># last column of metadata is 18
-# species are in cols (19:ncol(.))
-
-# check it out:
-str(med_mat)</code></pre>
-<pre><code>## Classes 'tbl_df', 'tbl' and 'data.frame':    51450 obs. of  138 variables:
-##  $ data.origin                 : Factor w/ 6 levels &quot;azz_asi&quot;,&quot;azz_malt&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ country                     : Factor w/ 4 levels &quot;Croatia&quot;,&quot;France&quot;,..: NA NA NA NA NA NA NA NA NA NA ...
-##  $ site                        : Factor w/ 838 levels &quot;1 Km South of the marina&quot;,..: 790 790 790 790 790 790 790 790 790 790 ...
-##  $ lon                         : num  7.9 7.9 7.9 7.9 7.9 ...
-##  $ lat                         : num  41.1 41.1 41.1 41.1 41.1 ...
-##  $ trans                       : Factor w/ 1953 levels &quot;1&quot;,&quot;10&quot;,&quot;100&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ season                      : Factor w/ 4 levels &quot;Autumn&quot;,&quot;Spring&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ protection                  : Factor w/ 2 levels &quot;NO&quot;,&quot;YES&quot;: 2 2 2 2 2 2 2 2 2 2 ...
-##  $ enforcement                 : int  2 2 2 2 2 2 2 2 2 2 ...
-##  $ total.mpa.ha                : num  15000 15000 15000 15000 15000 15000 15000 15000 15000 15000 ...
-##  $ size.notake                 : num  15000 15000 15000 15000 15000 15000 15000 15000 15000 15000 ...
-##  $ yr.creation                 : int  2002 2002 2002 2002 2002 2002 2002 2002 2002 2002 ...
-##  $ age.reserve.yr              : int  1 1 1 1 1 1 1 1 1 1 ...
-##  $ rug                         : num  NA NA NA NA NA NA NA NA NA NA ...
-##  $ depth                       : num  NA NA NA NA NA NA NA NA NA NA ...
-##  $ tmax                        : num  24.2 24.2 24.2 24.2 24.2 ...
-##  $ tmin                        : num  13 13 13 13 13 13 13 13 13 13 ...
-##  $ tmean                       : num  18 18 18 18 18 18 18 18 18 18 ...
-##  $ Abudefduf.saxatilis         : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Anthias.anthias             : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Apogon.imberbis             : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Atherina.boyeri             : int  1 NA NA NA NA NA NA NA NA NA ...
-##  $ Balistes.capriscus          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Belone.belone               : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Belonidae.sp.               : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Boops.boops                 : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Caranx.crysos               : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Cheilodipterus.novemstriatus: int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Chelon.labrosus             : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Chromis.chromis             : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Clupeidae                   : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Conger.conger               : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Coris.julis                 : int  NA 1 NA NA NA NA NA NA NA NA ...
-##  $ Ctenolabrus.rupestris       : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Dactylopterus.volitans      : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Dasyatis.pastinaca          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Dentex.dentex               : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Dicentrarchus.labrax        : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Dicentrarchus.punctatus     : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Diplodus.annularis          : int  NA NA 1 NA NA NA NA NA NA NA ...
-##  $ Diplodus.cervinus           : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Diplodus.puntazzo           : int  NA NA NA 1 NA NA NA NA NA NA ...
-##  $ Diplodus.sargus             : int  NA NA NA NA 1 NA NA NA NA NA ...
-##  $ Diplodus.vulgaris           : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Epinephelus.aeneus          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Epinephelus.caninus         : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Epinephelus.costae          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Epinephelus.marginatus      : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Fistularia.commersonii      : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Gobius.auratus              : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Gobius.bucchichi            : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Gobius.cobitis              : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Gobius.cruentatus           : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Gobius.geniporus            : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Gobius.paganellus           : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Gobius.vittatus             : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Gobius.xanthocephalus       : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Herklotsichthys.punctatus   : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Labridae.sp.                : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Labrus.merula               : int  NA NA NA NA NA 1 NA NA NA NA ...
-##  $ Labrus.mixtus               : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Labrus.viridis              : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Lagocephalus.sceleratus     : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Lagocephalus.spadiceus      : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Lichia.amia                 : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Lithognathus.mormyrus       : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Liza.aurata                 : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Mugil.cephalus              : int  NA NA NA NA NA NA 1 NA NA NA ...
-##  $ Mullus.barbatus             : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Mullus.surmuletus           : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Muraena.helena              : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Mycteroperca.rubra          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Myliobatis.aquila           : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Oblada.melanura             : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Oedalechilus.labeo          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Pagellus.acarne             : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Pagrus.caeruleostictus      : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Pagrus.pagrus               : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Parablennius.gattorugine    : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Parablennius.incognitus     : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Parablennius.pilicornis     : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Parablennius.rouxi          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Parablennius.sanguinolentus : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Parablennius.tentacularis   : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Parablennius.zvonimiri      : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Parupeneus.forsskali        : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Pempheris.vanicolensis      : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Phycis.phycis               : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Plotosus.lineatus           : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Pomadasys.incisus           : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Pomatomus.saltatrix         : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Pomatoschistus.quagga       : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Pseudocaranx.dentex         : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Pteragogus.pelycus          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Sardina.pilchardus          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Sargocentron.rubrum         : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Sarpa.salpa                 : int  NA NA NA NA NA NA NA 1 NA NA ...
-##  $ Scartella.cristata          : int  NA NA NA NA NA NA NA NA NA NA ...
-##  $ Scarus.ghobban              : int  NA NA NA NA NA NA NA NA NA NA ...
-##   [list output truncated]</code></pre>
-<pre class="r"><code># or glimpse(med_master)
-# or head(med_master)</code></pre>
+##   &lt;fct&gt;       &lt;fct&gt;   &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;fct&gt;  &lt;fct&gt;            &lt;int&gt;
+## 1 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1     1 Autumn YES                  2
+## 2 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1     1 Autumn YES                  2
+## 3 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1     1 Autumn YES                  2
+## 4 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1     1 Autumn YES                  2
+## 5 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1     1 Autumn YES                  2
+## 6 azz_asi     &lt;NA&gt;    ASIN~  7.90  41.1     1 Autumn YES                  2
+## # ... with 127 more variables: total.mpa.ha &lt;dbl&gt;, size.notake &lt;dbl&gt;,
+## #   yr.creation &lt;int&gt;, age.reserve.yr &lt;int&gt;, depth &lt;dbl&gt;, tmax &lt;dbl&gt;,
+## #   tmin &lt;dbl&gt;, tmean &lt;dbl&gt;, Abudefduf.saxatilis &lt;dbl&gt;,
+## #   Anthias.anthias &lt;dbl&gt;, Apogon.imberbis &lt;dbl&gt;, Atherina.boyeri &lt;dbl&gt;,
+## #   Balistes.capriscus &lt;dbl&gt;, Belone.belone &lt;dbl&gt;, Belonidae.sp. &lt;dbl&gt;,
+## #   Boops.boops &lt;dbl&gt;, Caranx.crysos &lt;dbl&gt;,
+## #   Cheilodipterus.novemstriatus &lt;dbl&gt;, Chelon.labrosus &lt;dbl&gt;,
+## #   Chromis.chromis &lt;dbl&gt;, Clupeidae &lt;dbl&gt;, Conger.conger &lt;dbl&gt;,
+## #   Coris.julis &lt;dbl&gt;, Ctenolabrus.rupestris &lt;dbl&gt;,
+## #   Dactylopterus.volitans &lt;dbl&gt;, Dasyatis.pastinaca &lt;dbl&gt;,
+## #   Dentex.dentex &lt;dbl&gt;, Dicentrarchus.labrax &lt;dbl&gt;,
+## #   Dicentrarchus.punctatus &lt;dbl&gt;, Diplodus.annularis &lt;dbl&gt;,
+## #   Diplodus.cervinus &lt;dbl&gt;, Diplodus.puntazzo &lt;dbl&gt;,
+## #   Diplodus.sargus &lt;dbl&gt;, Diplodus.vulgaris &lt;dbl&gt;,
+## #   Epinephelus.aeneus &lt;dbl&gt;, Epinephelus.caninus &lt;dbl&gt;,
+## #   Epinephelus.costae &lt;dbl&gt;, Epinephelus.marginatus &lt;dbl&gt;,
+## #   Fistularia.commersonii &lt;dbl&gt;, Gobius.auratus &lt;dbl&gt;,
+## #   Gobius.bucchichi &lt;dbl&gt;, Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;,
+## #   Gobius.geniporus &lt;dbl&gt;, Gobius.paganellus &lt;dbl&gt;,
+## #   Gobius.vittatus &lt;dbl&gt;, Gobius.xanthocephalus &lt;dbl&gt;,
+## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae.sp. &lt;dbl&gt;,
+## #   Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
+## #   Lagocephalus.sceleratus &lt;dbl&gt;, Lichia.amia &lt;dbl&gt;,
+## #   Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;, Mugil.cephalus &lt;dbl&gt;,
+## #   Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;, Muraena.helena &lt;dbl&gt;,
+## #   Mycteroperca.rubra &lt;dbl&gt;, Myliobatis.aquila &lt;dbl&gt;,
+## #   Oblada.melanura &lt;dbl&gt;, Oedalechilus.labeo &lt;dbl&gt;,
+## #   Pagellus.acarne &lt;dbl&gt;, Pagrus.caeruleostictus &lt;dbl&gt;,
+## #   Pagrus.pagrus &lt;dbl&gt;, Parablennius.gattorugine &lt;dbl&gt;,
+## #   Parablennius.incognitus &lt;dbl&gt;, Parablennius.pilicornis &lt;dbl&gt;,
+## #   Parablennius.rouxi &lt;dbl&gt;, Parablennius.sanguinolentus &lt;dbl&gt;,
+## #   Parablennius.tentacularis &lt;dbl&gt;, Parablennius.zvonimiri &lt;dbl&gt;,
+## #   Parupeneus.forsskali &lt;dbl&gt;, Pempheris.vanicolensis &lt;dbl&gt;,
+## #   Phycis.phycis &lt;dbl&gt;, Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
+## #   Pomatomus.saltatrix &lt;dbl&gt;, Pomatoschistus.quagga &lt;dbl&gt;,
+## #   Pseudocaranx.dentex &lt;dbl&gt;, Pteragogus.pelycus &lt;dbl&gt;,
+## #   Sardina.pilchardus &lt;dbl&gt;, Sargocentron.rubrum &lt;dbl&gt;,
+## #   Sarpa.salpa &lt;dbl&gt;, Scartella.cristata &lt;dbl&gt;, Scarus.ghobban &lt;dbl&gt;,
+## #   Sciaena.umbra &lt;dbl&gt;, Scorpaena.maderensis &lt;dbl&gt;,
+## #   Scorpaena.notata &lt;dbl&gt;, Scorpaena.porcus &lt;dbl&gt;,
+## #   Scorpaena.scrofa &lt;dbl&gt;, Seriola.dumerili &lt;dbl&gt;,
+## #   Serranus.cabrilla &lt;dbl&gt;, Serranus.hepatus &lt;dbl&gt;,
+## #   Serranus.scriba &lt;dbl&gt;, Siganus.luridus &lt;dbl&gt;, Siganus.rivulatus &lt;dbl&gt;,
+## #   Sparisoma.cretense &lt;dbl&gt;, ...</code></pre>
+<pre class="r"><code># last column of metadata is 17
+# species are in cols (18:136)</code></pre>
+</div>
 
 
 

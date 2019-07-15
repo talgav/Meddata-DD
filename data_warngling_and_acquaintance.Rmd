@@ -13,13 +13,15 @@ Medata is made up of fish census surveys conducted along the Mediterranean sea a
 
 ```{r upload raw data and review it}
 raw_med <- read.csv("med_raw.csv", na.strings = c("", "NA")) # na.string() is used to make sure all blanks and all NAs are counted as NA.
-summary(raw_med) # examine raw data and see if there are errors.
+summary(raw_med) # examine raw data and check for errors.
 
 ```
 
 'raw_med' is quite an extensive dataset and it includes all data collected, in a long format (so each species in each site has its own row). Though it is called "raw data", it had actually already undergo a series of validations (which are not done yet!).
 
 **`data.origin`**
+
+*fct*
 
 * azz_asi = Azzuro
 * azz_malta = Azzuro
@@ -30,103 +32,123 @@ summary(raw_med) # examine raw data and see if there are errors.
 
 **`country`**
 
-Still needs filled up #ToDo
+*fct*
+
+#ToDo: find code to retrieve country by coordinates
 
 **`site`**
 
-322 NAs - needs completing #ToDo
+*fct*
+
+#ToDo: change blanks to "Banyuls_Unknown" (make sure it's all France and same coords)
 `sites` (next code chunk) lists the site names
-They should all be strings but some are numbers #ToDo
 
 **`lon` and `lat` - coordinates**
 
-1258 NAs - needs completing (many are *Linosa* site, which I don't have the coordinates for at the moment)
+*num*
+
+#ToDo 1258 NAs - needs completing (many are *Linosa* site, no coords, should we take approx.?)
 `locations` (next code chunk) lists the site names with their coordinates
 
 **`trans`** = transect
 
+*int*
+
 number of transect.
-They should all be integers but some are strings #ToDo
 
 **`species`** = species scientific name
+
+*fct*
 
 capital letter in the genus name, genus and species names are separated with a dot (.)
 Some are not species but genus (followed by `spp.`) and some are families (one word, -dae suffix)
 
 **`sp.length`**
 
-The length of the fish in centimetres [integer]
+*num*
+
+The length of the fish in cm
 
 **`sp.n`**
 
-fish count - how many individuals of this species were observed? [integer]
+*int*
+
+fish count - how many individuals of this species were observed?
 
 **`season`**
 
-The season in which the survey was conducted [Autumn, Spring, Summer, Winter]
+*fct*; levels: `Autumn`, `Spring`, `Summer`
+The season in which the survey was conducted
 
 **`protection`** 
 
+*fct*
+
 Inside MPA = `YES`
 Outside MPA = `NO`
-
-322 NAs #ToDo
 
 **`enforcement`**
 
 Type of enforcement:
 
-1 = 
-2 =
-3 =
+*int* with 3 levels:
 
-322 NA's (Maybe these are the same NAs of `protection`) #ToDo
+* `1` = Minimal protection
+* `2` = Medium protection
+* `3` = Fully protected
+
+Complements `protection`
 
 **`total.mpa.ha`**
 
-Total MPA area in hactare. [numeric]
-many NAs! #ToDo 
-
+*num*
+Total MPA area in hactare
+# ToDo: complete NAs
 
 **`size.notake`**
 
-Area size of no-take zone (in ha?) #ToDO
+*num*
+Area size of no-take zone (in ha)
+# ToDo: complete NAs
 
 **`yr.creation`**
 
+*int*
+
 MPA establishing year.
-12773 NAs #ToDo
+# ToDo: complete NAs
 
 **`age.reserve.yr`**
 
+*int*
+
 The age of the MPA in years (corresponds to `yr.creation`)
-12773 NAs #ToDo
-
-**`rug`**
-
-Rugosity [numeric]
-Units? Values meaning? #ToDo
-33652 NAs (most of the data)
+# ToDo: complete NAs
 
 **`depth`**
 
-Depth of survey in metres [numeric]
-8838 NAs - Maybe I can complete some with bathymetry maps? #ToDo
+*num*
+
+Depth of survey in metres
+# ToDo: complete NAs from abthymetry maps?
 
 **`tmax`, `tmin`, `tmean`**
 
 Temperature: maximum, minimum and mean
-taken from...??? #ToDo
-Some missing values (NAs)
+taken from GMED
+# ToDo: complete NAs from GMED
 
 **`a`**
 
-??? #ToDo
-14856 NAs
+*num*
+
+species length-weight relationship constant
 
 **`b`**
-??? #ToDo
-14856 NAs
+
+*num*
+
+species length-weight relationship constant
 
 
 ```{r create lists of variables}
@@ -155,13 +177,11 @@ med_mat <- raw_med %>%
   mutate(grouped_id = row_number()) %>% # these two rows (group_by() and mutate()) are a workaround an error dplyr throws when there are multiple keys, i.e. the species, which is the column we'd like to spread, is not unique)
   spread(species, sp.n) %>% 
   select(-sp.length, -a, -b, -grouped_id) # these are irrelevant in this case but make sure to consider if you do need these variables
+med_mat[, 18:136][is.na(med_mat[, 18:136])] <- 0 # change NAs to 0s only for species
 head(med_mat)
-# last column of metadata is 18
-# species are in cols (19:ncol(.))
+# last column of metadata is 17
+# species are in cols (18:136)
 
-# check it out:
-str(med_mat)
-# or glimpse(med_master)
-# or head(med_master)
 ```
+
 
