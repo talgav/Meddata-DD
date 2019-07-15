@@ -14,7 +14,6 @@ Medata is made up of fish census surveys conducted along the Mediterranean sea a
 ```{r upload raw data and review it}
 raw_med <- read.csv("med_raw.csv", na.strings = c("", "NA")) # na.string() is used to make sure all blanks and all NAs are counted as NA.
 summary(raw_med) # examine raw data and check for errors.
-
 ```
 
 'raw_med' is quite an extensive dataset and it includes all data collected, in a long format (so each species in each site has its own row). Though it is called "raw data", it had actually already undergo a series of validations (which are not done yet!).
@@ -159,7 +158,10 @@ sites <- raw_med %>%
 
 # same for locations (this one includes lon and lat)
 locations <- raw_med %>%
-  distinct(lon, lat, site)
+  distinct(lon, lat)
+
+locations <- na.omit(locations) # omits NAs from locations, prep for next line of code:
+locations$country <- map.where(database = "world", locations$lon, locations$lat) # retrieves country for each point coordinate
 
 # and one more for species
 species <- raw_med %>% 
