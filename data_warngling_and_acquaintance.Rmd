@@ -167,6 +167,11 @@ locations$country <- map.where(database = "world", locations$lon, locations$lat)
 species <- raw_med %>% 
   distinct(species)
 
+# list of NA longitudes:
+lon_NA <- raw_med %>% 
+  dplyr::distinct(site, lon, lat) %>% 
+  filter(is.na(lon))
+
 ```
 
 
