@@ -63,3 +63,12 @@ m
 # Extract environmental values from layers 
 my.sites.environment <- data.frame(Name=my.sites$Name , depth=extract(bathymetry,my.sites[,2:3]) , extract(environment.bottom,my.sites[,2:3]) ) 
 my.sites.environment 
+
+############ The data available in Bio-ORACLE are documented in two peer reviewed articles that you should cite: ############
+
+# Tyberghein L, Verbruggen H, Pauly K, Troupin C, Mineur F, De Clerck O (2012) Bio-ORACLE: A global environmental dataset for marine species distribution modelling. Global Ecology and Biogeography, 21, 272–281.
+# [access publication]   [supporting information]	
+# 
+# Assis, J., Tyberghein, L., Bosh, S., Verbruggen, H., Serrão, E. A., & De Clerck, O. (2017). Bio-ORACLE v2.0: Extending marine data layers for bioclimatic modelling. Global Ecology and Biogeography.
+# [access publication]   [supporting information]
+
