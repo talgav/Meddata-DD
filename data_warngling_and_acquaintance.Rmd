@@ -52,7 +52,6 @@ ggplot(location_sites, aes(x = lon, y = lat)) + geom_point()
 
 ```
 Figure 1. Sites where fish surveys were conducted.
-## Data cleaning
 
 
 ```{r review it}
@@ -60,7 +59,7 @@ summary(raw_med) # examine raw data and check for errors.
 
 ```
 
-'raw_med' is an extensive dataset which includes all data collected, in a long format (so each species in each site has its own row). Though it is called "raw data", it had actually already undergo a series of validations (which are not done yet!).
+'raw_med' is an extensive dataset which includes all data collected, in a long format (so each species in each site has its own row). Though it is called "raw data", it had actually already underwent a series of validations.
 
 **`data.origin`**
 
@@ -82,15 +81,15 @@ summary(raw_med) # examine raw data and check for errors.
 
 *fct*
 
-#ToDo: change blanks to "Banyuls_Unknown" (make sure it's all France and same coords)
-`sites` (next code chunk) lists the site names
+`sites` lists the site names
 
 **`lon` and `lat` - coordinates**
 
 *num*
 
-#ToDo 1258 NAs - needs completing (many are *Linosa* site, no coords, should we take approx.?)
-`locations` (next code chunk) lists the site names with their coordinates
+approximate locations for: Linosa, Kornati
+
+`locations` lists the site names with their coordinates
 
 **`trans`** = transect
 
@@ -192,6 +191,13 @@ species length-weight relationship constant
 
 species length-weight relationship constant
 
+## Data cleaning
+
+* Linosa and kornati did not have specific coordinates, therefore, an approximate location (lat-lon) was attached to it. If your analysis requires fine-detail for the location, you might want to omit these locations.
+
+* 
+
+## Data wrangling
 
 Many analyses require species matrix made up of rows and columns where each row is a site (or an environmental factor/covariate) and each column is a species.
 
