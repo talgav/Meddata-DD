@@ -6,6 +6,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 # library(maps) # needed for map.where()
+library(plotly)
 library(tidyverse)
 
 ```
@@ -45,10 +46,11 @@ lon_NA <- raw_med %>%
 Visual fish census surveys took place in 57 locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database is comprised of approximately 49,000 observations of 93 species of fish and includes abundance data, as well as presence-absence data. Additional data will be collected during 2019 and will be added to the main database.
 
 ```{r locations map}
-location_sites <- cbind(locations, sites) %>% 
-  na.omit(.)
+sites_plot <- ggplot(data = raw_med, aes(x = lon, y = lat)) +
+  geom_point(aes(colour = country)) + 
+  xlab("") + ylab("")
 
-ggplot(location_sites, aes(x = lon, y = lat)) + geom_point()
+ggplotly(sites_plot)
 
 ```
 Figure 1. Sites where fish surveys were conducted.
