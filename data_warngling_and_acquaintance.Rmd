@@ -5,18 +5,62 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+# library(maps) # needed for map.where()
 library(tidyverse)
 
 ```
 
+# Introduction
 Medata is made up of fish census surveys conducted along the Mediterranean sea and collated into a unified dataset that includes information on the sites and the fish.
 
-```{r upload raw data and review it}
+```{r setup data}
 raw_med <- read.csv("med_raw.csv", na.strings = c("", "NA")) # na.string() is used to make sure all blanks and all NAs are counted as NA.
-summary(raw_med) # examine raw data and check for errors.
+
+# create a sites list from all unique sites:
+sites <- raw_med %>%
+  distinct(site)
+
+# same for locations (this one includes lon and lat)
+locations <- raw_med %>%
+  distinct(lon, lat)
+
+# locations <- na.omit(locations) # omits NAs from locations, prep for next line of code:
+# locations$country <- map.where(database = "world", locations$lon, locations$lat) # retrieves country for each point coordinate
+
+# and one more for species
+species <- raw_med %>% 
+  distinct(species)
+
+# list of NA longitudes:
+lon_NA <- raw_med %>% 
+  dplyr::distinct(site, lon, lat) %>% 
+  filter(is.na(lon))
+
 ```
 
-'raw_med' is quite an extensive dataset and it includes all data collected, in a long format (so each species in each site has its own row). Though it is called "raw data", it had actually already undergo a series of validations (which are not done yet!).
+
+# Methods
+
+## Data collection
+Visual fish census surveys took place in 57 locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database is comprised of approximately 49,000 observations of 93 species of fish and includes abundance data, as well as presence-absence data. Additional data will be collected during 2019 and will be added to the main database.
+
+```{r locations map}
+location_sites <- cbind(locations, sites) %>% 
+  na.omit(.)
+
+ggplot(location_sites, aes(x = lon, y = lat)) + geom_point()
+
+```
+Figure 1. Sites where fish surveys were conducted.
+## Data cleaning
+
+
+```{r review it}
+summary(raw_med) # examine raw data and check for errors.
+
+```
+
+'raw_med' is an extensive dataset which includes all data collected, in a long format (so each species in each site has its own row). Though it is called "raw data", it had actually already undergo a series of validations (which are not done yet!).
 
 **`data.origin`**
 
@@ -26,7 +70,6 @@ summary(raw_med) # examine raw data and check for errors.
 * azz_malta = Azzuro
 * Belmaker = Belmaker
 * Claudet = Claudet
-* rilov = Rilov
 * Sala - PEW = Sala
 
 **`country`**
@@ -148,31 +191,6 @@ species length-weight relationship constant
 *num*
 
 species length-weight relationship constant
-
-
-```{r create lists of variables}
-
-# create a sites list from all unique sites:
-sites <- raw_med %>%
-  distinct(site)
-
-# same for locations (this one includes lon and lat)
-locations <- raw_med %>%
-  distinct(lon, lat)
-
-locations <- na.omit(locations) # omits NAs from locations, prep for next line of code:
-locations$country <- map.where(database = "world", locations$lon, locations$lat) # retrieves country for each point coordinate
-
-# and one more for species
-species <- raw_med %>% 
-  distinct(species)
-
-# list of NA longitudes:
-lon_NA <- raw_med %>% 
-  dplyr::distinct(site, lon, lat) %>% 
-  filter(is.na(lon))
-
-```
 
 
 Many analyses require species matrix made up of rows and columns where each row is a site (or an environmental factor/covariate) and each column is a species.
