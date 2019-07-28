@@ -39,7 +39,7 @@ lon_NA <- raw_med %>%
 
 ```
 
-
+.
 # Methods
 
 ## Data collection
