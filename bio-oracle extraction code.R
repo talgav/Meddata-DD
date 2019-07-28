@@ -1,74 +1,42 @@
 # Packages required: sdmpredictors (The package also contains external datasets (MARSPEC, BioClim))
 
 # Load package 
-library(sdmpredictors) 
-
-# # Explore datasets in the package 
-# list_datasets() 
-# 
-# # Explore layers in a dataset 
-# list_layers() 
-# 
-# # Download specific layers to the current directory 
-# bathy <- load_layers(c("BO_bathymin", "BO_bathymean", "BO_bathymax")) 
-# 
-# # Check layer statistics 
-# layer_stats() 
-# 
-# # Check Pearson correlation coefficient between layers 
-# layers_correlation() 
-
-############ Sample code 1 : Maximum temperature at the sea bottom ############
-
-# Load package 
-library(sdmpredictors) 
-
-# Easy download of raster file (Maximum Temperature at the sea bottom) 
-temp.max.bottom <- load_layers("BO2_tempmax_bdmax") 
-
-# Crop raster to fit the North Atlantic 
-ne.atlantic.ext <- extent(-100, 45, 30.75, 72.5) 
-temp.max.bottom.crop <- crop(temp.max.bottom, ne.atlantic.ext) 
-
-# Generate a nice color ramp and plot the map 
-my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127")) 
-plot(temp.max.bottom.crop,col=my.colors(1000),axes=FALSE, box=FALSE) 
-title(cex.sub = 1.25, sub = "Maximum temperature at the sea bottom (ºC)")
-
-############ Sample code 2 : Extracting environmental information for a set of sites ############
-# Load packages (leaflet allows to load google maps) 
-library(sdmpredictors) 
+library(tidyverse)
+library(sdmpredictors)
 library(leaflet) 
 
-# List layers avaialble in Bio-ORACLE v2 
-layers.bio2 <- list_layers( datasets="Bio-ORACLE" ) 
-layers.bio2 
-
-# Download environmental data layers (Max. Temperature, Min. Salinity and Min. Nitrates at the sea bottom) 
-environment.bottom <- load_layers( layercodes = c("BO2_tempmax_bdmean" , "BO2_salinitymin_bdmean", "BO2_nitratemin_bdmean") , equalarea=FALSE, rasterstack=TRUE) 
-
-# Download bathymetry 
-bathymetry <- load_layers("BO_bathymean") 
-
-# Generate a data.frame with the sites of interest 
-my.sites <- data.frame(Name=c("Faro, Portugal, NE Atlantic" , "Maspalomas, Spain, NE Atlantic" , "Guadeloupe, France, Caribbean Sea" , "Havana, Cuba, Caribbean Sea") , Lon=c(-7.873,-15.539,-61.208,-82.537) , Lat=c(37.047, 27.794,15.957,23.040 ) ) 
-my.sites 
-
-# Visualise sites of interest in google maps 
-m <- leaflet() 
-m <- addTiles(m) 
-m <- addMarkers(m, lng=my.sites$Lon, lat=my.sites$Lat, popup=my.sites$Name) 
-m 
+# Download raster files from Bio ORACLE:
+temperature <- load_layers(c("BO_sstmax", "BO_sstmean", "BO_sstmin"), datadir = "C:/Users/Shira/Documents/MEData/Bio ORACLE data")
+# med_ext <- raster::extent(-5.8299126019999221, 30.6333332060000885, 35.7853580580000425, 45.8222356830000876)
+# temperature_med <- crop(temperature, med_ext)
 
 # Extract environmental values from layers 
-my.sites.environment <- data.frame(Name=my.sites$Name , depth=extract(bathymetry,my.sites[,2:3]) , extract(environment.bottom,my.sites[,2:3]) ) 
-my.sites.environment 
+medata <- medata %>% 
+  mutate(tm)
+  data.frame(site = my.sites$Name , depth=extract(bathymetry,my.sites[,2:3]) , extract(environment.bottom,my.sites[,2:3]) ) 
 
-############ The data available in Bio-ORACLE are documented in two peer reviewed articles that you should cite: ############
+unique_coords <- raw_med %>% 
+    dplyr::distinct(lon, lat)
 
-# Tyberghein L, Verbruggen H, Pauly K, Troupin C, Mineur F, De Clerck O (2012) Bio-ORACLE: A global environmental dataset for marine species distribution modelling. Global Ecology and Biogeography, 21, 272–281.
-# [access publication]   [supporting information]	
-# 
-# Assis, J., Tyberghein, L., Bosh, S., Verbruggen, H., Serrão, E. A., & De Clerck, O. (2017). Bio-ORACLE v2.0: Extending marine data layers for bioclimatic modelling. Global Ecology and Biogeography.
-# [access publication]   [supporting information]
+temp_mean <- raster::extract(temperature[[2]], # raster layer
+                     unique_coords[c("lon","lat")], # SPDF with centroids for buffer
+                     buffer = 15000,  # buffer size, units depend on CRS
+                     fun = mean, # what to value to extract
+                     df = TRUE)
+temp_mean <- temp_mean[, "BO_sstmean"]
 
+temp_max <- raster::extract(temperature[[1]], unique_coords[c("lon","lat")], buffer = 15000, fun = mean, df = TRUE)
+temp_max <- temp_max[, "BO_sstmax"]
+
+temp_min <- raster::extract(temperature[[3]], unique_coords[c("lon","lat")], buffer = 15000, fun = mean, df = TRUE)
+temp_min <- temp_min[, "BO_sstmin"]
+
+temp_data <- cbind.data.frame(unique_coords, tmax = temp_max, tmin = temp_min, tmean = temp_mean) %>% 
+  distinct_all()
+# temp_data <- temp_data[order(temp_data$trans), ]
+raw_med <- raw_med %>% 
+  dplyr::select(-"tmax", -"tmin", -"tmean") %>% 
+  left_join(temp_data, by = c("lon", "lat"))
+
+head(raw_med)
+# write.csv(raw_med, "med_raw.csv", append = FALSE)
