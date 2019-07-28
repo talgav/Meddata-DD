@@ -146,40 +146,41 @@ Complements `protection`
 
 *num*
 Total MPA area in hactare
-# ToDo: complete NAs
+For Ustica - taken from: http://www.parks.it/indice/RM/Eindex.php
+
+Marettimo is the west-most island in a large nature reserve called "Isola Egadi", which extends 53,992 ha, but contains ![zoning](http://www.ampisoleegadi.it/?idx=1620).
 
 **`size.notake`**
 
 *num*
+
 Area size of no-take zone (in ha)
-# ToDo: complete NAs
+For Ustica - taken from: http://www.mmmpa.eu/UST-MPA.asp
 
 **`yr.creation`**
 
 *int*
 
 MPA establishing year.
-# ToDo: complete NAs
 
 **`age.reserve.yr`**
 
 *int*
 
 The age of the MPA in years (corresponds to `yr.creation`)
-# ToDo: complete NAs
 
 **`depth`**
 
 *num*
 
 Depth of survey in metres
-# ToDo: complete NAs from abthymetry maps?
 
 **`tmax`, `tmin`, `tmean`**
 
 Temperature: maximum, minimum and mean
-taken from GMED
-# ToDo: complete NAs from GMED
+Data acquired from ![Bio Oracle](http://www.bio-oracle.org/index.php):
+Tyberghein L, Verbruggen H, Pauly K, Troupin C, Mineur F, De Clerck O (2012) Bio-ORACLE: A global environmental dataset for marine species distribution modelling. Global Ecology and Biogeography, 21, 272–281.
+Assis, J., Tyberghein, L., Bosh, S., Verbruggen, H., Serrão, E. A., & De Clerck, O. (2017). Bio-ORACLE v2.0: Extending marine data layers for bioclimatic modelling. Global Ecology and Biogeography.
 
 **`a`**
 
