@@ -63,136 +63,31 @@ summary(raw_med) # examine raw data and check for errors.
 
 'raw_med' is an extensive dataset which includes all data collected, in a long format (so each species in each site has its own row). Though it is called "raw data", it had actually already underwent a series of validations.
 
-**`data.origin`**
-
-*fct*
-
-* azz_asi = Azzuro
-* azz_malta = Azzuro
-* Belmaker = Belmaker
-* Claudet = Claudet
-* Sala - PEW = Sala
-
-**`country`**
-
-*fct*
-
-Country where `site` is located.
-
-**`site`**
-
-*fct*
-
-`sites` lists the site names
-
-**`lon` and `lat` - coordinates**
-
-*num*
-
-approximate locations for: Linosa, Kornati
-
-`locations` lists the site names with their coordinates
-
-**`trans`** = transect
-
-*int*
-
-number of transect.
-
-**`species`** = species scientific name
-
-*fct*
-
-capital letter in the genus name, genus and species names are separated with a dot (.)
-Some are not species but genus (followed by `spp.`) and some are families (one word, -dae suffix)
-
-**`sp.length`**
-
-*num*
-
-The length of the fish in cm
-
-**`sp.n`**
-
-*int*
-
-fish count - how many individuals of this species were observed?
-
-**`season`**
-
-*fct*; levels: `Autumn`, `Spring`, `Summer`
-The season in which the survey was conducted
-
-**`protection`** 
-
-*fct*
-
-Inside MPA = `YES`
-Outside MPA = `NO`
-
-**`enforcement`**
-
-Type of enforcement:
-
-*int* with 3 levels:
-
-* `1` = Minimal protection
-* `2` = Medium protection
-* `3` = Fully protected
-
-Complements `protection`
-
-**`total.mpa.ha`**
-
-*num*
-Total MPA area in hactare
-For Ustica - taken from: http://www.parks.it/indice/RM/Eindex.php
-
-Marettimo is the west-most island in a large nature reserve called "Isola Egadi", which extends 53,992 ha, but contains ![zoning](http://www.ampisoleegadi.it/?idx=1620).
-
-**`size.notake`**
-
-*num*
-
-Area size of no-take zone (in ha)
-For Ustica - taken from: http://www.mmmpa.eu/UST-MPA.asp
-
-**`yr.creation`**
-
-*int*
-
-MPA establishing year.
-
-**`age.reserve.yr`**
-
-*int*
-
-The age of the MPA in years (corresponds to `yr.creation`)
-
-**`depth`**
-
-*num*
-
-Depth of survey in metres
-
-**`tmax`, `tmin`, `tmean`**
-
-Temperature: maximum, minimum and mean
-Data acquired from ![Bio-ORACLE](http://www.bio-oracle.org/index.php):
-Tyberghein L, Verbruggen H, Pauly K, Troupin C, Mineur F, De Clerck O (2012) Bio-ORACLE: A global environmental dataset for marine species distribution modelling. Global Ecology and Biogeography, 21, 272–281.
-Assis, J., Tyberghein, L., Bosh, S., Verbruggen, H., Serrão, E. A., & De Clerck, O. (2017). Bio-ORACLE v2.0: Extending marine data layers for bioclimatic modelling. Global Ecology and Biogeography.
-
-**`a`**
-
-*num*
-
-species length-weight relationship constant
-
-**`b`**
-
-*num*
-
-species length-weight relationship constant
+| Column name    | type  | comments     |
+| :------------- | :---: | -----------: |
+|  `data.origin` | *fct* | azz_asi = Azzuro; azz_malta = Azzuro; Belmaker = Belmaker; Claudet = Claudet; Sala - PEW = Sala |
+| `country`      | *fct* | Country where `site` is located |
+| `sites`        | *fct* | site names   |
+| `lon`          | *num* | longitude (degrees); approximate for Linosa, Kornati|
+| `lat`          | *num* | latitude (degrees); approximate for Linosa, Kornati |
+| `trans`        | *int* | transect number |
+| `species`      | *fct* | species scientific name (*Genus.species*); some species are recognised to Genus (spp)  or Family (-dae suffix) level |
+| `
+| `sp.length`    | *num* | length of fish in cm |
+| `sp.n`         | *int* | fish count - how many individuals of this species were observed? |
+| `season`       | *fct* | levels: `Autumn`, `Spring`, `Summer` - The season in which the survey was conducted |
+| `protection`   | *fct* | inside MPA = `YES`; outside MPA = `NO` |
+| `enforcement`  | *int* | type of enforcement. 3 levels: `1` = Minimal protection; `2` = Medium protection; `3` = Fully protected. Complements `protection` |
+| `total.mpa.ha` | *num* | total MPA area in hactare; ![Source for Ustica](http://www.parks.it/indice/RM/Eindex.php); ![Source for Marettimo](http://www.ampisoleegadi.it/?idx=1620) |
+| `size.notake`  | *num* | area size of no-take zone (in ha); ![Source for Ustica](http://www.mmmpa.eu/UST-MPA.asp) |
+| `yr.creation`  | *int* | MPA establishment year |
+| `age.reserve.yr`| *int* | age of the MPA in years (corresponds to `yr.creation`) |
+| `depth`        | *num* | depth of survey in metres (where applicable) |
+| `tmax`         | *num* | maximum temperature (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `tmin`         | *num* | minimum temperature (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `tmean`        | *num* | mean temperature (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `a`            | *num* | species length-weight relationship constant |
+| `b`            | *num* | species length-weight relationship constant |
 
 ## Data cleaning
 
