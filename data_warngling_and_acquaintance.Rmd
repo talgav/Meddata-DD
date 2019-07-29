@@ -1,6 +1,6 @@
 ---
 title: "Data wrangling for Mediterranean dataset (Medata)"
-author: "Shira Salingre"
+author: "Shira Salingré"
 output: html_document
 ---
 
@@ -72,7 +72,6 @@ summary(raw_med) # examine raw data and check for errors.
 | `lat`          | *num* | latitude (degrees); approximate for Linosa, Kornati |
 | `trans`        | *int* | transect number |
 | `species`      | *fct* | species scientific name (*Genus.species*); some species are recognised to Genus (spp)  or Family (-dae suffix) level |
-| `
 | `sp.length`    | *num* | length of fish in cm |
 | `sp.n`         | *int* | fish count - how many individuals of this species were observed? |
 | `season`       | *fct* | levels: `Autumn`, `Spring`, `Summer` - The season in which the survey was conducted |
