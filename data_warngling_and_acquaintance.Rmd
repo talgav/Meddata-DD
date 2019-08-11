@@ -1,67 +1,33 @@
 ---
-title: "Data wrangling for Mediterranean dataset (Medata)"
+title: "Data acquaintance for Mediterranean dataset (Medata)"
 author: "Shira Salingré"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-library(ggmap)
+library(sf)
 library(plotly)
 library(tidyverse)
 
 ```
 
 # Introduction
-Medata is made up of fish census surveys conducted along the Mediterranean sea and collated into a unified dataset that includes information on the sites and the fish.
+Medata is a dataset of Mediterranean fish census surveys conducted along the Mediterranean sea. The dataset includes environmental variables as well as conservation information regarding MPAs.
+
+This is a collaboration of ![Belmaker Lab](https://belmaker.weebly.com/) (Tel Aviv University, Israel), ![Ernesto Azzuro](https://www.researchgate.net/profile/Ernesto_Azzurro) (ISPRA, Italy), ![Joachim Claudet](http://www.joachimclaudet.com/) (CNRS, France) and ![Enric Sala](https://www.researchgate.net/profile/Enric_Sala).
+
 
 ```{r setup data}
 raw_med <- read.csv("med_raw.csv", na.strings = c("", "NA")) # na.string() is used to make sure all blanks and all NAs are counted as NA.
 
-# create a sites list from all unique sites:
-sites <- raw_med %>%
-  distinct(site)
-
-# same for locations (this one includes lon and lat)
-locations <- raw_med %>%
-  distinct(lon, lat)
-
-# locations <- na.omit(locations) # omits NAs from locations, prep for next line of code:
-# locations$country <- map.where(database = "world", locations$lon, locations$lat) # retrieves country for each point coordinate
-
-# and one more for species
-species <- raw_med %>% 
-  distinct(species)
+# locations will be a subset of unique sites: sites that have unique longitude and latitude
+locations <- raw_med %>% 
+  select(lon, lat, country, site) %>% 
+  distinct(lon, lat, .keep_all = TRUE)
 
 ```
 
-
-# Methods
-
-## Data collection
-Visual fish census surveys took place in 57 locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database is comprised of approximately 49,000 observations of 93 species of fish and includes abundance data, as well as presence-absence data. Additional data will be collected during 2019 and will be added to the main database.
-
-```{r locations map}
-extent_medit <- c(-5.353764, 36.21573, 30.06809, 45.80891)
-memory.limit(size = 20000)
-
-medit_map <- get_map(location = extent_medit, zoom = 6, maptype = "watercolor", source = "stamen")
-
-sites_plot <- ggplot(data = raw_med, aes(x = lon, y = lat, z = tmean, text = site)) +
-  geom_point(aes(colour = country)) + 
-  xlab("") + ylab("")
-
-ggplotly(sites_plot, tooltip = c("site", "tmean", "country"))
-
-```
-Figure 1. Survey sites.
-
-
-```{r review it}
-summary(raw_med) # examine raw data and check for errors.
-
-```
-
-'raw_med' is an extensive dataset which includes all data collected, in a long format (so each species in each site has its own row). Though it is called "raw data", it had actually already underwent a series of validations.
+# Variables
 
 | Column name    | type  | comments     |
 | :------------- | :---: | -----------: |
@@ -82,11 +48,42 @@ summary(raw_med) # examine raw data and check for errors.
 | `yr.creation`  | *int* | MPA establishment year |
 | `age.reserve.yr`| *int* | age of the MPA in years (corresponds to `yr.creation`) |
 | `depth`        | *num* | depth of survey in metres (where applicable) |
-| `tmax`         | *num* | maximum temperature (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `tmin`         | *num* | minimum temperature (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `tmean`        | *num* | mean temperature (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
 | `a`            | *num* | species length-weight relationship constant |
 | `b`            | *num* | species length-weight relationship constant |
+| `tmean`        | *num* | annual mean temperature (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `trange`       | *num* | annual temperature range (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `sal_mean`     | *num* | annual mean salinity (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `pp_mean`      | *num* | annual mean primary productivity (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `pp_range`     | *num* | annual primary production range (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+
+# Methods
+
+## Data collection
+Visual fish census surveys took place in 57 locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database is comprised of approximately 49,000 observations of 93 species of fish and includes abundance data, as well as presence-absence data. Additional data will be collected during 2019 and will be added to the main database.
+
+```{r locations map}
+med_map <- sf::st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp")
+
+sites_plot <- ggplot(raw_med) +
+  geom_sf(data = med_map$geometry, mapping = aes()) +
+  geom_point(aes(x = lon, y = lat, col = tmean)) +
+  scale_colour_brewer(palette = "RdBu", aesthetics = "fill")
+
+sites_plot
+
+```
+
+Figure 1. Survey sites.
+
+
+```{r review the dataset}
+summary(raw_med) # examine raw data and check for errors.
+
+raw_med %>% distinct(country) # check full country list
+raw_med %>% distinct(site) # check full site list
+raw_med %>% distinct(species) # check full species list. NOTE: some are not species but genus or family.
+
+```
 
 ## Data cleaning
 
