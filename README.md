@@ -8,4 +8,4 @@ Fish traits data ("fish_traits.csv" including: Size, Mobility, Activity, Schooli
 
 This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Aviv University, Israel), [Ernesto Azzuro](https://www.researchgate.net/profile/Ernesto_Azzurro) (ISPRA, Italy), [Joachim Claudet](http://www.joachimclaudet.com/) (CNRS, France) and [Enric Sala](https://www.researchgate.net/profile/Enric_Sala).
 
-Please see the `Hello_Medata.html` file for detailed information.
+Please see the [`Hello_Medata.html`](https://github.com/shirasal/medata/blob/master/Hello_Medata.html) file for detailed information.
