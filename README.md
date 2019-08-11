@@ -1,37 +1,11 @@
-## Welcome to GitHub Pages
+# MEDATA
 
-You can use the [editor on GitHub](https://github.com/shirasal/medata/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+`Medata` is a data set of Mediterranean fish census surveys conducted along the Mediterranean sea. The dataset includes environmental variables as well as conservation information regarding MPAs.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+Environmental information (temperature, salinity and primary production) was acquired from [Bio-ORACLE](http://http://www.bio-oracle.org) using `sdmpredictors` package.
 
-### Markdown
+Fish traits data ("fish_traits.csv" including: Size, Mobility, Activity, Schooling, Position, Diet) were aqcuired from [GASPAR](http://cesab.org/index.php/en/projets-passes/28-gaspar) and [Trait structure reveals the processes underlying fish establishment in the Mediterranean O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017](https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523). For some species no data was available, therefore they are not included.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Aviv University, Israel), [Ernesto Azzuro](https://www.researchgate.net/profile/Ernesto_Azzurro) (ISPRA, Italy), [Joachim Claudet](http://www.joachimclaudet.com/) (CNRS, France) and [Enric Sala](https://www.researchgate.net/profile/Enric_Sala).
 
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/shirasal/medata/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+Please see the `Hello Data.html` file for detailed information.
