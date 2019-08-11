@@ -93,6 +93,81 @@ raw_med %>% distinct(species) # check full species list. NOTE: some are not spec
 
 ## Data wrangling
 
+### Acquiring data from other resources
+
+Environmental data (temperature, salinity and primary production) were acquired from [Bio-ORACLE](http://http://www.bio-oracle.org) using `sdmpredictors` package.
+
+Fish traits data ("fish_traits.csv" including: Size, Mobility, Activity, Schooling, Position, Diet) was aqcuired from [GASPAR](http://cesab.org/index.php/en/projets-passes/28-gaspar). Where data was unavailable we used the information from [Trait structure reveals the processes underlying fish establishment in the Mediterranean
+O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017](https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523). For some species no data was available, therefore they are not included.
+
+Species with NA values:
+* Chelon.labrosus
+* Ctenolabrus.rupestris
+* Dicentrarchus.labrax
+* Dicentrarchus.punctatus
+* Gobius.auratus
+* Gobius.cobitis
+* Gobius.geniporus
+* Gobius.paganellus
+* Gobius.vittatus
+* Labrus.merula
+* Labrus.viridis
+* Lichia.amia
+* Liza.aurata
+* Mullus.barbatus
+* Myliobatis.aquila
+* Oedalechilus.labeo
+* Phycis.phycis
+* Pomatomus.saltatrix
+* Pomatoschistus.quagga
+* Symphodus.cinereus
+* Symphodus.ocellatus
+* Symphodus.rostratus
+* Trachurus.mediterraneus
+* Tripterygion.tripteronotus
+* Trisopterus.minutus
+
+*Size* coded as an ordered categorical variable with 6 levels:
+1. S1 = 0-7cm
+2. S2 = 7.1-15cm
+3. S3 = 15.1- 30cm
+4. S4 = 30.1-50cm
+5. S5 = 50.1-80cm
+6. S6 = >80cm
+
+*Mobility8/Home range coded as an ordered categorical variable with 3 levels:
+1. Sed = sedentary
+2. Mob = mobile within a reef
+3. VMob = highly mobile i.e. between reefs
+
+Period of *Activity* coded as an ordered categorical variable with 3 levels:
+1. Day = diurnal
+2. Both = diurnal & nocturnal
+3. Night = nocturnal
+
+Schooling coded as a categorical variable, 5 levels:
+1. Sol = solitary
+2. Pair = pairing
+3. SmallG = small group
+4. MedG = medium group
+5. LargeG = large group
+
+Position in the water column (*Level-water*) coded as an ordered categorical variable with 3 levels:
+1. Bottom = bottom
+2. Low = above bottom
+3. High = pelagic
+
+*Diet* coded as a categorical variable with 7 levels:
+1. HD = herbivorous-detritivorous (undefined organic material, often grouped by many authors under the name detritus and/or undefined vegetal material, turf or filamentous algae)
+2. HM = herbivorous macro-algal (macro algae (large fleshy algae) and sea grass)
+3. IS = invertivorous sessile (sessile invertebrates: coral, sponge, ascidians and so on)
+4. IM = invertivorous mobile (large benthic invertebrates + small benthic invertebrates + undefined invertebrates)
+5. PK = planktonivorous (plankton and small organisms which migrate in the water column, such as many benthic copepods, amphipods, crustacean larvaes etc which migrate in the water column at night)
+6. FC = Pelagic macro-organisms (large organisms living in the water column, usually fish and cephalopods) and benthic fish
+7. OM = omnivorous (herbivorous and/or detritivorous AND carnivorous)
+
+
+### Transformation
 Many analyses require species matrix made up of rows and columns where each row is a site (or an environmental factor/covariate) and each column is a species.
 
 ```{r create species matrix}
