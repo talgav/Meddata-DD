@@ -14,7 +14,7 @@ library(tidyverse)
 # Introduction
 Medata is a dataset of Mediterranean fish census surveys conducted along the Mediterranean sea. The dataset includes environmental variables as well as conservation information regarding MPAs.
 
-This is a collaboration of ![Belmaker Lab](https://belmaker.weebly.com/) (Tel Aviv University, Israel), ![Ernesto Azzuro](https://www.researchgate.net/profile/Ernesto_Azzurro) (ISPRA, Italy), ![Joachim Claudet](http://www.joachimclaudet.com/) (CNRS, France) and ![Enric Sala](https://www.researchgate.net/profile/Enric_Sala).
+This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Aviv University, Israel), [Ernesto Azzuro](https://www.researchgate.net/profile/Ernesto_Azzurro) (ISPRA, Italy), [Joachim Claudet](http://www.joachimclaudet.com/) (CNRS, France) and [Enric Sala](https://www.researchgate.net/profile/Enric_Sala).
 
 
 ```{r setup data}
@@ -29,8 +29,8 @@ locations <- raw_med %>%
 
 # Variables
 
-| Column name    | type  | comments     |
-| :------------- | :---: | -----------: |
+| variable       | type  | comments                             |
+| :------------- | :---: | :------------------------------------|
 |  `data.origin` | *fct* | azz_asi = Azzuro; azz_malta = Azzuro; Belmaker = Belmaker; Claudet = Claudet; Sala - PEW = Sala |
 | `country`      | *fct* | Country where `site` is located |
 | `sites`        | *fct* | site names   |
@@ -43,18 +43,18 @@ locations <- raw_med %>%
 | `season`       | *fct* | levels: `Autumn`, `Spring`, `Summer` - The season in which the survey was conducted |
 | `protection`   | *fct* | inside MPA = `YES`; outside MPA = `NO` |
 | `enforcement`  | *int* | type of enforcement. 3 levels: `1` = Minimal protection; `2` = Medium protection; `3` = Fully protected. Complements `protection` |
-| `total.mpa.ha` | *num* | total MPA area in hactare; ![Source for Ustica](http://www.parks.it/indice/RM/Eindex.php); ![Source for Marettimo](http://www.ampisoleegadi.it/?idx=1620) |
-| `size.notake`  | *num* | area size of no-take zone (in ha); ![Source for Ustica](http://www.mmmpa.eu/UST-MPA.asp) |
+| `total.mpa.ha` | *num* | total MPA area in hactare; [Source for Ustica](http://www.parks.it/indice/RM/Eindex.php); [Source for Marettimo](http://www.ampisoleegadi.it/?idx=1620) |
+| `size.notake`  | *num* | area size of no-take zone (in ha); [Source for Ustica](http://www.mmmpa.eu/UST-MPA.asp) |
 | `yr.creation`  | *int* | MPA establishment year |
 | `age.reserve.yr`| *int* | age of the MPA in years (corresponds to `yr.creation`) |
 | `depth`        | *num* | depth of survey in metres (where applicable) |
 | `a`            | *num* | species length-weight relationship constant |
 | `b`            | *num* | species length-weight relationship constant |
-| `tmean`        | *num* | annual mean temperature (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `trange`       | *num* | annual temperature range (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `sal_mean`     | *num* | annual mean salinity (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `pp_mean`      | *num* | annual mean primary productivity (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `pp_range`     | *num* | annual primary production range (Source: ![Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `tmean`        | *num* | annual mean temperature (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `trange`       | *num* | annual temperature range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `sal_mean`     | *num* | annual mean salinity (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `pp_mean`      | *num* | annual mean primary productivity (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `pp_range`     | *num* | annual primary production range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
 
 # Methods
 
