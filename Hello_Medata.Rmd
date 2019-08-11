@@ -1,7 +1,10 @@
 ---
 title: "Data acquaintance for Mediterranean dataset (Medata)"
 author: "Shira Salingré"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
