@@ -4,7 +4,9 @@ author: "Shira Salingré"
 output: 
   html_document:
     toc: true
-    toc_float: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
 ---
 
 ```{r setup, include=FALSE}
@@ -25,8 +27,8 @@ raw_med <- read.csv("med_raw.csv", na.strings = c("", "NA")) # na.string() is us
 
 # locations will be a subset of unique sites: sites that have unique longitude and latitude
 locations <- raw_med %>% 
-  select(lon, lat, country, site) %>% 
-  distinct(lon, lat, .keep_all = TRUE)
+  dplyr::select(lon, lat, country, site) %>% 
+  dplyr::distinct(lon, lat, .keep_all = TRUE)
 
 ```
 
