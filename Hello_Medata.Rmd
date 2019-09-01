@@ -13,20 +13,20 @@ output:
 library(sf)
 library(plotly)
 library(tidyverse)
-
+library(ggspatial)
 ```
 
 # Introduction
-Medata is a dataset of Mediterranean fish census surveys conducted along the Mediterranean sea. The dataset includes environmental variables as well as conservation information regarding MPAs.
+Medata is a dataset of fish census surveys conducted along the Mediterranean sea. The dataset includes environmental variables, as well as conservation information regarding MPAs.
 
 This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Aviv University, Israel), [Ernesto Azzuro](https://www.researchgate.net/profile/Ernesto_Azzurro) (ISPRA, Italy), [Joachim Claudet](http://www.joachimclaudet.com/) (CNRS, France) and [Enric Sala](https://www.researchgate.net/profile/Enric_Sala).
 
 
 ```{r setup data}
-raw_med <- read.csv("med_raw.csv", na.strings = c("", "NA")) # na.string() is used to make sure all blanks and all NAs are counted as NA.
+med_raw <- read_csv("med_raw.csv", na = c("", "NA")) # na() is used to make sure all blanks and all NAs are counted as NA.
 
 # locations will be a subset of unique sites: sites that have unique longitude and latitude
-locations <- raw_med %>% 
+locations <- med_raw %>% 
   dplyr::select(lon, lat, country, site) %>% 
   dplyr::distinct(lon, lat, .keep_all = TRUE)
 
@@ -37,29 +37,29 @@ locations <- raw_med %>%
 | variable       | type  | comments                             |
 | :------------- | :---: | :------------------------------------|
 |  `data.origin` | *fct* | azz_asi = Azzuro; azz_malta = Azzuro; Belmaker = Belmaker; Claudet = Claudet; Sala - PEW = Sala |
-| `country`      | *fct* | Country where `site` is located |
-| `sites`        | *fct* | site names   |
-| `lon`          | *num* | longitude (degrees); approximate for Linosa, Kornati|
-| `lat`          | *num* | latitude (degrees); approximate for Linosa, Kornati |
-| `trans`        | *int* | transect number |
-| `species`      | *fct* | species scientific name (*Genus.species*); some species are recognised to Genus (spp)  or Family (-dae suffix) level |
-| `sp.length`    | *num* | length of fish in cm |
-| `sp.n`         | *int* | fish count - how many individuals of this species were observed? |
-| `season`       | *fct* | levels: `Autumn`, `Spring`, `Summer` - The season in which the survey was conducted |
-| `protection`   | *fct* | inside MPA = `YES`; outside MPA = `NO` |
-| `enforcement`  | *int* | type of enforcement. 3 levels: `1` = Minimal protection; `2` = Medium protection; `3` = Fully protected. Complements `protection` |
-| `total.mpa.ha` | *num* | total MPA area in hactare; [Source for Ustica](http://www.parks.it/indice/RM/Eindex.php); [Source for Marettimo](http://www.ampisoleegadi.it/?idx=1620) |
-| `size.notake`  | *num* | area size of no-take zone (in ha); [Source for Ustica](http://www.mmmpa.eu/UST-MPA.asp) |
-| `yr.creation`  | *int* | MPA establishment year |
+| `country`       | *fct* | Country where `site` is located |
+| `sites`         | *fct* | site names   |
+| `lon`           | *num* | longitude (degrees); approximate for Linosa, Kornati|
+| `lat`           | *num* | latitude (degrees); approximate for Linosa, Kornati |
+| `trans`         | *int* | transect number |
+| `species`       | *fct* | species scientific name (*Genus.species*); some species are recognised to Genus (spp)  or Family (-dae suffix) level |
+| `sp.length`     | *num* | length of fish in cm |
+| `sp.n`          | *int* | fish count - how many individuals of this species were observed? |
+| `season`        | *fct* | levels: `Autumn`, `Spring`, `Summer` - The season in which the survey was conducted |
+| `protection`    | *fct* | inside MPA = `YES`; outside MPA = `NO` |
+| `enforcement`   | *int* | type of enforcement. 3 levels: `1` = Minimal protection; `2` = Medium protection; `3` = Fully protected. Complements `protection` |
+| `total.mpa.ha`  | *num* | total MPA area in hactare; [Source for Ustica](http://www.parks.it/indice/RM/Eindex.php); [Source for Marettimo](http://www.ampisoleegadi.it/?idx=1620) |
+| `size.notake`   | *num* | area size of no-take zone (in ha); [Source for Ustica](http://www.mmmpa.eu/UST-MPA.asp) |
+| `yr.creation`   | *int* | MPA establishment year |
 | `age.reserve.yr`| *int* | age of the MPA in years (corresponds to `yr.creation`) |
-| `depth`        | *num* | depth of survey in metres (where applicable) |
-| `a`            | *num* | species length-weight relationship constant |
-| `b`            | *num* | species length-weight relationship constant |
-| `tmean`        | *num* | annual mean temperature (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `trange`       | *num* | annual temperature range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `sal_mean`     | *num* | annual mean salinity (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `pp_mean`      | *num* | annual mean primary productivity (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
-| `pp_range`     | *num* | annual primary production range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `depth`         | *num* | depth of survey in metres (where applicable) |
+| `a`             | *num* | species length-weight relationship constant |
+| `b`             | *num* | species length-weight relationship constant |
+| `tmean`         | *num* | annual mean temperature (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `trange`        | *num* | annual temperature range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `sal_mean`      | *num* | annual mean salinity (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `pp_mean`       | *num* | annual mean primary productivity (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `pp_range`      | *num* | annual primary production range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
 
 # Methods
 
@@ -67,34 +67,37 @@ locations <- raw_med %>%
 Visual fish census surveys took place in 57 locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database is comprised of approximately 49,000 observations of 93 species of fish and includes abundance data, as well as presence-absence data. Additional data will be collected during 2019 and will be added to the main database.
 
 ```{r locations map}
-med_map <- sf::st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp")
+med_map <- sf::st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp", quiet = TRUE)
 
-sites_plot <- ggplot(raw_med) +
+sites_plot <- ggplot(med_raw) +
   geom_sf(data = med_map$geometry, mapping = aes()) +
-  geom_point(aes(x = lon, y = lat, col = tmean)) +
-  scale_colour_brewer(palette = "RdBu", aesthetics = "fill")
+  geom_point(aes(x = lon, y = lat, fill = tmean), colour = "black", pch = 21,
+             size = 5, alpha = 0.7) +
+  scale_fill_distiller(palette = "RdBu") +
+  ggtitle(label = "Mediterranean fish surveys", subtitle = "Locations and temperatures") +
+  xlab("Longitude") + 
+  ylab("Latitude") +
+  labs(fill = "Mean Annual Temp")
 
 sites_plot
 
 ```
 
-Figure 1. Survey sites.
+Figure 1. Survey sites and temperatures (in degrees celsius).
 
 
 ```{r review the dataset}
-summary(raw_med) # examine raw data and check for errors.
+summary(med_raw) # examine raw data and check for errors.
 
-raw_med %>% distinct(country) # check full country list
-raw_med %>% distinct(site) # check full site list
-raw_med %>% distinct(species) # check full species list. NOTE: some are not species but genus or family.
+med_raw %>% distinct(country) # check full country list
+med_raw %>% distinct(site) # check full site list
+med_raw %>% distinct(species) # check full species list. NOTE: some are not species but genus or family.
 
 ```
 
 ## Data cleaning
 
 * Linosa and kornati did not have specific coordinates, therefore, an approximate location (lat-lon) was attached to it. If your analysis requires fine-detail for the location, you might want to omit these locations.
-
-* 
 
 ## Data wrangling
 
@@ -106,6 +109,7 @@ Fish traits data ("fish_traits.csv" including: Size, Mobility, Activity, Schooli
 O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017](https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523). For some species no data was available, therefore they are not included.
 
 Species with NA values:
+
 * Chelon.labrosus
 * Ctenolabrus.rupestris
 * Dicentrarchus.labrax
@@ -140,7 +144,7 @@ Species with NA values:
 5. S5 = 50.1-80cm
 6. S6 = >80cm
 
-*Mobility8/Home range coded as an ordered categorical variable with 3 levels:
+*Mobility*/Home range coded as an ordered categorical variable with 3 levels:
 1. Sed = sedentary
 2. Mob = mobile within a reef
 3. VMob = highly mobile i.e. between reefs
@@ -150,7 +154,7 @@ Period of *Activity* coded as an ordered categorical variable with 3 levels:
 2. Both = diurnal & nocturnal
 3. Night = nocturnal
 
-Schooling coded as a categorical variable, 5 levels:
+*Schooling* coded as a categorical variable, 5 levels:
 1. Sol = solitary
 2. Pair = pairing
 3. SmallG = small group
@@ -176,16 +180,29 @@ Position in the water column (*Level-water*) coded as an ordered categorical var
 Many analyses require species matrix made up of rows and columns where each row is a site (or an environmental factor/covariate) and each column is a species.
 
 ```{r create species matrix}
+# Create a tibble of metadata
+med_meta <- med_raw %>% 
+  distinct(country, site, lon, lat, season, protection, enforcement, total.mpa.ha, size.notake, 
+           yr.creation, age.reserve.yr, tmean, trange, sal_mean, pp_mean, pp_range)
 
-med_mat <- raw_med %>% 
-  group_by(species) %>% 
-  mutate(grouped_id = row_number()) %>% # these two rows (group_by() and mutate()) are a workaround an error dplyr throws when there are multiple keys, i.e. the species, which is the column we'd like to spread, is not unique)
-  spread(species, sp.n) %>% 
-  select(-sp.length, -a, -b, -grouped_id) # these are irrelevant in this case but make sure to consider if you do need these variables
-med_mat[, 18:136][is.na(med_mat[, 18:136])] <- 0 # change NAs to 0s only for species
+# Create a species matrix with summation of each species in each site (abundance)
+med_mat <- med_raw %>% 
+  group_by(site, lon, lat, species) %>% # Note it only shows sites and species (with coordinate-locations)
+  summarise(n = sum(sp.n)) %>% 
+  spread(species, n, fill = 0)
 head(med_mat)
-# last column of metadata is 17
-# species are in cols (18:136)
+
+# Put the 2 data sets together (species and metadata)
+full_med_mat <- left_join(med_meta, med_mat, by = c("site", "lon", "lat"))
+write_csv(full_med_mat, "med_species_matrix.csv")
+read_csv("med_species_matrix.csv")
+head(full_med_mat)
+
+# Convert the abundance matrix to presence-absence matrix
+pres_abs_mat <- full_med_mat
+pres_abs_mat[17:ncol(pres_abs_mat)] <- ifelse(pres_abs_mat[17:ncol(pres_abs_mat)] > 0, 1, 0)
+head(pres_abs_mat)
+
 
 ```
 
