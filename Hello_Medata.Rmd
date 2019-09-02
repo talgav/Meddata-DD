@@ -1,5 +1,5 @@
 ---
-title: "Data acquaintance for Mediterranean dataset (Medata)"
+title: "Data acquaintance for Mediterranean dataset (MEData)"
 author: "Shira Salingré"
 output: 
   html_document:
