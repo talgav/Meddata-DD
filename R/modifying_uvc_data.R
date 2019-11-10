@@ -1,3 +1,5 @@
+library(todor) # not required
+
 # This is a code to modify data from Crete underwater census surveys into the format of all UVC surveys
 
 library(tidyverse)
@@ -8,10 +10,20 @@ uvc_colnames <- c("data.origin", "country", "site", "lon", "lat", "trans", "spec
 
 crete_data <- read_csv("~/Lab stuff/Crete/crete2019/UVC_crete_2019.csv",
                        col_types = cols(Notes = "c"))
+# correct mistakes:
+crete_data$Species <- str_replace(crete_data$Species, "ThalASSoma pavo", "Thalassoma pavo")
+crete_data$Species <- str_replace(crete_data$Species, "Epinephelus costea", "Epinephelus costae")
+crete_data$Species <- str_replace(crete_data$Species, "Atherina sp.", "Atherina spp")
+crete_data$Species <- str_replace(crete_data$Species, "Gobius.panellus", "Gobiidae")
+crete_data$Species <- str_replace(crete_data$Species, "Gobiidae spp", "Gobiidae")
+crete_data$Species <- str_replace(crete_data$Species, "Belonidae spp.", "Belonidae")
+crete_data$Species <- str_replace(crete_data$Species, "Pagrus coeruleostrictus", "Pagrus coeruleostictus")
+
 colnames(crete_data)
 
 crete_data <- crete_data %>%
   filter(Distance <= 2.5) %>% # limit belt transect to 2.5 m distance
+  filter(Confidence == 1) %>% # only species that we're sure about their ID
   filter(Date != 2019-10-12 & Observer_Name != "Shira Salingre",
          Date != 2019-10-13 & Observer_Name != "Shira Salingre") # remove inexperienced observer from 2 1st days of diving
 
@@ -35,13 +47,68 @@ crete_mod <- crete %>% mutate(data.origin = "Belmaker", country = "Greece", # ad
                               protection = "NO", enforcement = 0, total.mpa.ha	= 0,
                               size.notake = 0, yr.creation	= NA, age.reserve.yr = NA,
                               site = str_extract(SiteID, "Cret\\d\\d")) %>%   # site name is 'Cret' followed by day of dive date
-                      select(data.origin, country, site, lon, lat, trans, Species, Length, Amount,
+                       select(data.origin, country, site, lon, lat, trans, Species, Length, Amount,
                              Season, protection, enforcement, total.mpa.ha, size.notake, yr.creation,
                              age.reserve.yr, Mean_Depth)
 # 3. match colnames to the uvc colnames (missing: a, b, temp, pp, sal)
 colnames(crete_mod) <- c(uvc_colnames)
+crete_mod$species <- gsub("\\s", "\\.", x = crete_mod$species) # replace space with '.' in species names
 
 # check it out
 glimpse(crete_mod)
 
 # write_csv(crete_mod, "data/crete_uvc.csv")
+
+# add to medata:
+medata <- read_csv("data/med_raw.csv")
+colnames(medata)
+
+# check for new species:
+crete_spp <- unique(crete_mod$species)
+med_spp <- unique(medata$species)
+base::setdiff(crete_spp, med_spp)
+
+################################################################################################
+# Check single observation of Euthynnus alletteratus (p. 91 in guide)
+crete_data %>% filter(Species == "Euthynnus alletteratus") %>%
+  select(`First Observer`, Observer_Name, Transect)
+crete_data %>% filter(`First Observer` == "Yoni Belmaker", Transect == "A") %>%
+  select(Species, Confidence, Observer_Name) %>% print(n = Inf)
+################################################################################################
+
+# add biomass coefficients:
+ab <- read_csv("~/MEData/Lenght_weight.csv")
+crete_full <- crete_mod %>% dplyr::left_join(ab)
+
+# add environmental variables (explanations in `bio-oracle extraction code.R`)
+library(sdmpredictors)
+unique_coords <- crete_full %>% 
+  dplyr::distinct(lon, lat)
+temperature <- load_layers(c("BO_sstmean", "BO_sstrange"), datadir = "~/MEData/Bio ORACLE data")
+salinity <- load_layers("BO2_salinitymean_bdmin", datadir = "~/MEData/Bio ORACLE data")
+productivity <- load_layers(c("BO2_ppmean_bdmin", "BO2_pprange_bdmin"), datadir = "~/MEData/Bio ORACLE data")
+temp_mean <- raster::extract(temperature[[1]], unique_coords[c("lon","lat")], buffer = 15000, fun = mean, df = TRUE)
+temp_mean <- temp_mean[, "BO_sstmean"]
+temp_range <- raster::extract(temperature[[2]], unique_coords[c("lon","lat")], buffer = 15000, fun = mean, df = TRUE)
+temp_range <- temp_range[, "BO_sstrange"]
+sal_mean <- raster::extract(salinity, unique_coords[c("lon","lat")], fun = mean, df = TRUE)
+sal_mean <- sal_mean[, "BO2_salinitymean_bdmin"]
+pp_mean <- raster::extract(productivity[[1]], unique_coords[c("lon","lat")], buffer = 15000, fun = mean, df = TRUE)
+pp_mean <- pp_mean[, "BO2_ppmean_bdmin"]
+pp_range <- raster::extract(productivity[[2]], unique_coords[c("lon","lat")], buffer = 15000, fun = mean, df = TRUE)
+pp_range <- pp_range[, "BO2_pprange_bdmin"]
+env_data <- cbind.data.frame(unique_coords, tmean = temp_mean, trange = temp_range, sal_mean, pp_mean, pp_range) # put together all enviromental data with coordiantes
+
+# add data to crete_full file:
+crete_full <- crete_full %>%
+  left_join(env_data, by = c("lon", "lat"))
+
+View(crete_full)
+# write_csv(crete_full, "crete_uvc_full.csv")
+
+# FIXME salinity not filled for some reason
+
+# add crete data to all uvc:
+all <- rbind(medata, crete_full)
+View(all)
+# write_csv(all, "data/all_uvc_data_101119.csv")
