@@ -7,19 +7,18 @@ library(sdmpredictors)
 # Tyberghein L, Verbruggen H, Pauly K, Troupin C, Mineur F, De Clerck O (2012) Bio-ORACLE: A global environmental dataset for marine species distribution modelling. Global Ecology and Biogeography, 21, 272–281.
 # 
 # Assis, J., Tyberghein, L., Bosh, S., Verbruggen, H., Serrão, E. A., & De Clerck, O. (2017). Bio-ORACLE v2.0: Extending marine data layers for bioclimatic modelling. Global Ecology and Biogeography.
-
 library(leaflet) 
 
-raw_med <- read.csv("C:/Users/Shira/Documents/R/medata/med_raw.csv")
+raw_med <- read_csv("~/MEData/medata/data/med_raw.csv")
 
-list_datasets() # which datasets Bio ORACLE contain?
-all_bio_layers <- list_layers(datasets = "Bio-ORACLE") # explore layers from Bio ORACLE
+list_datasets(marine = TRUE) # which marine datasets Bio ORACLE contain?
+all_bio_layers <- list_layers(datasets = "Bio-ORACLE", marine = TRUE) # explore layers from Bio ORACLE
 all_bio_layers[2:3] # to view layers names and code
 
 ######################### temperature #########################
 
 # Download temperature raster files from Bio ORACLE:
-temperature <- load_layers(c("BO_sstmean", "BO_sstrange"), datadir = "C:/Users/Shira/Documents/MEData/Bio ORACLE data") # download temperature data from bio ORACLE to the appointed directory
+temperature <- load_layers(c("BO_sstmean", "BO_sstrange"), datadir = "~/MEData/Bio ORACLE data") # download temperature data from bio ORACLE to the appointed directory
 
 unique_coords <- raw_med %>% 
     dplyr::distinct(lon, lat) # set relevant coordinates: all the unique coordinates from raw_med data set.
