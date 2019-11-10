@@ -17,13 +17,13 @@ library(ggspatial)
 ```
 
 # Introduction
-Medata is a dataset of fish census surveys conducted along the Mediterranean sea. The dataset includes environmental variables, as well as conservation information regarding MPAs.
+Medata is a dataset of underwater fish census surveys conducted along the Mediterranean sea. The dataset includes environmental variables, as well as conservation information regarding MPAs.
 
 This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Aviv University, Israel), [Ernesto Azzuro](https://www.researchgate.net/profile/Ernesto_Azzurro) (ISPRA, Italy), [Joachim Claudet](http://www.joachimclaudet.com/) (CNRS, France) and [Enric Sala](https://www.researchgate.net/profile/Enric_Sala).
 
 
 ```{r setup data}
-med_raw <- read_csv("med_raw.csv", na = c("", "NA")) # na() is used to make sure all blanks and all NAs are counted as NA.
+med_raw <- read_csv("data/all_uvc_data_101119.csv", na = c("", "NA")) # na() is used to make sure all blanks and all NAs are counted as NA.
 
 # locations will be a subset of unique sites: sites that have unique longitude and latitude
 locations <- med_raw %>% 
@@ -34,9 +34,9 @@ locations <- med_raw %>%
 
 # Variables
 
-| variable       | type  | comments                             |
-| :------------- | :---: | :------------------------------------|
-|  `data.origin` | *fct* | azz_asi = Azzuro; azz_malta = Azzuro; Belmaker = Belmaker; Claudet = Claudet; Sala - PEW = Sala |
+| variable        | type  | comments                             |
+| :-------------- | :---: | :------------------------------------|
+|  `data.origin`  | *fct* | azz_asi = Azzuro; azz_malta = Azzuro; Belmaker = Belmaker; Claudet = Claudet; Sala - PEW = Sala |
 | `country`       | *fct* | Country where `site` is located |
 | `sites`         | *fct* | site names   |
 | `lon`           | *num* | longitude (degrees); approximate for Linosa, Kornati|
@@ -64,7 +64,7 @@ locations <- med_raw %>%
 # Methods
 
 ## Data collection
-Visual fish census surveys took place in 57 locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database is comprised of approximately 49,000 observations of 93 species of fish and includes abundance data, as well as presence-absence data. Additional data will be collected during 2019 and will be added to the main database.
+Visual fish census surveys took place in multiple locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database is comprised of approximately 50,0000 observations of 93 species of fish and includes abundance data, as well as presence-absence data. Additional data will be collected during 2019 and will be added to the main database.
 
 ```{r locations map}
 med_map <- sf::st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp", quiet = TRUE)
@@ -105,36 +105,35 @@ med_raw %>% distinct(species) # check full species list. NOTE: some are not spec
 
 Environmental data (temperature, salinity and primary production) were acquired from [Bio-ORACLE](http://http://www.bio-oracle.org) using `sdmpredictors` package.
 
-Fish traits data ("fish_traits.csv" including: Size, Mobility, Activity, Schooling, Position, Diet) was aqcuired from [GASPAR](http://cesab.org/index.php/en/projets-passes/28-gaspar). Where data was unavailable we used the information from [Trait structure reveals the processes underlying fish establishment in the Mediterranean
-O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017](https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523). For some species no data was available, therefore they are not included.
+Fish traits data ("fish_traits.csv" including: size, mobility, activity, schooling, position, diet) were aqcuired from [GASPAR](http://cesab.org/index.php/en/projets-passes/28-gaspar). Where data were unavailable we used the information from [Trait structure reveals the processes underlying fish establishment in the Mediterranean. O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017](https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523).
 
-Species with NA values:
+Species with no available trait data were removed from traits-related analysis:
 
-* Chelon.labrosus
-* Ctenolabrus.rupestris
-* Dicentrarchus.labrax
-* Dicentrarchus.punctatus
-* Gobius.auratus
-* Gobius.cobitis
-* Gobius.geniporus
-* Gobius.paganellus
-* Gobius.vittatus
-* Labrus.merula
-* Labrus.viridis
-* Lichia.amia
-* Liza.aurata
-* Mullus.barbatus
-* Myliobatis.aquila
-* Oedalechilus.labeo
-* Phycis.phycis
-* Pomatomus.saltatrix
-* Pomatoschistus.quagga
-* Symphodus.cinereus
-* Symphodus.ocellatus
-* Symphodus.rostratus
-* Trachurus.mediterraneus
-* Tripterygion.tripteronotus
-* Trisopterus.minutus
+* *Chelon labrosus*
+* *Ctenolabrus rupestris*
+* *Dicentrarchus labrax*
+* *Dicentrarchus punctatus*
+* *Gobius auratus*
+* *Gobius cobitis*
+* *Gobius geniporus*
+* *Gobius paganellus*
+* *Gobius vittatus*
+* *Labrus merula*
+* *Labrus viridis*
+* *Lichia amia*
+* *Liza aurata*
+* *Mullus barbatus*
+* *Myliobatis aquila*
+* *Oedalechilus labeo*
+* *Phycis phycis*
+* *Pomatomus saltatrix*
+* *Pomatoschistus quagga*
+* *Symphodus cinereus*
+* *Symphodus ocellatus*
+* *Symphodus rostratus*
+* *Trachurus mediterraneus*
+* *Tripterygion tripteronotus*
+* *Trisopterus minutus*
 
 *Size* coded as an ordered categorical variable with 6 levels:
 1. S1 = 0-7cm
@@ -194,8 +193,6 @@ head(med_mat)
 
 # Put the 2 data sets together (species and metadata)
 full_med_mat <- left_join(med_meta, med_mat, by = c("site", "lon", "lat"))
-write_csv(full_med_mat, "med_species_matrix.csv")
-read_csv("med_species_matrix.csv")
 head(full_med_mat)
 
 # Convert the abundance matrix to presence-absence matrix
