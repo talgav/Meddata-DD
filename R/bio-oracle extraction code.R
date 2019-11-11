@@ -1,112 +1,73 @@
-# Packages required: sdmpredictors (The package also contains external datasets (MARSPEC, BioClim))
 
 # Load package 
-library(tidyverse)
 library(sdmpredictors)
-# CITATION:
-# Tyberghein L, Verbruggen H, Pauly K, Troupin C, Mineur F, De Clerck O (2012) Bio-ORACLE: A global environmental dataset for marine species distribution modelling. Global Ecology and Biogeography, 21, 272–281.
-# 
-# Assis, J., Tyberghein, L., Bosh, S., Verbruggen, H., Serrão, E. A., & De Clerck, O. (2017). Bio-ORACLE v2.0: Extending marine data layers for bioclimatic modelling. Global Ecology and Biogeography.
-library(leaflet) 
+library(tidyverse)
+# library(leaflet) 
 
-raw_med <- read_csv("~/MEData/medata/data/med_raw.csv")
+# load point data (I only need their lon and lat) - only unique coordinates:
+unique_coords <- read_csv("~/MEData/medata/data/all_uvc_data_101119.csv",
+                          col_types = cols(depth = col_double())) %>%
+  dplyr::distinct(lon, lat)
 
-list_datasets(marine = TRUE) # which marine datasets Bio ORACLE contain?
-all_bio_layers <- list_layers(datasets = "Bio-ORACLE", marine = TRUE) # explore layers from Bio ORACLE
-all_bio_layers[2:3] # to view layers names and code
+# explore layers from Bio ORACLE
+all_bio_layers <- list_layers(datasets = "Bio-ORACLE", marine = TRUE) %>%
+  dplyr::select(layer_code, name) # to view layers names and code
+
+# to search for a layer code by a specific string - change the 2nd arg in str_detect:
+all_bio_layers %>% filter(stringr::str_detect(.$name, "salinity"))
 
 ######################### temperature #########################
 
 # Download temperature raster files from Bio ORACLE:
 temperature <- load_layers(c("BO_sstmean", "BO_sstrange"), datadir = "~/MEData/Bio ORACLE data") # download temperature data from bio ORACLE to the appointed directory
 
-unique_coords <- raw_med %>% 
-    dplyr::distinct(lon, lat) # set relevant coordinates: all the unique coordinates from raw_med data set.
-
 temp_mean <- raster::extract(temperature[[1]], # raster layer (the 2 raters are stacked so here we choose the relavent one)
-                     unique_coords[c("lon","lat")], # SPDF with centroids for buffer
+                     unique_coords, # SPDF with coords as centroids for buffer
                      buffer = 15000,  # buffer size, units depend on CRS (here it's degrees)
                      fun = mean, # what to value to extract
-                     df = TRUE) # create data frame
-temp_mean <- temp_mean[, "BO_sstmean"] # select only the temperature column
+                     df = TRUE) %>% # create data frame
+              dplyr::select(BO_sstmean) # select only the temperature column
 
-temp_range <- raster::extract(temperature[[2]], unique_coords[c("lon","lat")], buffer = 15000, fun = mean, df = TRUE)
-temp_range <- temp_range[, "BO_sstrange"]
-
-temp_data <- cbind.data.frame(unique_coords, tmean = temp_mean, trange = temp_range) # put together the 2 data sets and combine with the coordinates
-
-# add data to raw_med file:
-raw_med <- raw_med %>%
-  left_join(temp_data, by = c("lon", "lat"))
-# 
-# head(raw_med)
-# # write.csv(raw_med, "med_raw.csv", append = FALSE)
+temp_range <- raster::extract(temperature[[2]], unique_coords, buffer = 15000, fun = mean, df = TRUE) %>% 
+              dplyr::select(BO_sstrange)
 
 ######################### salinity #########################
 
 # Download salinity raster files from Bio ORACLE:
-salinity <- load_layers("BO2_salinitymean_bdmin", datadir = "C:/Users/Shira/Documents/MEData/Bio ORACLE data")
-
-# unique_coords <- raw_med %>%
-#   dplyr::distinct(lon, lat)
-
-sal_mean <- raster::extract(salinity, unique_coords[c("lon","lat")], fun = mean, df = TRUE)
-sal_mean <- sal_mean[, "BO2_salinitymean_bdmin"]
-
-sal_data <- cbind.data.frame(unique_coords, sal_mean)
-
-head(sal_data)
-
-raw_med <- raw_med %>%
-  left_join(sal_data, by = c("lon", "lat"))
-
-# head(raw_med)
-# write.csv(raw_med, "med_raw.csv", append = FALSE)
+salinity <- load_layers("BO2_salinitymean_ss", datadir = "~/MEData/Bio ORACLE data")
+sal_mean <- raster::extract(salinity, unique_coords, fun = mean, df = TRUE) %>% 
+            dplyr::select("BO2_salinitymean_ss")
 
 ######################### primary production #########################
 
 # Download pp raster files from Bio ORACLE:
-productivity <- load_layers(c("BO2_ppmean_bdmin", "BO2_pprange_bdmin"), datadir = "C:/Users/Shira/Documents/MEData/Bio ORACLE data")
+productivity <- load_layers(c("BO2_ppmean_ss", "BO2_pprange_ss"), datadir = "~/MEData/Bio ORACLE data")
+pp_mean <- raster::extract(productivity[[1]], unique_coords, buffer = 15000, fun = mean, df = TRUE) %>% 
+           dplyr::select("BO2_ppmean_ss")
+pp_range <- raster::extract(productivity[[2]], unique_coords, buffer = 15000, fun = mean, df = TRUE) %>% 
+            dplyr::select("BO2_pprange_ss")
 
-## uncomment the next two lines when running without the temperature:
-# unique_coords <- raw_med %>%
-#   dplyr::distinct(lon, lat)
+# ######################### depth #########################
+# 
+# # Download bathymertry raster files from Bio ORACLE:
+# bathymetry <- load_layers("BO_bathymean", datadir = "~/MEData/Bio ORACLE data")
+# bathy_mean <- raster::extract(bathymetry, unique_coords, fun = mean, df = TRUE) %>% 
+#   dplyr::select("BO_bathymean")
 
-pp_mean <- raster::extract(productivity[[1]], unique_coords[c("lon","lat")], buffer = 15000, fun = mean, df = TRUE)
-pp_mean <- pp_mean[, "BO2_ppmean_bdmin"]
 
-pp_range <- raster::extract(productivity[[2]], unique_coords[c("lon","lat")], buffer = 15000, fun = mean, df = TRUE)
-pp_range <- pp_range[, "BO2_pprange_bdmin"]
+# combine all:
+env_data <- cbind(unique_coords, temp_mean, temp_range, sal_mean, pp_mean, pp_range)
+glimpse(env_data)
+write_csv(env_data, "data/env_bio_oracle.csv")
 
-pp_data <- cbind.data.frame(unique_coords, pp_mean, pp_range)
-head(pp_data)
+all_uvc <- read_csv("~/MEData/medata/data/all_uvc_data_101119.csv",
+                          col_types = cols(depth = col_double())) %>%
+           dplyr::select(-c(tmean, trange, sal_mean, pp_mean, pp_range)) # remove old data IF NEEDED
 
-raw_med <- raw_med %>%
-  left_join(pp_data, by = c("lon", "lat"))
-
-# head(raw_med)
-# write.csv(raw_med, "med_raw.csv", append = FALSE)
-
-######################### depth #########################
-
-# Download bathymertry raster files from Bio ORACLE:
-bathymetry <- load_layers("BO_bathymean", datadir = "C:/Users/Shira/Documents/MEData/Bio ORACLE data")
-
-## uncomment the next two lines when running without the temperature:
-# unique_coords <- raw_med %>%
-#   dplyr::distinct(lon, lat)
-
-bathy_mean <- raster::extract(bathymetry, unique_coords[c("lon","lat")], fun = mean, df = TRUE)
-bathy_mean <- bathy_mean[, "BO_bathymean"]
-
-bathy_data <- cbind.data.frame(unique_coords, bathy_mean)
-head(bathy_data)
-
-raw_med <- raw_med %>%
-  left_join(bathy_data, by = c("lon", "lat"))
-
-colnames(raw_med)
-
-# head(raw_med)
-write.csv(raw_med, "med_raw.csv")
-
+all_uvc_env <- left_join(all_uvc, env_data, by = c("lon", "lat"))
+colnames(all_uvc_env) <- c("data.origin", "country", "site", "lon", "lat", "trans", 
+                           "species", "sp.length", "sp.n", "season", "protection", "enforcement",
+                           "total.mpa.ha", "size.notake", "yr.creation", "age.reserve.yr", "depth", "a",
+                           "b", "tmean", "trange", "sal_mean", "pp_mean", "pp_range")
+glimpse(all_uvc_env)
+write_csv(all_uvc_env, "~/MEData/medata/data/all_uvc_data_101119.csv", append = FALSE)
