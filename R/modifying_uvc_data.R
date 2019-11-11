@@ -14,7 +14,7 @@ crete_data <- read_csv("~/Lab stuff/Crete/crete2019/UVC_crete_2019.csv",
 crete_data$Species <- str_replace(crete_data$Species, "ThalASSoma pavo", "Thalassoma pavo")
 crete_data$Species <- str_replace(crete_data$Species, "Epinephelus costea", "Epinephelus costae")
 crete_data$Species <- str_replace(crete_data$Species, "Atherina sp.", "Atherina spp")
-crete_data$Species <- str_replace(crete_data$Species, "Gobius.panellus", "Gobiidae")
+crete_data$Species <- str_replace(crete_data$Species, "Gobius panellus", "Gobius paganellus")
 crete_data$Species <- str_replace(crete_data$Species, "Gobiidae spp", "Gobiidae")
 crete_data$Species <- str_replace(crete_data$Species, "Belonidae spp.", "Belonidae")
 crete_data$Species <- str_replace(crete_data$Species, "Pagrus coeruleostrictus", "Pagrus coeruleostictus")
@@ -68,14 +68,6 @@ crete_spp <- unique(crete_mod$species)
 med_spp <- unique(medata$species)
 base::setdiff(crete_spp, med_spp)
 
-################################################################################################
-# Check single observation of Euthynnus alletteratus (p. 91 in guide)
-crete_data %>% filter(Species == "Euthynnus alletteratus") %>%
-  select(`First Observer`, Observer_Name, Transect)
-crete_data %>% filter(`First Observer` == "Yoni Belmaker", Transect == "A") %>%
-  select(Species, Confidence, Observer_Name) %>% print(n = Inf)
-################################################################################################
-
 # add biomass coefficients:
 ab <- read_csv("~/MEData/Lenght_weight.csv")
 crete_full <- crete_mod %>% dplyr::left_join(ab)
@@ -106,7 +98,7 @@ crete_full <- crete_full %>%
 View(crete_full)
 # write_csv(crete_full, "crete_uvc_full.csv")
 
-# FIXME salinity not filled for some reason
+# FIXME salinity not filled for some reason?
 
 # add crete data to all uvc:
 all <- rbind(medata, crete_full)
