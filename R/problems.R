@@ -27,10 +27,6 @@ depth_NAs <- raw_med %>% filter(is.na(depth)) %>% print(.)
 ab_NAs <- raw_med %>% filter(is.na(a), is.na(b)) %>% distinct(species) %>% print(.)
 # write_csv(ab_NAs, "problems/ab_NAs.csv")
 
-temp_NAs <- raw_med %>% filter(is.na(tmean), is.na(trange)) %>% print(.)
-# write_csv(temp_NAs, "problems/temp_NAs.csv")
-
 sal_NAs <- raw_med %>% filter(is.na(sal_mean)) %>% print(.)
 # write_csv(sal_NAs, "problems/sal_NAs.csv")
-
 
