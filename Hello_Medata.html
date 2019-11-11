@@ -276,7 +276,7 @@ div.tocify {
 ##   depth = col_logical()
 ## )</code></pre>
 <pre><code>## See spec(...) for full column specifications.</code></pre>
-<pre><code>## Warning: 5007 parsing failures.
+<pre><code>## Warning: 5048 parsing failures.
 ##   row   col           expected actual                           file
 ## 37741 depth 1/0/T/F/TRUE/FALSE   24.4 'data/all_uvc_data_101119.csv'
 ## 37742 depth 1/0/T/F/TRUE/FALSE   24.4 'data/all_uvc_data_101119.csv'
@@ -451,53 +451,53 @@ sites_plot</code></pre>
 <p>Figure 1. Survey sites and temperatures (in degrees celsius).</p>
 <pre class="r"><code>summary(med_raw) # examine raw data and check for errors.</code></pre>
 <pre><code>##  data.origin          country              site                lon        
-##  Length:42747       Length:42747       Length:42747       Min.   : 1.159  
+##  Length:42788       Length:42788       Length:42788       Min.   : 1.159  
 ##  Class :character   Class :character   Class :character   1st Qu.: 8.218  
 ##  Mode  :character   Mode  :character   Mode  :character   Median :15.443  
-##                                                           Mean   :18.716  
+##                                                           Mean   :18.720  
 ##                                                           3rd Qu.:29.063  
 ##                                                           Max.   :35.076  
 ##                                                                           
 ##       lat            trans        species            sp.length     
-##  Min.   :32.42   Min.   :   1   Length:42747       Min.   :  0.00  
-##  1st Qu.:35.01   1st Qu.: 339   Class :character   1st Qu.:  8.00  
+##  Min.   :32.42   Min.   :   1   Length:42788       Min.   :  0.00  
+##  1st Qu.:35.01   1st Qu.: 337   Class :character   1st Qu.:  8.00  
 ##  Median :37.98   Median :1475   Mode  :character   Median : 10.00  
-##  Mean   :37.76   Mean   :1288                      Mean   : 11.59  
+##  Mean   :37.76   Mean   :1287                      Mean   : 11.61  
 ##  3rd Qu.:41.06   3rd Qu.:2027                      3rd Qu.: 15.00  
 ##  Max.   :44.94   Max.   :2392                      Max.   :150.00  
 ##                                                    NA's   :842     
-##       sp.n            season           protection         enforcement   
-##  Min.   :    0.0   Length:42747       Length:42747       Min.   :0.000  
-##  1st Qu.:    1.0   Class :character   Class :character   1st Qu.:0.000  
-##  Median :    1.0   Mode  :character   Mode  :character   Median :1.000  
-##  Mean   :   16.5                                         Mean   :1.156  
-##  3rd Qu.:    3.0                                         3rd Qu.:2.000  
-##  Max.   :10000.0                                         Max.   :3.000  
-##                                                          NA's   :322    
+##       sp.n             season           protection         enforcement   
+##  Min.   :    0.00   Length:42788       Length:42788       Min.   :0.000  
+##  1st Qu.:    1.00   Class :character   Class :character   1st Qu.:0.000  
+##  Median :    1.00   Mode  :character   Mode  :character   Median :1.000  
+##  Mean   :   16.59                                         Mean   :1.155  
+##  3rd Qu.:    4.00                                         3rd Qu.:2.000  
+##  Max.   :10000.00                                         Max.   :3.000  
+##                                                           NA's   :322    
 ##   total.mpa.ha       size.notake       yr.creation    age.reserve.yr 
 ##  Min.   :     0.0   Min.   :    0.0   Min.   :1960    Min.   : 1.0   
 ##  1st Qu.:    84.4   1st Qu.:   84.4   1st Qu.:1968    1st Qu.: 9.0   
 ##  Median :   650.0   Median :  519.2   Median :1997    Median :15.0   
-##  Mean   :  4875.1   Mean   : 2619.7   Mean   :1988    Mean   :25.5   
+##  Mean   :  4868.8   Mean   : 2615.9   Mean   :1988    Mean   :25.5   
 ##  3rd Qu.:  2375.0   3rd Qu.: 2651.0   3rd Qu.:2002    3rd Qu.:49.0   
 ##  Max.   :207000.0   Max.   :15000.0   Max.   :2008    Max.   :57.0   
-##  NA's   :10897      NA's   :14514     NA's   :11270   NA's   :11270  
+##  NA's   :10897      NA's   :14514     NA's   :11311   NA's   :11311  
 ##   depth               a                b             tmean      
 ##  Mode:logical   Min.   :0.0005   Min.   :2.611   Min.   :16.80  
-##  NA's:42747     1st Qu.:0.0092   1st Qu.:2.965   1st Qu.:18.66  
-##                 Median :0.0138   Median :3.073   Median :20.01  
+##  NA's:42788     1st Qu.:0.0092   1st Qu.:2.965   1st Qu.:18.66  
+##                 Median :0.0134   Median :3.073   Median :20.01  
 ##                 Mean   :0.0143   Mean   :3.018   Mean   :20.01  
-##                 3rd Qu.:0.0165   3rd Qu.:3.111   3rd Qu.:21.67  
+##                 3rd Qu.:0.0165   3rd Qu.:3.111   3rd Qu.:21.66  
 ##                 Max.   :0.0480   Max.   :3.393   Max.   :22.97  
-##                 NA's   :1295     NA's   :1295                   
-##      trange          sal_mean        pp_mean             pp_range       
-##  Min.   : 9.172   Min.   :36.93   Min.   :0.0000000   Min.   :0.000000  
-##  1st Qu.:10.990   1st Qu.:37.82   1st Qu.:0.0004410   1st Qu.:0.001692  
-##  Median :11.696   Median :38.25   Median :0.0008587   Median :0.003710  
-##  Mean   :11.778   Mean   :38.39   Mean   :0.0016207   Mean   :0.004825  
-##  3rd Qu.:12.160   3rd Qu.:39.22   3rd Qu.:0.0027377   3rd Qu.:0.007396  
-##  Max.   :15.843   Max.   :39.27   Max.   :0.0084421   Max.   :0.028252  
-##                   NA's   :1305</code></pre>
+##                 NA's   :1288     NA's   :1288                   
+##      trange          sal_mean        pp_mean            pp_range       
+##  Min.   : 9.172   Min.   :36.93   Min.   :0.000000   Min.   :0.000000  
+##  1st Qu.:10.990   1st Qu.:37.82   1st Qu.:0.000441   1st Qu.:0.001684  
+##  Median :11.696   Median :38.25   Median :0.000854   Median :0.003710  
+##  Mean   :11.775   Mean   :38.39   Mean   :0.001619   Mean   :0.004821  
+##  3rd Qu.:12.160   3rd Qu.:39.22   3rd Qu.:0.002738   3rd Qu.:0.007396  
+##  Max.   :15.843   Max.   :39.27   Max.   :0.008442   Max.   :0.028252  
+##                   NA's   :1319</code></pre>
 <pre class="r"><code>med_raw %&gt;% distinct(country) # check full country list</code></pre>
 <pre><code>## # A tibble: 8 x 1
 ##   country
@@ -526,7 +526,7 @@ sites_plot</code></pre>
 ## 10 CABRERA       
 ## # ... with 55 more rows</code></pre>
 <pre class="r"><code>med_raw %&gt;% distinct(species) # check full species list. NOTE: some are not species but genus or family.</code></pre>
-<pre><code>## # A tibble: 125 x 1
+<pre><code>## # A tibble: 124 x 1
 ##    species           
 ##    &lt;chr&gt;             
 ##  1 Atherina.boyeri   
@@ -539,7 +539,7 @@ sites_plot</code></pre>
 ##  8 Sarpa.salpa       
 ##  9 Serranus.scriba   
 ## 10 Thalassoma.pavo   
-## # ... with 115 more rows</code></pre>
+## # ... with 114 more rows</code></pre>
 </div>
 <div id="data-cleaning" class="section level2">
 <h2>Data cleaning</h2>
@@ -602,7 +602,7 @@ med_mat &lt;- med_raw %&gt;%
   summarise(n = sum(sp.n)) %&gt;% 
   spread(species, n, fill = 0)
 head(med_mat)</code></pre>
-<pre><code>## # A tibble: 6 x 128
+<pre><code>## # A tibble: 6 x 127
 ## # Groups:   site, lon, lat [6]
 ##   site    lon   lat Abudefduf.saxat~ Anthias.anthias Apogon.imberbis
 ##   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt;            &lt;dbl&gt;           &lt;dbl&gt;           &lt;dbl&gt;
@@ -612,7 +612,7 @@ head(med_mat)</code></pre>
 ## 4 Achz~ 35.1   33.0                1               0               5
 ## 5 ADRA~ 30.4   36.2                0               0               0
 ## 6 ADRA~ 30.5   36.3                0               0               0
-## # ... with 122 more variables: Atherina.boyeri &lt;dbl&gt;, Atherina.spp &lt;dbl&gt;,
+## # ... with 121 more variables: Atherina.boyeri &lt;dbl&gt;, Atherina.spp &lt;dbl&gt;,
 ## #   Balistes.capriscus &lt;dbl&gt;, Belone.belone &lt;dbl&gt;, Belonidae &lt;dbl&gt;,
 ## #   Belonidae.sp. &lt;dbl&gt;, Boops.boops &lt;dbl&gt;, Caranx.crysos &lt;dbl&gt;,
 ## #   Cheilodipterus.novemstriatus &lt;dbl&gt;, Chelon.labrosus &lt;dbl&gt;,
@@ -625,25 +625,25 @@ head(med_mat)</code></pre>
 ## #   Diplodus.sargus &lt;dbl&gt;, Diplodus.vulgaris &lt;dbl&gt;,
 ## #   Epinephelus.aeneus &lt;dbl&gt;, Epinephelus.caninus &lt;dbl&gt;,
 ## #   Epinephelus.costae &lt;dbl&gt;, Epinephelus.marginatus &lt;dbl&gt;,
-## #   Euthynnus.alletteratus &lt;dbl&gt;, Fistularia.commersonii &lt;dbl&gt;,
-## #   Gobiidae &lt;dbl&gt;, Gobius.auratus &lt;dbl&gt;, Gobius.bucchichi &lt;dbl&gt;,
-## #   Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;, Gobius.geniporus &lt;dbl&gt;,
-## #   Gobius.paganellus &lt;dbl&gt;, Gobius.vittatus &lt;dbl&gt;,
-## #   Gobius.xanthocephalus &lt;dbl&gt;, Herklotsichthys.punctatus &lt;dbl&gt;,
-## #   Labridae.sp. &lt;dbl&gt;, Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;,
-## #   Labrus.viridis &lt;dbl&gt;, Lagocephalus.sceleratus &lt;dbl&gt;,
-## #   Lichia.amia &lt;dbl&gt;, Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;,
-## #   Mugil.cephalus &lt;dbl&gt;, Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;,
-## #   Muraena.helena &lt;dbl&gt;, Mycteroperca.rubra &lt;dbl&gt;,
-## #   Myliobatis.aquila &lt;dbl&gt;, Oblada.melanura &lt;dbl&gt;,
-## #   Oedalechilus.labeo &lt;dbl&gt;, Pagellus.acarne &lt;dbl&gt;,
-## #   Pagrus.caeruleostictus &lt;dbl&gt;, Pagrus.coeruleostictus &lt;dbl&gt;,
-## #   Pagrus.pagrus &lt;dbl&gt;, Parablennius.gattorugine &lt;dbl&gt;,
-## #   Parablennius.incognitus &lt;dbl&gt;, Parablennius.pilicornis &lt;dbl&gt;,
-## #   Parablennius.rouxi &lt;dbl&gt;, Parablennius.sanguinolentus &lt;dbl&gt;,
-## #   Parablennius.tentacularis &lt;dbl&gt;, Parablennius.zvonimiri &lt;dbl&gt;,
-## #   Parupeneus.forsskali &lt;dbl&gt;, Pempheris.vanicolensis &lt;dbl&gt;,
-## #   Phycis.phycis &lt;dbl&gt;, Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
+## #   Fistularia.commersonii &lt;dbl&gt;, Gobius.auratus &lt;dbl&gt;,
+## #   Gobius.bucchichi &lt;dbl&gt;, Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;,
+## #   Gobius.geniporus &lt;dbl&gt;, Gobius.paganellus &lt;dbl&gt;,
+## #   Gobius.vittatus &lt;dbl&gt;, Gobius.xanthocephalus &lt;dbl&gt;,
+## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae.sp. &lt;dbl&gt;,
+## #   Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
+## #   Lagocephalus.sceleratus &lt;dbl&gt;, Lichia.amia &lt;dbl&gt;,
+## #   Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;, Mugil.cephalus &lt;dbl&gt;,
+## #   Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;, Muraena.helena &lt;dbl&gt;,
+## #   Mycteroperca.rubra &lt;dbl&gt;, Myliobatis.aquila &lt;dbl&gt;,
+## #   Oblada.melanura &lt;dbl&gt;, Oedalechilus.labeo &lt;dbl&gt;,
+## #   Pagellus.acarne &lt;dbl&gt;, Pagrus.caeruleostictus &lt;dbl&gt;,
+## #   Pagrus.coeruleostictus &lt;dbl&gt;, Pagrus.pagrus &lt;dbl&gt;,
+## #   Parablennius.gattorugine &lt;dbl&gt;, Parablennius.incognitus &lt;dbl&gt;,
+## #   Parablennius.pilicornis &lt;dbl&gt;, Parablennius.rouxi &lt;dbl&gt;,
+## #   Parablennius.sanguinolentus &lt;dbl&gt;, Parablennius.tentacularis &lt;dbl&gt;,
+## #   Parablennius.zvonimiri &lt;dbl&gt;, Parupeneus.forsskali &lt;dbl&gt;,
+## #   Pempheris.vanicolensis &lt;dbl&gt;, Phycis.phycis &lt;dbl&gt;,
+## #   Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
 ## #   Pomatomus.saltatrix &lt;dbl&gt;, Pomatoschistus.quagga &lt;dbl&gt;,
 ## #   Pseudocaranx.dentex &lt;dbl&gt;, Pteragogus.pelycus &lt;dbl&gt;,
 ## #   Pterois.miles &lt;dbl&gt;, Sardina.pilchardus &lt;dbl&gt;,
@@ -656,11 +656,12 @@ head(med_mat)</code></pre>
 ## #   Siganus.rivulatus &lt;dbl&gt;, Sparisoma.cretense &lt;dbl&gt;,
 ## #   Sparus.aurata &lt;dbl&gt;, Sphyraena.chrysotaenia &lt;dbl&gt;,
 ## #   Sphyraena.sphyraena &lt;dbl&gt;, Sphyraena.viridensis &lt;dbl&gt;,
-## #   Spicara.maena &lt;dbl&gt;, ...</code></pre>
+## #   Spicara.maena &lt;dbl&gt;, Spicara.smaris &lt;dbl&gt;,
+## #   Spondyliosoma.cantharus &lt;dbl&gt;, ...</code></pre>
 <pre class="r"><code># Put the 2 data sets together (species and metadata)
 full_med_mat &lt;- left_join(med_meta, med_mat, by = c(&quot;site&quot;, &quot;lon&quot;, &quot;lat&quot;))
 head(full_med_mat)</code></pre>
-<pre><code>## # A tibble: 6 x 141
+<pre><code>## # A tibble: 6 x 140
 ##   country site    lon   lat season protection enforcement total.mpa.ha
 ##   &lt;chr&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;            &lt;dbl&gt;        &lt;dbl&gt;
 ## 1 Italy   ASIN~  7.90  41.1 Autumn YES                  2        15000
@@ -669,7 +670,7 @@ head(full_med_mat)</code></pre>
 ## 4 Italy   ASIN~  8.22  41.1 Autumn YES                  3        15000
 ## 5 Italy   ASIN~  8.20  41.0 Autumn YES                  2        15000
 ## 6 Italy   ASIN~  8.22  41.0 Autumn YES                  3        15000
-## # ... with 133 more variables: size.notake &lt;dbl&gt;, yr.creation &lt;dbl&gt;,
+## # ... with 132 more variables: size.notake &lt;dbl&gt;, yr.creation &lt;dbl&gt;,
 ## #   age.reserve.yr &lt;dbl&gt;, tmean &lt;dbl&gt;, trange &lt;dbl&gt;, sal_mean &lt;dbl&gt;,
 ## #   pp_mean &lt;dbl&gt;, pp_range &lt;dbl&gt;, Abudefduf.saxatilis &lt;dbl&gt;,
 ## #   Anthias.anthias &lt;dbl&gt;, Apogon.imberbis &lt;dbl&gt;, Atherina.boyeri &lt;dbl&gt;,
@@ -685,25 +686,25 @@ head(full_med_mat)</code></pre>
 ## #   Diplodus.sargus &lt;dbl&gt;, Diplodus.vulgaris &lt;dbl&gt;,
 ## #   Epinephelus.aeneus &lt;dbl&gt;, Epinephelus.caninus &lt;dbl&gt;,
 ## #   Epinephelus.costae &lt;dbl&gt;, Epinephelus.marginatus &lt;dbl&gt;,
-## #   Euthynnus.alletteratus &lt;dbl&gt;, Fistularia.commersonii &lt;dbl&gt;,
-## #   Gobiidae &lt;dbl&gt;, Gobius.auratus &lt;dbl&gt;, Gobius.bucchichi &lt;dbl&gt;,
-## #   Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;, Gobius.geniporus &lt;dbl&gt;,
-## #   Gobius.paganellus &lt;dbl&gt;, Gobius.vittatus &lt;dbl&gt;,
-## #   Gobius.xanthocephalus &lt;dbl&gt;, Herklotsichthys.punctatus &lt;dbl&gt;,
-## #   Labridae.sp. &lt;dbl&gt;, Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;,
-## #   Labrus.viridis &lt;dbl&gt;, Lagocephalus.sceleratus &lt;dbl&gt;,
-## #   Lichia.amia &lt;dbl&gt;, Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;,
-## #   Mugil.cephalus &lt;dbl&gt;, Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;,
-## #   Muraena.helena &lt;dbl&gt;, Mycteroperca.rubra &lt;dbl&gt;,
-## #   Myliobatis.aquila &lt;dbl&gt;, Oblada.melanura &lt;dbl&gt;,
-## #   Oedalechilus.labeo &lt;dbl&gt;, Pagellus.acarne &lt;dbl&gt;,
-## #   Pagrus.caeruleostictus &lt;dbl&gt;, Pagrus.coeruleostictus &lt;dbl&gt;,
-## #   Pagrus.pagrus &lt;dbl&gt;, Parablennius.gattorugine &lt;dbl&gt;,
-## #   Parablennius.incognitus &lt;dbl&gt;, Parablennius.pilicornis &lt;dbl&gt;,
-## #   Parablennius.rouxi &lt;dbl&gt;, Parablennius.sanguinolentus &lt;dbl&gt;,
-## #   Parablennius.tentacularis &lt;dbl&gt;, Parablennius.zvonimiri &lt;dbl&gt;,
-## #   Parupeneus.forsskali &lt;dbl&gt;, Pempheris.vanicolensis &lt;dbl&gt;,
-## #   Phycis.phycis &lt;dbl&gt;, Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
+## #   Fistularia.commersonii &lt;dbl&gt;, Gobius.auratus &lt;dbl&gt;,
+## #   Gobius.bucchichi &lt;dbl&gt;, Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;,
+## #   Gobius.geniporus &lt;dbl&gt;, Gobius.paganellus &lt;dbl&gt;,
+## #   Gobius.vittatus &lt;dbl&gt;, Gobius.xanthocephalus &lt;dbl&gt;,
+## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae.sp. &lt;dbl&gt;,
+## #   Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
+## #   Lagocephalus.sceleratus &lt;dbl&gt;, Lichia.amia &lt;dbl&gt;,
+## #   Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;, Mugil.cephalus &lt;dbl&gt;,
+## #   Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;, Muraena.helena &lt;dbl&gt;,
+## #   Mycteroperca.rubra &lt;dbl&gt;, Myliobatis.aquila &lt;dbl&gt;,
+## #   Oblada.melanura &lt;dbl&gt;, Oedalechilus.labeo &lt;dbl&gt;,
+## #   Pagellus.acarne &lt;dbl&gt;, Pagrus.caeruleostictus &lt;dbl&gt;,
+## #   Pagrus.coeruleostictus &lt;dbl&gt;, Pagrus.pagrus &lt;dbl&gt;,
+## #   Parablennius.gattorugine &lt;dbl&gt;, Parablennius.incognitus &lt;dbl&gt;,
+## #   Parablennius.pilicornis &lt;dbl&gt;, Parablennius.rouxi &lt;dbl&gt;,
+## #   Parablennius.sanguinolentus &lt;dbl&gt;, Parablennius.tentacularis &lt;dbl&gt;,
+## #   Parablennius.zvonimiri &lt;dbl&gt;, Parupeneus.forsskali &lt;dbl&gt;,
+## #   Pempheris.vanicolensis &lt;dbl&gt;, Phycis.phycis &lt;dbl&gt;,
+## #   Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
 ## #   Pomatomus.saltatrix &lt;dbl&gt;, Pomatoschistus.quagga &lt;dbl&gt;,
 ## #   Pseudocaranx.dentex &lt;dbl&gt;, Pteragogus.pelycus &lt;dbl&gt;,
 ## #   Pterois.miles &lt;dbl&gt;, Sardina.pilchardus &lt;dbl&gt;,
@@ -711,12 +712,13 @@ head(full_med_mat)</code></pre>
 ## #   Scartella.cristata &lt;dbl&gt;, Scarus.ghobban &lt;dbl&gt;, Sciaena.umbra &lt;dbl&gt;,
 ## #   Scorpaena.maderensis &lt;dbl&gt;, Scorpaena.notata &lt;dbl&gt;,
 ## #   Scorpaena.porcus &lt;dbl&gt;, Scorpaena.scrofa &lt;dbl&gt;,
-## #   Seriola.dumerili &lt;dbl&gt;, ...</code></pre>
+## #   Seriola.dumerili &lt;dbl&gt;, Serranus.cabrilla &lt;dbl&gt;,
+## #   Serranus.hepatus &lt;dbl&gt;, ...</code></pre>
 <pre class="r"><code># Convert the abundance matrix to presence-absence matrix
 pres_abs_mat &lt;- full_med_mat
 pres_abs_mat[17:ncol(pres_abs_mat)] &lt;- ifelse(pres_abs_mat[17:ncol(pres_abs_mat)] &gt; 0, 1, 0)
 head(pres_abs_mat)</code></pre>
-<pre><code>## # A tibble: 6 x 141
+<pre><code>## # A tibble: 6 x 140
 ##   country site    lon   lat season protection enforcement total.mpa.ha
 ##   &lt;chr&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;            &lt;dbl&gt;        &lt;dbl&gt;
 ## 1 Italy   ASIN~  7.90  41.1 Autumn YES                  2        15000
@@ -725,7 +727,7 @@ head(pres_abs_mat)</code></pre>
 ## 4 Italy   ASIN~  8.22  41.1 Autumn YES                  3        15000
 ## 5 Italy   ASIN~  8.20  41.0 Autumn YES                  2        15000
 ## 6 Italy   ASIN~  8.22  41.0 Autumn YES                  3        15000
-## # ... with 133 more variables: size.notake &lt;dbl&gt;, yr.creation &lt;dbl&gt;,
+## # ... with 132 more variables: size.notake &lt;dbl&gt;, yr.creation &lt;dbl&gt;,
 ## #   age.reserve.yr &lt;dbl&gt;, tmean &lt;dbl&gt;, trange &lt;dbl&gt;, sal_mean &lt;dbl&gt;,
 ## #   pp_mean &lt;dbl&gt;, pp_range &lt;dbl&gt;, Abudefduf.saxatilis &lt;dbl&gt;,
 ## #   Anthias.anthias &lt;dbl&gt;, Apogon.imberbis &lt;dbl&gt;, Atherina.boyeri &lt;dbl&gt;,
@@ -741,25 +743,25 @@ head(pres_abs_mat)</code></pre>
 ## #   Diplodus.sargus &lt;dbl&gt;, Diplodus.vulgaris &lt;dbl&gt;,
 ## #   Epinephelus.aeneus &lt;dbl&gt;, Epinephelus.caninus &lt;dbl&gt;,
 ## #   Epinephelus.costae &lt;dbl&gt;, Epinephelus.marginatus &lt;dbl&gt;,
-## #   Euthynnus.alletteratus &lt;dbl&gt;, Fistularia.commersonii &lt;dbl&gt;,
-## #   Gobiidae &lt;dbl&gt;, Gobius.auratus &lt;dbl&gt;, Gobius.bucchichi &lt;dbl&gt;,
-## #   Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;, Gobius.geniporus &lt;dbl&gt;,
-## #   Gobius.paganellus &lt;dbl&gt;, Gobius.vittatus &lt;dbl&gt;,
-## #   Gobius.xanthocephalus &lt;dbl&gt;, Herklotsichthys.punctatus &lt;dbl&gt;,
-## #   Labridae.sp. &lt;dbl&gt;, Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;,
-## #   Labrus.viridis &lt;dbl&gt;, Lagocephalus.sceleratus &lt;dbl&gt;,
-## #   Lichia.amia &lt;dbl&gt;, Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;,
-## #   Mugil.cephalus &lt;dbl&gt;, Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;,
-## #   Muraena.helena &lt;dbl&gt;, Mycteroperca.rubra &lt;dbl&gt;,
-## #   Myliobatis.aquila &lt;dbl&gt;, Oblada.melanura &lt;dbl&gt;,
-## #   Oedalechilus.labeo &lt;dbl&gt;, Pagellus.acarne &lt;dbl&gt;,
-## #   Pagrus.caeruleostictus &lt;dbl&gt;, Pagrus.coeruleostictus &lt;dbl&gt;,
-## #   Pagrus.pagrus &lt;dbl&gt;, Parablennius.gattorugine &lt;dbl&gt;,
-## #   Parablennius.incognitus &lt;dbl&gt;, Parablennius.pilicornis &lt;dbl&gt;,
-## #   Parablennius.rouxi &lt;dbl&gt;, Parablennius.sanguinolentus &lt;dbl&gt;,
-## #   Parablennius.tentacularis &lt;dbl&gt;, Parablennius.zvonimiri &lt;dbl&gt;,
-## #   Parupeneus.forsskali &lt;dbl&gt;, Pempheris.vanicolensis &lt;dbl&gt;,
-## #   Phycis.phycis &lt;dbl&gt;, Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
+## #   Fistularia.commersonii &lt;dbl&gt;, Gobius.auratus &lt;dbl&gt;,
+## #   Gobius.bucchichi &lt;dbl&gt;, Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;,
+## #   Gobius.geniporus &lt;dbl&gt;, Gobius.paganellus &lt;dbl&gt;,
+## #   Gobius.vittatus &lt;dbl&gt;, Gobius.xanthocephalus &lt;dbl&gt;,
+## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae.sp. &lt;dbl&gt;,
+## #   Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
+## #   Lagocephalus.sceleratus &lt;dbl&gt;, Lichia.amia &lt;dbl&gt;,
+## #   Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;, Mugil.cephalus &lt;dbl&gt;,
+## #   Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;, Muraena.helena &lt;dbl&gt;,
+## #   Mycteroperca.rubra &lt;dbl&gt;, Myliobatis.aquila &lt;dbl&gt;,
+## #   Oblada.melanura &lt;dbl&gt;, Oedalechilus.labeo &lt;dbl&gt;,
+## #   Pagellus.acarne &lt;dbl&gt;, Pagrus.caeruleostictus &lt;dbl&gt;,
+## #   Pagrus.coeruleostictus &lt;dbl&gt;, Pagrus.pagrus &lt;dbl&gt;,
+## #   Parablennius.gattorugine &lt;dbl&gt;, Parablennius.incognitus &lt;dbl&gt;,
+## #   Parablennius.pilicornis &lt;dbl&gt;, Parablennius.rouxi &lt;dbl&gt;,
+## #   Parablennius.sanguinolentus &lt;dbl&gt;, Parablennius.tentacularis &lt;dbl&gt;,
+## #   Parablennius.zvonimiri &lt;dbl&gt;, Parupeneus.forsskali &lt;dbl&gt;,
+## #   Pempheris.vanicolensis &lt;dbl&gt;, Phycis.phycis &lt;dbl&gt;,
+## #   Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
 ## #   Pomatomus.saltatrix &lt;dbl&gt;, Pomatoschistus.quagga &lt;dbl&gt;,
 ## #   Pseudocaranx.dentex &lt;dbl&gt;, Pteragogus.pelycus &lt;dbl&gt;,
 ## #   Pterois.miles &lt;dbl&gt;, Sardina.pilchardus &lt;dbl&gt;,
@@ -767,7 +769,8 @@ head(pres_abs_mat)</code></pre>
 ## #   Scartella.cristata &lt;dbl&gt;, Scarus.ghobban &lt;dbl&gt;, Sciaena.umbra &lt;dbl&gt;,
 ## #   Scorpaena.maderensis &lt;dbl&gt;, Scorpaena.notata &lt;dbl&gt;,
 ## #   Scorpaena.porcus &lt;dbl&gt;, Scorpaena.scrofa &lt;dbl&gt;,
-## #   Seriola.dumerili &lt;dbl&gt;, ...</code></pre>
+## #   Seriola.dumerili &lt;dbl&gt;, Serranus.cabrilla &lt;dbl&gt;,
+## #   Serranus.hepatus &lt;dbl&gt;, ...</code></pre>
 </div>
 </div>
 </div>
