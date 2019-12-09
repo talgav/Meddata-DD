@@ -10,4 +10,4 @@ This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Avi
 
 Please see the [`Hello_Medata.html`](https://shirasal.github.io/medata/Hello_Medata.html) file for detailed information.
 
-![](1ObservationsMapsGIF.gif)
+![](figures/1ObservationsMapsGIF.gif)
