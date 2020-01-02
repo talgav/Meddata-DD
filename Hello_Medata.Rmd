@@ -96,17 +96,11 @@ species <- med_raw %>% distinct(species) %>% arrange(.$species) %>% print(n = In
 
 ```
 
-## Data cleaning
-
-* Linosa and kornati did not have specific coordinates, therefore, an approximate location (lat-lon) was attached to it. If your analysis requires fine-detail for the location, you might want to omit these locations.
-
-## Data wrangling
-
 ### Acquiring data from other resources
 
-Environmental data (temperature, salinity and primary production) were acquired from [Bio-ORACLE](http://http://www.bio-oracle.org) using `sdmpredictors` package.
+**Environmental data** (temperature, salinity and primary production) were acquired from [Bio-ORACLE](http://http://www.bio-oracle.org) using `sdmpredictors` package.
 
-Fish traits data ("fish_traits.csv" including: size, mobility, activity, schooling, position, diet) were aqcuired from [GASPAR](http://cesab.org/index.php/en/projets-passes/28-gaspar). Where data were unavailable we used the information from [Trait structure reveals the processes underlying fish establishment in the Mediterranean. O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017](https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523).
+Fish **traits** data ("fish_traits.csv" including: size, mobility, activity, schooling, position, diet) were aqcuired from [GASPAR](http://cesab.org/index.php/en/projets-passes/28-gaspar). Where data were unavailable we used the information from [Trait structure reveals the processes underlying fish establishment in the Mediterranean. O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017](https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523).
 
 *Size* coded as an ordered categorical variable with 6 levels:
 1. S1 = 0-7cm
@@ -147,6 +141,12 @@ Position in the water column (*Level-water*) coded as an ordered categorical var
 6. FC = Pelagic macro-organisms (large organisms living in the water column, usually fish and cephalopods) and benthic fish
 7. OM = omnivorous (herbivorous and/or detritivorous AND carnivorous)
 
+
+## Data wrangling
+
+* Linosa and kornati did not have specific coordinates, therefore, an approximate location (lat-lon) was attached to it. If your analysis requires fine-detail for the location, you might want to omit these locations.
+
+* Data from source `azz_asi` are only presence-absence.
 
 ### Transformations
 Many analyses require species matrix made up of rows and columns where each row is a site (or an environmental factor/covariate) and each column is a species.

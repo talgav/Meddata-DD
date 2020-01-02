@@ -263,29 +263,10 @@ div.tocify {
 <h1>Introduction</h1>
 <p>Medata is a dataset of underwater fish census surveys conducted along the Mediterranean sea. The dataset includes environmental variables, as well as conservation information regarding MPAs.</p>
 <p>This is a collaboration of <a href="https://belmaker.weebly.com/">Belmaker Lab</a> (Tel Aviv University, Israel), <a href="https://www.researchgate.net/profile/Ernesto_Azzurro">Ernesto Azzuro</a> (ISPRA, Italy), <a href="http://www.joachimclaudet.com/">Joachim Claudet</a> (CNRS, France) and <a href="https://www.researchgate.net/profile/Enric_Sala">Enric Sala</a>.</p>
-<pre class="r"><code>med_raw &lt;- read_csv(&quot;data/all_uvc_data_101119.csv&quot;, na = c(&quot;&quot;, &quot;NA&quot;)) # na() is used to make sure all blanks and all NAs are counted as NA.</code></pre>
-<pre><code>## Parsed with column specification:
-## cols(
-##   .default = col_double(),
-##   data.origin = col_character(),
-##   country = col_character(),
-##   site = col_character(),
-##   species = col_character(),
-##   season = col_character(),
-##   protection = col_character(),
-##   depth = col_logical()
-## )</code></pre>
-<pre><code>## See spec(...) for full column specifications.</code></pre>
-<pre><code>## Warning: 5048 parsing failures.
-##   row   col           expected actual                           file
-## 37741 depth 1/0/T/F/TRUE/FALSE   24.4 'data/all_uvc_data_101119.csv'
-## 37742 depth 1/0/T/F/TRUE/FALSE   24.4 'data/all_uvc_data_101119.csv'
-## 37743 depth 1/0/T/F/TRUE/FALSE   24.4 'data/all_uvc_data_101119.csv'
-## 37744 depth 1/0/T/F/TRUE/FALSE   24.4 'data/all_uvc_data_101119.csv'
-## 37745 depth 1/0/T/F/TRUE/FALSE   24.4 'data/all_uvc_data_101119.csv'
-## ..... ..... .................. ...... ..............................
-## See problems(...) for more details.</code></pre>
-<pre class="r"><code># locations will be a subset of unique sites: sites that have unique longitude and latitude
+<pre class="r"><code>med_raw &lt;- read_csv(&quot;data/all_uvc_data_101119.csv&quot;, na = c(&quot;&quot;, &quot;NA&quot;),
+                    col_types = cols(depth = &quot;d&quot;))
+
+# locations will be a subset of unique sites: sites that have unique longitude and latitude
 locations &lt;- med_raw %&gt;% 
   dplyr::select(lon, lat, country, site) %&gt;% 
   dplyr::distinct(lon, lat, .keep_all = TRUE)</code></pre>
@@ -482,105 +463,233 @@ sites_plot</code></pre>
 ##  3rd Qu.:  2375.0   3rd Qu.: 2651.0   3rd Qu.:2002    3rd Qu.:49.0   
 ##  Max.   :207000.0   Max.   :15000.0   Max.   :2008    Max.   :57.0   
 ##  NA's   :10897      NA's   :14514     NA's   :11311   NA's   :11311  
-##   depth               a                b             tmean      
-##  Mode:logical   Min.   :0.0005   Min.   :2.611   Min.   :16.80  
-##  NA's:42788     1st Qu.:0.0092   1st Qu.:2.965   1st Qu.:18.66  
-##                 Median :0.0134   Median :3.073   Median :20.01  
-##                 Mean   :0.0143   Mean   :3.018   Mean   :20.01  
-##                 3rd Qu.:0.0165   3rd Qu.:3.111   3rd Qu.:21.66  
-##                 Max.   :0.0480   Max.   :3.393   Max.   :22.97  
-##                 NA's   :1288     NA's   :1288                   
+##      depth             a                b             tmean      
+##  Min.   : 2.90   Min.   :0.0005   Min.   :2.611   Min.   :16.80  
+##  1st Qu.: 6.40   1st Qu.:0.0092   1st Qu.:2.965   1st Qu.:18.66  
+##  Median :13.00   Median :0.0134   Median :3.073   Median :20.01  
+##  Mean   :13.47   Mean   :0.0143   Mean   :3.018   Mean   :20.01  
+##  3rd Qu.:18.25   3rd Qu.:0.0165   3rd Qu.:3.111   3rd Qu.:21.66  
+##  Max.   :29.00   Max.   :0.0480   Max.   :3.393   Max.   :22.97  
+##  NA's   :37740   NA's   :1288     NA's   :1288                   
 ##      trange          sal_mean        pp_mean            pp_range       
-##  Min.   : 9.172   Min.   :36.93   Min.   :0.000000   Min.   :0.000000  
-##  1st Qu.:10.990   1st Qu.:37.82   1st Qu.:0.000441   1st Qu.:0.001684  
-##  Median :11.696   Median :38.25   Median :0.000854   Median :0.003710  
-##  Mean   :11.775   Mean   :38.39   Mean   :0.001619   Mean   :0.004821  
-##  3rd Qu.:12.160   3rd Qu.:39.22   3rd Qu.:0.002738   3rd Qu.:0.007396  
-##  Max.   :15.843   Max.   :39.27   Max.   :0.008442   Max.   :0.028252  
+##  Min.   : 9.172   Min.   :33.99   Min.   :0.000366   Min.   :0.001350  
+##  1st Qu.:10.990   1st Qu.:37.67   1st Qu.:0.000541   1st Qu.:0.001754  
+##  Median :11.696   Median :37.83   Median :0.000680   Median :0.002678  
+##  Mean   :11.775   Mean   :38.02   Mean   :0.002931   Mean   :0.007034  
+##  3rd Qu.:12.160   3rd Qu.:38.77   3rd Qu.:0.006139   3rd Qu.:0.011524  
+##  Max.   :15.843   Max.   :39.24   Max.   :0.009892   Max.   :0.026852  
 ##                   NA's   :1319</code></pre>
-<pre class="r"><code>med_raw %&gt;% distinct(country) # check full country list</code></pre>
+<pre class="r"><code>countries &lt;- med_raw %&gt;% distinct(country) %&gt;% arrange(.$country) %&gt;% print(n = Inf)# full country list</code></pre>
 <pre><code>## # A tibble: 8 x 1
 ##   country
 ##   &lt;chr&gt;  
-## 1 Italy  
-## 2 Malta  
-## 3 Turkey 
-## 4 Spain  
-## 5 Greece 
-## 6 Israel 
-## 7 Croatia
-## 8 France</code></pre>
-<pre class="r"><code>med_raw %&gt;% distinct(site) # check full site list</code></pre>
+## 1 Croatia
+## 2 France 
+## 3 Greece 
+## 4 Israel 
+## 5 Italy  
+## 6 Malta  
+## 7 Spain  
+## 8 Turkey</code></pre>
+<pre class="r"><code>sites &lt;- med_raw %&gt;% distinct(site) %&gt;% arrange(.$site) %&gt;% print(n = Inf) # full site list</code></pre>
 <pre><code>## # A tibble: 65 x 1
-##    site          
-##    &lt;chr&gt;         
-##  1 ASINARA_add   
-##  2 Asinara       
-##  3 Linosa        
-##  4 Lampedusa     
-##  5 Malta         
-##  6 ADRASAN       
-##  7 ILLA DE L'AIRE
-##  8 ALONISSOS     
-##  9 AYVALIK       
-## 10 CABRERA       
-## # ... with 55 more rows</code></pre>
-<pre class="r"><code>med_raw %&gt;% distinct(species) # check full species list. NOTE: some are not species but genus or family.</code></pre>
-<pre><code>## # A tibble: 124 x 1
-##    species           
-##    &lt;chr&gt;             
-##  1 Atherina.boyeri   
-##  2 Coris.julis       
-##  3 Diplodus.annularis
-##  4 Diplodus.puntazzo 
-##  5 Diplodus.sargus   
-##  6 Labrus.merula     
-##  7 Mugil.cephalus    
-##  8 Sarpa.salpa       
-##  9 Serranus.scriba   
-## 10 Thalassoma.pavo   
-## # ... with 114 more rows</code></pre>
-</div>
-<div id="data-cleaning" class="section level2">
-<h2>Data cleaning</h2>
-<ul>
-<li>Linosa and kornati did not have specific coordinates, therefore, an approximate location (lat-lon) was attached to it. If your analysis requires fine-detail for the location, you might want to omit these locations.</li>
-</ul>
-</div>
-<div id="data-wrangling" class="section level2">
-<h2>Data wrangling</h2>
+##    site                               
+##    &lt;chr&gt;                              
+##  1 1 Km South of the marina           
+##  2 1000m S of Harbor                  
+##  3 500m S of Harbor                   
+##  4 Achziv                             
+##  5 ADRASAN                            
+##  6 ALONISSOS                          
+##  7 Asinara                            
+##  8 ASINARA_add                        
+##  9 AYVALIK                            
+## 10 Banyuls                            
+## 11 Banyuls port                       
+## 12 Banyuls_Unknown                    
+## 13 Beach at next bay over from Banyuls
+## 14 Behind the marina                  
+## 15 Brijuni                            
+## 16 CABRERA                            
+## 17 CAP DE CREUS                       
+## 18 CAPO CACCIA                        
+## 19 CARLOFORTE                         
+## 20 CAVALLERIA                         
+## 21 Cret12                             
+## 22 Cret13                             
+## 23 Cret14                             
+## 24 Cret16                             
+## 25 Cret18                             
+## 26 Cret19                             
+## 27 Cret20                             
+## 28 Cret22                             
+## 29 DRAGONERA                          
+## 30 EIVISSA                            
+## 31 FETHIYE                            
+## 32 FORMENTERA                         
+## 33 FORMENTOR                          
+## 34 Gdor                               
+## 35 GENOVA                             
+## 36 GOKOVA                             
+## 37 GYAROS                             
+## 38 Habonim                            
+## 39 ILLA DE L'AIRE                     
+## 40 KARPATHOS                          
+## 41 KAS                                
+## 42 KIMOLOS                            
+## 43 Kornati                            
+## 44 Lampedusa                          
+## 45 Linosa                             
+## 46 Malta                              
+## 47 MARATEA                            
+## 48 Marettimo                          
+## 49 MEDES                              
+## 50 Miljet                             
+## 51 MONTGRI                            
+## 52 North of the arches, public beach  
+## 53 OTRANTO                            
+## 54 Outside reseve                     
+## 55 PIPERI                             
+## 56 PORTO CESAREO                      
+## 57 PORTOFINO                          
+## 58 San vito                           
+## 59 Shikmona                           
+## 60 South edge of no-take zone         
+## 61 south of Cape Bear                 
+## 62 TAVOLARA                           
+## 63 TORRE GUACETO                      
+## 64 TREMITI                            
+## 65 Ustica</code></pre>
+<pre class="r"><code>species &lt;- med_raw %&gt;% distinct(species) %&gt;% arrange(.$species) %&gt;% print(n = Inf) # full species list. NOTE: some are not species but genus or family.</code></pre>
+<pre><code>## # A tibble: 122 x 1
+##     species                     
+##     &lt;chr&gt;                       
+##   1 Abudefduf.saxatilis         
+##   2 Anthias.anthias             
+##   3 Apogon.imberbis             
+##   4 Atherina.boyeri             
+##   5 Atherina.spp                
+##   6 Balistes.capriscus          
+##   7 Belone.belone               
+##   8 Belonidae                   
+##   9 Boops.boops                 
+##  10 Caranx.crysos               
+##  11 Cheilodipterus.novemstriatus
+##  12 Chelon.labrosus             
+##  13 Chromis.chromis             
+##  14 Clupeidae                   
+##  15 Conger.conger               
+##  16 Coris.julis                 
+##  17 Ctenolabrus.rupestris       
+##  18 Dactylopterus.volitans      
+##  19 Dasyatis.pastinaca          
+##  20 Dentex.dentex               
+##  21 Dicentrarchus.labrax        
+##  22 Dicentrarchus.punctatus     
+##  23 Diplodus.annularis          
+##  24 Diplodus.cervinus           
+##  25 Diplodus.puntazzo           
+##  26 Diplodus.sargus             
+##  27 Diplodus.vulgaris           
+##  28 Epinephelus.aeneus          
+##  29 Epinephelus.caninus         
+##  30 Epinephelus.costae          
+##  31 Epinephelus.marginatus      
+##  32 Fistularia.commersonii      
+##  33 Gobius.auratus              
+##  34 Gobius.bucchichi            
+##  35 Gobius.cobitis              
+##  36 Gobius.cruentatus           
+##  37 Gobius.geniporus            
+##  38 Gobius.paganellus           
+##  39 Gobius.vittatus             
+##  40 Gobius.xanthocephalus       
+##  41 Herklotsichthys.punctatus   
+##  42 Labridae                    
+##  43 Labrus.merula               
+##  44 Labrus.mixtus               
+##  45 Labrus.viridis              
+##  46 Lagocephalus.sceleratus     
+##  47 Lichia.amia                 
+##  48 Lithognathus.mormyrus       
+##  49 Liza.aurata                 
+##  50 Mugil.cephalus              
+##  51 Mullus.barbatus             
+##  52 Mullus.surmuletus           
+##  53 Muraena.helena              
+##  54 Mycteroperca.rubra          
+##  55 Myliobatis.aquila           
+##  56 Oblada.melanura             
+##  57 Oedalechilus.labeo          
+##  58 Pagellus.acarne             
+##  59 Pagrus.caeruleostictus      
+##  60 Pagrus.pagrus               
+##  61 Parablennius.gattorugine    
+##  62 Parablennius.incognitus     
+##  63 Parablennius.pilicornis     
+##  64 Parablennius.rouxi          
+##  65 Parablennius.sanguinolentus 
+##  66 Parablennius.tentacularis   
+##  67 Parablennius.zvonimiri      
+##  68 Parupeneus.forsskali        
+##  69 Pempheris.vanicolensis      
+##  70 Phycis.phycis               
+##  71 Plotosus.lineatus           
+##  72 Pomadasys.incisus           
+##  73 Pomatomus.saltatrix         
+##  74 Pomatoschistus.quagga       
+##  75 Pseudocaranx.dentex         
+##  76 Pteragogus.pelycus          
+##  77 Pterois.miles               
+##  78 Sardina.pilchardus          
+##  79 Sargocentron.rubrum         
+##  80 Sarpa.salpa                 
+##  81 Scartella.cristata          
+##  82 Scarus.ghobban              
+##  83 Sciaena.umbra               
+##  84 Scorpaena.maderensis        
+##  85 Scorpaena.notata            
+##  86 Scorpaena.porcus            
+##  87 Scorpaena.scrofa            
+##  88 Seriola.dumerili            
+##  89 Serranus.cabrilla           
+##  90 Serranus.hepatus            
+##  91 Serranus.scriba             
+##  92 Siganus.luridus             
+##  93 Siganus.rivulatus           
+##  94 Sparisoma.cretense          
+##  95 Sparus.aurata               
+##  96 Sphyraena.chrysotaenia      
+##  97 Sphyraena.sphyraena         
+##  98 Sphyraena.viridensis        
+##  99 Spicara.maena               
+## 100 Spicara.smaris              
+## 101 Spondyliosoma.cantharus     
+## 102 Stephanolepis.diaspros      
+## 103 Symphodus.cinereus          
+## 104 Symphodus.doderleini        
+## 105 Symphodus.mediterraneus     
+## 106 Symphodus.melanocercus      
+## 107 Symphodus.ocellatus         
+## 108 Symphodus.roissali          
+## 109 Symphodus.rostratus         
+## 110 Symphodus.spp.              
+## 111 Symphodus.tinca             
+## 112 Synodus.saurus              
+## 113 Taeniura.grabata            
+## 114 Thalassoma.pavo             
+## 115 Torquigener.flavimaculosus  
+## 116 Trachinotus.ovatus          
+## 117 Trachinus.draco             
+## 118 Trachurus.mediterraneus     
+## 119 Tripterygion.delaisi        
+## 120 Tripterygion.melanurus      
+## 121 Tripterygion.tripteronotus  
+## 122 Trisopterus.minutus</code></pre>
 <div id="acquiring-data-from-other-resources" class="section level3">
 <h3>Acquiring data from other resources</h3>
-<p>Environmental data (temperature, salinity and primary production) were acquired from <a href="http://http://www.bio-oracle.org">Bio-ORACLE</a> using <code>sdmpredictors</code> package.</p>
-<p>Fish traits data (“fish_traits.csv” including: size, mobility, activity, schooling, position, diet) were aqcuired from <a href="http://cesab.org/index.php/en/projets-passes/28-gaspar">GASPAR</a>. Where data were unavailable we used the information from <a href="https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523">Trait structure reveals the processes underlying fish establishment in the Mediterranean. O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017</a>.</p>
-<p>Species with no available trait data were removed from traits-related analysis:</p>
-<ul>
-<li><em>Chelon labrosus</em></li>
-<li><em>Ctenolabrus rupestris</em></li>
-<li><em>Dicentrarchus labrax</em></li>
-<li><em>Dicentrarchus punctatus</em></li>
-<li><em>Gobius auratus</em></li>
-<li><em>Gobius cobitis</em></li>
-<li><em>Gobius geniporus</em></li>
-<li><em>Gobius paganellus</em></li>
-<li><em>Gobius vittatus</em></li>
-<li><em>Labrus merula</em></li>
-<li><em>Labrus viridis</em></li>
-<li><em>Lichia amia</em></li>
-<li><em>Liza aurata</em></li>
-<li><em>Mullus barbatus</em></li>
-<li><em>Myliobatis aquila</em></li>
-<li><em>Oedalechilus labeo</em></li>
-<li><em>Phycis phycis</em></li>
-<li><em>Pomatomus saltatrix</em></li>
-<li><em>Pomatoschistus quagga</em></li>
-<li><em>Symphodus cinereus</em></li>
-<li><em>Symphodus ocellatus</em></li>
-<li><em>Symphodus rostratus</em></li>
-<li><em>Trachurus mediterraneus</em></li>
-<li><em>Tripterygion tripteronotus</em></li>
-<li><em>Trisopterus minutus</em></li>
-</ul>
+<p><strong>Environmental data</strong> (temperature, salinity and primary production) were acquired from <a href="http://http://www.bio-oracle.org">Bio-ORACLE</a> using <code>sdmpredictors</code> package.</p>
+<p>Fish <strong>traits</strong> data (“fish_traits.csv” including: size, mobility, activity, schooling, position, diet) were aqcuired from <a href="http://cesab.org/index.php/en/projets-passes/28-gaspar">GASPAR</a>. Where data were unavailable we used the information from <a href="https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523">Trait structure reveals the processes underlying fish establishment in the Mediterranean. O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017</a>.</p>
 <p><em>Size</em> coded as an ordered categorical variable with 6 levels: 1. S1 = 0-7cm 2. S2 = 7.1-15cm 3. S3 = 15.1- 30cm 4. S4 = 30.1-50cm 5. S5 = 50.1-80cm 6. S6 = &gt;80cm</p>
 <p><em>Mobility</em>/Home range coded as an ordered categorical variable with 3 levels: 1. Sed = sedentary 2. Mob = mobile within a reef 3. VMob = highly mobile i.e. between reefs</p>
 <p>Period of <em>Activity</em> coded as an ordered categorical variable with 3 levels: 1. Day = diurnal 2. Both = diurnal &amp; nocturnal 3. Night = nocturnal</p>
@@ -588,8 +697,15 @@ sites_plot</code></pre>
 <p>Position in the water column (<em>Level-water</em>) coded as an ordered categorical variable with 3 levels: 1. Bottom = bottom 2. Low = above bottom 3. High = pelagic</p>
 <p><em>Diet</em> coded as a categorical variable with 7 levels: 1. HD = herbivorous-detritivorous (undefined organic material, often grouped by many authors under the name detritus and/or undefined vegetal material, turf or filamentous algae) 2. HM = herbivorous macro-algal (macro algae (large fleshy algae) and sea grass) 3. IS = invertivorous sessile (sessile invertebrates: coral, sponge, ascidians and so on) 4. IM = invertivorous mobile (large benthic invertebrates + small benthic invertebrates + undefined invertebrates) 5. PK = planktonivorous (plankton and small organisms which migrate in the water column, such as many benthic copepods, amphipods, crustacean larvaes etc which migrate in the water column at night) 6. FC = Pelagic macro-organisms (large organisms living in the water column, usually fish and cephalopods) and benthic fish 7. OM = omnivorous (herbivorous and/or detritivorous AND carnivorous)</p>
 </div>
-<div id="transformation" class="section level3">
-<h3>Transformation</h3>
+</div>
+<div id="data-wrangling" class="section level2">
+<h2>Data wrangling</h2>
+<ul>
+<li><p>Linosa and kornati did not have specific coordinates, therefore, an approximate location (lat-lon) was attached to it. If your analysis requires fine-detail for the location, you might want to omit these locations.</p></li>
+<li><p>Data from source <code>azz_asi</code> are only presence-absence.</p></li>
+</ul>
+<div id="transformations" class="section level3">
+<h3>Transformations</h3>
 <p>Many analyses require species matrix made up of rows and columns where each row is a site (or an environmental factor/covariate) and each column is a species.</p>
 <pre class="r"><code># Create a tibble of metadata
 med_meta &lt;- med_raw %&gt;% 
@@ -602,7 +718,7 @@ med_mat &lt;- med_raw %&gt;%
   summarise(n = sum(sp.n)) %&gt;% 
   spread(species, n, fill = 0)
 head(med_mat)</code></pre>
-<pre><code>## # A tibble: 6 x 127
+<pre><code>## # A tibble: 6 x 125
 ## # Groups:   site, lon, lat [6]
 ##   site    lon   lat Abudefduf.saxat~ Anthias.anthias Apogon.imberbis
 ##   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt;            &lt;dbl&gt;           &lt;dbl&gt;           &lt;dbl&gt;
@@ -612,9 +728,9 @@ head(med_mat)</code></pre>
 ## 4 Achz~ 35.1   33.0                1               0               5
 ## 5 ADRA~ 30.4   36.2                0               0               0
 ## 6 ADRA~ 30.5   36.3                0               0               0
-## # ... with 121 more variables: Atherina.boyeri &lt;dbl&gt;, Atherina.spp &lt;dbl&gt;,
+## # ... with 119 more variables: Atherina.boyeri &lt;dbl&gt;, Atherina.spp &lt;dbl&gt;,
 ## #   Balistes.capriscus &lt;dbl&gt;, Belone.belone &lt;dbl&gt;, Belonidae &lt;dbl&gt;,
-## #   Belonidae.sp. &lt;dbl&gt;, Boops.boops &lt;dbl&gt;, Caranx.crysos &lt;dbl&gt;,
+## #   Boops.boops &lt;dbl&gt;, Caranx.crysos &lt;dbl&gt;,
 ## #   Cheilodipterus.novemstriatus &lt;dbl&gt;, Chelon.labrosus &lt;dbl&gt;,
 ## #   Chromis.chromis &lt;dbl&gt;, Clupeidae &lt;dbl&gt;, Conger.conger &lt;dbl&gt;,
 ## #   Coris.julis &lt;dbl&gt;, Ctenolabrus.rupestris &lt;dbl&gt;,
@@ -629,21 +745,20 @@ head(med_mat)</code></pre>
 ## #   Gobius.bucchichi &lt;dbl&gt;, Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;,
 ## #   Gobius.geniporus &lt;dbl&gt;, Gobius.paganellus &lt;dbl&gt;,
 ## #   Gobius.vittatus &lt;dbl&gt;, Gobius.xanthocephalus &lt;dbl&gt;,
-## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae.sp. &lt;dbl&gt;,
-## #   Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
+## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae &lt;dbl&gt;, Labrus.merula &lt;dbl&gt;,
+## #   Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
 ## #   Lagocephalus.sceleratus &lt;dbl&gt;, Lichia.amia &lt;dbl&gt;,
 ## #   Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;, Mugil.cephalus &lt;dbl&gt;,
 ## #   Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;, Muraena.helena &lt;dbl&gt;,
 ## #   Mycteroperca.rubra &lt;dbl&gt;, Myliobatis.aquila &lt;dbl&gt;,
 ## #   Oblada.melanura &lt;dbl&gt;, Oedalechilus.labeo &lt;dbl&gt;,
 ## #   Pagellus.acarne &lt;dbl&gt;, Pagrus.caeruleostictus &lt;dbl&gt;,
-## #   Pagrus.coeruleostictus &lt;dbl&gt;, Pagrus.pagrus &lt;dbl&gt;,
-## #   Parablennius.gattorugine &lt;dbl&gt;, Parablennius.incognitus &lt;dbl&gt;,
-## #   Parablennius.pilicornis &lt;dbl&gt;, Parablennius.rouxi &lt;dbl&gt;,
-## #   Parablennius.sanguinolentus &lt;dbl&gt;, Parablennius.tentacularis &lt;dbl&gt;,
-## #   Parablennius.zvonimiri &lt;dbl&gt;, Parupeneus.forsskali &lt;dbl&gt;,
-## #   Pempheris.vanicolensis &lt;dbl&gt;, Phycis.phycis &lt;dbl&gt;,
-## #   Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
+## #   Pagrus.pagrus &lt;dbl&gt;, Parablennius.gattorugine &lt;dbl&gt;,
+## #   Parablennius.incognitus &lt;dbl&gt;, Parablennius.pilicornis &lt;dbl&gt;,
+## #   Parablennius.rouxi &lt;dbl&gt;, Parablennius.sanguinolentus &lt;dbl&gt;,
+## #   Parablennius.tentacularis &lt;dbl&gt;, Parablennius.zvonimiri &lt;dbl&gt;,
+## #   Parupeneus.forsskali &lt;dbl&gt;, Pempheris.vanicolensis &lt;dbl&gt;,
+## #   Phycis.phycis &lt;dbl&gt;, Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
 ## #   Pomatomus.saltatrix &lt;dbl&gt;, Pomatoschistus.quagga &lt;dbl&gt;,
 ## #   Pseudocaranx.dentex &lt;dbl&gt;, Pteragogus.pelycus &lt;dbl&gt;,
 ## #   Pterois.miles &lt;dbl&gt;, Sardina.pilchardus &lt;dbl&gt;,
@@ -657,11 +772,12 @@ head(med_mat)</code></pre>
 ## #   Sparus.aurata &lt;dbl&gt;, Sphyraena.chrysotaenia &lt;dbl&gt;,
 ## #   Sphyraena.sphyraena &lt;dbl&gt;, Sphyraena.viridensis &lt;dbl&gt;,
 ## #   Spicara.maena &lt;dbl&gt;, Spicara.smaris &lt;dbl&gt;,
-## #   Spondyliosoma.cantharus &lt;dbl&gt;, ...</code></pre>
+## #   Spondyliosoma.cantharus &lt;dbl&gt;, Stephanolepis.diaspros &lt;dbl&gt;,
+## #   Symphodus.cinereus &lt;dbl&gt;, ...</code></pre>
 <pre class="r"><code># Put the 2 data sets together (species and metadata)
 full_med_mat &lt;- left_join(med_meta, med_mat, by = c(&quot;site&quot;, &quot;lon&quot;, &quot;lat&quot;))
 head(full_med_mat)</code></pre>
-<pre><code>## # A tibble: 6 x 140
+<pre><code>## # A tibble: 6 x 138
 ##   country site    lon   lat season protection enforcement total.mpa.ha
 ##   &lt;chr&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;            &lt;dbl&gt;        &lt;dbl&gt;
 ## 1 Italy   ASIN~  7.90  41.1 Autumn YES                  2        15000
@@ -670,15 +786,15 @@ head(full_med_mat)</code></pre>
 ## 4 Italy   ASIN~  8.22  41.1 Autumn YES                  3        15000
 ## 5 Italy   ASIN~  8.20  41.0 Autumn YES                  2        15000
 ## 6 Italy   ASIN~  8.22  41.0 Autumn YES                  3        15000
-## # ... with 132 more variables: size.notake &lt;dbl&gt;, yr.creation &lt;dbl&gt;,
+## # ... with 130 more variables: size.notake &lt;dbl&gt;, yr.creation &lt;dbl&gt;,
 ## #   age.reserve.yr &lt;dbl&gt;, tmean &lt;dbl&gt;, trange &lt;dbl&gt;, sal_mean &lt;dbl&gt;,
 ## #   pp_mean &lt;dbl&gt;, pp_range &lt;dbl&gt;, Abudefduf.saxatilis &lt;dbl&gt;,
 ## #   Anthias.anthias &lt;dbl&gt;, Apogon.imberbis &lt;dbl&gt;, Atherina.boyeri &lt;dbl&gt;,
 ## #   Atherina.spp &lt;dbl&gt;, Balistes.capriscus &lt;dbl&gt;, Belone.belone &lt;dbl&gt;,
-## #   Belonidae &lt;dbl&gt;, Belonidae.sp. &lt;dbl&gt;, Boops.boops &lt;dbl&gt;,
-## #   Caranx.crysos &lt;dbl&gt;, Cheilodipterus.novemstriatus &lt;dbl&gt;,
-## #   Chelon.labrosus &lt;dbl&gt;, Chromis.chromis &lt;dbl&gt;, Clupeidae &lt;dbl&gt;,
-## #   Conger.conger &lt;dbl&gt;, Coris.julis &lt;dbl&gt;, Ctenolabrus.rupestris &lt;dbl&gt;,
+## #   Belonidae &lt;dbl&gt;, Boops.boops &lt;dbl&gt;, Caranx.crysos &lt;dbl&gt;,
+## #   Cheilodipterus.novemstriatus &lt;dbl&gt;, Chelon.labrosus &lt;dbl&gt;,
+## #   Chromis.chromis &lt;dbl&gt;, Clupeidae &lt;dbl&gt;, Conger.conger &lt;dbl&gt;,
+## #   Coris.julis &lt;dbl&gt;, Ctenolabrus.rupestris &lt;dbl&gt;,
 ## #   Dactylopterus.volitans &lt;dbl&gt;, Dasyatis.pastinaca &lt;dbl&gt;,
 ## #   Dentex.dentex &lt;dbl&gt;, Dicentrarchus.labrax &lt;dbl&gt;,
 ## #   Dicentrarchus.punctatus &lt;dbl&gt;, Diplodus.annularis &lt;dbl&gt;,
@@ -690,21 +806,20 @@ head(full_med_mat)</code></pre>
 ## #   Gobius.bucchichi &lt;dbl&gt;, Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;,
 ## #   Gobius.geniporus &lt;dbl&gt;, Gobius.paganellus &lt;dbl&gt;,
 ## #   Gobius.vittatus &lt;dbl&gt;, Gobius.xanthocephalus &lt;dbl&gt;,
-## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae.sp. &lt;dbl&gt;,
-## #   Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
+## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae &lt;dbl&gt;, Labrus.merula &lt;dbl&gt;,
+## #   Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
 ## #   Lagocephalus.sceleratus &lt;dbl&gt;, Lichia.amia &lt;dbl&gt;,
 ## #   Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;, Mugil.cephalus &lt;dbl&gt;,
 ## #   Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;, Muraena.helena &lt;dbl&gt;,
 ## #   Mycteroperca.rubra &lt;dbl&gt;, Myliobatis.aquila &lt;dbl&gt;,
 ## #   Oblada.melanura &lt;dbl&gt;, Oedalechilus.labeo &lt;dbl&gt;,
 ## #   Pagellus.acarne &lt;dbl&gt;, Pagrus.caeruleostictus &lt;dbl&gt;,
-## #   Pagrus.coeruleostictus &lt;dbl&gt;, Pagrus.pagrus &lt;dbl&gt;,
-## #   Parablennius.gattorugine &lt;dbl&gt;, Parablennius.incognitus &lt;dbl&gt;,
-## #   Parablennius.pilicornis &lt;dbl&gt;, Parablennius.rouxi &lt;dbl&gt;,
-## #   Parablennius.sanguinolentus &lt;dbl&gt;, Parablennius.tentacularis &lt;dbl&gt;,
-## #   Parablennius.zvonimiri &lt;dbl&gt;, Parupeneus.forsskali &lt;dbl&gt;,
-## #   Pempheris.vanicolensis &lt;dbl&gt;, Phycis.phycis &lt;dbl&gt;,
-## #   Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
+## #   Pagrus.pagrus &lt;dbl&gt;, Parablennius.gattorugine &lt;dbl&gt;,
+## #   Parablennius.incognitus &lt;dbl&gt;, Parablennius.pilicornis &lt;dbl&gt;,
+## #   Parablennius.rouxi &lt;dbl&gt;, Parablennius.sanguinolentus &lt;dbl&gt;,
+## #   Parablennius.tentacularis &lt;dbl&gt;, Parablennius.zvonimiri &lt;dbl&gt;,
+## #   Parupeneus.forsskali &lt;dbl&gt;, Pempheris.vanicolensis &lt;dbl&gt;,
+## #   Phycis.phycis &lt;dbl&gt;, Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
 ## #   Pomatomus.saltatrix &lt;dbl&gt;, Pomatoschistus.quagga &lt;dbl&gt;,
 ## #   Pseudocaranx.dentex &lt;dbl&gt;, Pteragogus.pelycus &lt;dbl&gt;,
 ## #   Pterois.miles &lt;dbl&gt;, Sardina.pilchardus &lt;dbl&gt;,
@@ -713,12 +828,13 @@ head(full_med_mat)</code></pre>
 ## #   Scorpaena.maderensis &lt;dbl&gt;, Scorpaena.notata &lt;dbl&gt;,
 ## #   Scorpaena.porcus &lt;dbl&gt;, Scorpaena.scrofa &lt;dbl&gt;,
 ## #   Seriola.dumerili &lt;dbl&gt;, Serranus.cabrilla &lt;dbl&gt;,
-## #   Serranus.hepatus &lt;dbl&gt;, ...</code></pre>
+## #   Serranus.hepatus &lt;dbl&gt;, Serranus.scriba &lt;dbl&gt;, Siganus.luridus &lt;dbl&gt;,
+## #   ...</code></pre>
 <pre class="r"><code># Convert the abundance matrix to presence-absence matrix
 pres_abs_mat &lt;- full_med_mat
 pres_abs_mat[17:ncol(pres_abs_mat)] &lt;- ifelse(pres_abs_mat[17:ncol(pres_abs_mat)] &gt; 0, 1, 0)
 head(pres_abs_mat)</code></pre>
-<pre><code>## # A tibble: 6 x 140
+<pre><code>## # A tibble: 6 x 138
 ##   country site    lon   lat season protection enforcement total.mpa.ha
 ##   &lt;chr&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;            &lt;dbl&gt;        &lt;dbl&gt;
 ## 1 Italy   ASIN~  7.90  41.1 Autumn YES                  2        15000
@@ -727,15 +843,15 @@ head(pres_abs_mat)</code></pre>
 ## 4 Italy   ASIN~  8.22  41.1 Autumn YES                  3        15000
 ## 5 Italy   ASIN~  8.20  41.0 Autumn YES                  2        15000
 ## 6 Italy   ASIN~  8.22  41.0 Autumn YES                  3        15000
-## # ... with 132 more variables: size.notake &lt;dbl&gt;, yr.creation &lt;dbl&gt;,
+## # ... with 130 more variables: size.notake &lt;dbl&gt;, yr.creation &lt;dbl&gt;,
 ## #   age.reserve.yr &lt;dbl&gt;, tmean &lt;dbl&gt;, trange &lt;dbl&gt;, sal_mean &lt;dbl&gt;,
 ## #   pp_mean &lt;dbl&gt;, pp_range &lt;dbl&gt;, Abudefduf.saxatilis &lt;dbl&gt;,
 ## #   Anthias.anthias &lt;dbl&gt;, Apogon.imberbis &lt;dbl&gt;, Atherina.boyeri &lt;dbl&gt;,
 ## #   Atherina.spp &lt;dbl&gt;, Balistes.capriscus &lt;dbl&gt;, Belone.belone &lt;dbl&gt;,
-## #   Belonidae &lt;dbl&gt;, Belonidae.sp. &lt;dbl&gt;, Boops.boops &lt;dbl&gt;,
-## #   Caranx.crysos &lt;dbl&gt;, Cheilodipterus.novemstriatus &lt;dbl&gt;,
-## #   Chelon.labrosus &lt;dbl&gt;, Chromis.chromis &lt;dbl&gt;, Clupeidae &lt;dbl&gt;,
-## #   Conger.conger &lt;dbl&gt;, Coris.julis &lt;dbl&gt;, Ctenolabrus.rupestris &lt;dbl&gt;,
+## #   Belonidae &lt;dbl&gt;, Boops.boops &lt;dbl&gt;, Caranx.crysos &lt;dbl&gt;,
+## #   Cheilodipterus.novemstriatus &lt;dbl&gt;, Chelon.labrosus &lt;dbl&gt;,
+## #   Chromis.chromis &lt;dbl&gt;, Clupeidae &lt;dbl&gt;, Conger.conger &lt;dbl&gt;,
+## #   Coris.julis &lt;dbl&gt;, Ctenolabrus.rupestris &lt;dbl&gt;,
 ## #   Dactylopterus.volitans &lt;dbl&gt;, Dasyatis.pastinaca &lt;dbl&gt;,
 ## #   Dentex.dentex &lt;dbl&gt;, Dicentrarchus.labrax &lt;dbl&gt;,
 ## #   Dicentrarchus.punctatus &lt;dbl&gt;, Diplodus.annularis &lt;dbl&gt;,
@@ -747,21 +863,20 @@ head(pres_abs_mat)</code></pre>
 ## #   Gobius.bucchichi &lt;dbl&gt;, Gobius.cobitis &lt;dbl&gt;, Gobius.cruentatus &lt;dbl&gt;,
 ## #   Gobius.geniporus &lt;dbl&gt;, Gobius.paganellus &lt;dbl&gt;,
 ## #   Gobius.vittatus &lt;dbl&gt;, Gobius.xanthocephalus &lt;dbl&gt;,
-## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae.sp. &lt;dbl&gt;,
-## #   Labrus.merula &lt;dbl&gt;, Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
+## #   Herklotsichthys.punctatus &lt;dbl&gt;, Labridae &lt;dbl&gt;, Labrus.merula &lt;dbl&gt;,
+## #   Labrus.mixtus &lt;dbl&gt;, Labrus.viridis &lt;dbl&gt;,
 ## #   Lagocephalus.sceleratus &lt;dbl&gt;, Lichia.amia &lt;dbl&gt;,
 ## #   Lithognathus.mormyrus &lt;dbl&gt;, Liza.aurata &lt;dbl&gt;, Mugil.cephalus &lt;dbl&gt;,
 ## #   Mullus.barbatus &lt;dbl&gt;, Mullus.surmuletus &lt;dbl&gt;, Muraena.helena &lt;dbl&gt;,
 ## #   Mycteroperca.rubra &lt;dbl&gt;, Myliobatis.aquila &lt;dbl&gt;,
 ## #   Oblada.melanura &lt;dbl&gt;, Oedalechilus.labeo &lt;dbl&gt;,
 ## #   Pagellus.acarne &lt;dbl&gt;, Pagrus.caeruleostictus &lt;dbl&gt;,
-## #   Pagrus.coeruleostictus &lt;dbl&gt;, Pagrus.pagrus &lt;dbl&gt;,
-## #   Parablennius.gattorugine &lt;dbl&gt;, Parablennius.incognitus &lt;dbl&gt;,
-## #   Parablennius.pilicornis &lt;dbl&gt;, Parablennius.rouxi &lt;dbl&gt;,
-## #   Parablennius.sanguinolentus &lt;dbl&gt;, Parablennius.tentacularis &lt;dbl&gt;,
-## #   Parablennius.zvonimiri &lt;dbl&gt;, Parupeneus.forsskali &lt;dbl&gt;,
-## #   Pempheris.vanicolensis &lt;dbl&gt;, Phycis.phycis &lt;dbl&gt;,
-## #   Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
+## #   Pagrus.pagrus &lt;dbl&gt;, Parablennius.gattorugine &lt;dbl&gt;,
+## #   Parablennius.incognitus &lt;dbl&gt;, Parablennius.pilicornis &lt;dbl&gt;,
+## #   Parablennius.rouxi &lt;dbl&gt;, Parablennius.sanguinolentus &lt;dbl&gt;,
+## #   Parablennius.tentacularis &lt;dbl&gt;, Parablennius.zvonimiri &lt;dbl&gt;,
+## #   Parupeneus.forsskali &lt;dbl&gt;, Pempheris.vanicolensis &lt;dbl&gt;,
+## #   Phycis.phycis &lt;dbl&gt;, Plotosus.lineatus &lt;dbl&gt;, Pomadasys.incisus &lt;dbl&gt;,
 ## #   Pomatomus.saltatrix &lt;dbl&gt;, Pomatoschistus.quagga &lt;dbl&gt;,
 ## #   Pseudocaranx.dentex &lt;dbl&gt;, Pteragogus.pelycus &lt;dbl&gt;,
 ## #   Pterois.miles &lt;dbl&gt;, Sardina.pilchardus &lt;dbl&gt;,
@@ -770,7 +885,8 @@ head(pres_abs_mat)</code></pre>
 ## #   Scorpaena.maderensis &lt;dbl&gt;, Scorpaena.notata &lt;dbl&gt;,
 ## #   Scorpaena.porcus &lt;dbl&gt;, Scorpaena.scrofa &lt;dbl&gt;,
 ## #   Seriola.dumerili &lt;dbl&gt;, Serranus.cabrilla &lt;dbl&gt;,
-## #   Serranus.hepatus &lt;dbl&gt;, ...</code></pre>
+## #   Serranus.hepatus &lt;dbl&gt;, Serranus.scriba &lt;dbl&gt;, Siganus.luridus &lt;dbl&gt;,
+## #   ...</code></pre>
 </div>
 </div>
 </div>
