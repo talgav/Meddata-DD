@@ -8,6 +8,6 @@ Fish traits data ("fish_traits.csv" including: Size, Mobility, Activity, Schooli
 
 This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Aviv University, Israel), [Ernesto Azzuro](https://www.researchgate.net/profile/Ernesto_Azzurro) (ISPRA, Italy), [Joachim Claudet](http://www.joachimclaudet.com/) (CNRS, France) and [Enric Sala](https://www.researchgate.net/profile/Enric_Sala). We would like to acknowledge Dive2gether Marine Field Station Plakias for assisting with Crete data collection.
 
-Please see the [`Hello_Medata.html`](https://shirasal.github.io/medata/Hello_Medata.html) file for detailed information.
+Please see the [`Hello_Medata.html`](https://htmlpreview.github.io/?https://github.com/shirasal/medata/blob/master/Hello_Medata.html) file for detailed information.
 
 ![](figures/1ObservationsMapsGIF.gif)
