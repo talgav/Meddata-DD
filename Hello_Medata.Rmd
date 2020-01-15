@@ -30,7 +30,7 @@ med_raw <- read_csv("data/all_uvc_data_101119.csv", na = c("", "NA"),
 locations <- med_raw %>% 
   dplyr::select(lon, lat, country, site) %>% 
   dplyr::distinct(lon, lat, .keep_all = TRUE)
-
+count(locations)
 ```
 
 # Variables
@@ -62,6 +62,37 @@ locations <- med_raw %>%
 | `pp_mean`       | *num* | annual mean primary productivity (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
 | `pp_range`      | *num* | annual primary production range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
 
+# Overview
+
+```{r}
+summary(med_raw) # examine raw data and check for errors.
+
+```
+
+## Countries
+
+Data was collected from 8 countries:
+
+```{r review the dataset}
+med_raw %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf)# full country list
+
+```
+
+## Sites
+
+Data was collected at 65 sites:
+```{r}
+med_raw %>% distinct(site) %>% arrange(.$site) %>% print(n = Inf) # full site list
+
+```
+
+## Species
+
+Dataset withholds 122 species (NOTE: some are not species but genus or family.)
+```{r}
+med_raw %>% distinct(species) %>% arrange(.$species) %>% print(n = Inf) # full species list. 
+```
+
 # Methods
 
 ## Data collection
@@ -86,17 +117,7 @@ sites_plot
 
 Figure 1. Survey sites and temperatures (in degrees celsius).
 
-
-```{r review the dataset}
-summary(med_raw) # examine raw data and check for errors.
-
-countries <- med_raw %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf)# full country list
-sites <- med_raw %>% distinct(site) %>% arrange(.$site) %>% print(n = Inf) # full site list
-species <- med_raw %>% distinct(species) %>% arrange(.$species) %>% print(n = Inf) # full species list. NOTE: some are not species but genus or family.
-
-```
-
-### Acquiring data from other resources
+## Acquiring data from other resources
 
 **Environmental data** (temperature, salinity and primary production) were acquired from [Bio-ORACLE](http://http://www.bio-oracle.org) using `sdmpredictors` package.
 
@@ -140,7 +161,6 @@ Position in the water column (*Level-water*) coded as an ordered categorical var
 5. PK = planktonivorous (plankton and small organisms which migrate in the water column, such as many benthic copepods, amphipods, crustacean larvaes etc which migrate in the water column at night)
 6. FC = Pelagic macro-organisms (large organisms living in the water column, usually fish and cephalopods) and benthic fish
 7. OM = omnivorous (herbivorous and/or detritivorous AND carnivorous)
-
 
 ## Data wrangling
 
