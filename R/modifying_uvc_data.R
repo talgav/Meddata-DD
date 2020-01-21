@@ -8,7 +8,7 @@ uvc_colnames <- c("data.origin", "country", "site", "lon", "lat", "trans", "spec
                   "sp.length", "sp.n", "season", "protection", "enforcement", "total.mpa.ha",
                   "size.notake", "yr.creation", "age.reserve.yr", "depth") # missing a, b ,temp, pp, sal
 
-crete_data <- read_csv("~/Lab stuff/Crete/crete2019/UVC_crete_2019.csv",
+crete_data <- read_csv("~/MSc/Lab/crete2019/UVC_crete_2019.csv",
                        col_types = cols(Notes = "c"))
 # correct mistakes:
 crete_data$Species <- str_replace(crete_data$Species, "ThalASSoma pavo", "Thalassoma pavo")
@@ -46,7 +46,7 @@ crete$trans <- ifelse(crete$Transect == "A", 1,
 crete_mod <- crete %>% mutate(data.origin = "Belmaker", country = "Greece", # add columns of UVC format
                               protection = "NO", enforcement = 0, total.mpa.ha	= 0,
                               size.notake = 0, yr.creation	= NA, age.reserve.yr = NA,
-                              site = str_extract(SiteID, "Cret\\d\\d")) %>%   # site name is 'Cret' followed by day of dive date
+                              site = SiteID) %>%
                        select(data.origin, country, site, lon, lat, trans, Species, Length, Amount,
                              Season, protection, enforcement, total.mpa.ha, size.notake, yr.creation,
                              age.reserve.yr, Mean_Depth)
@@ -60,7 +60,7 @@ glimpse(crete_mod)
 # write_csv(crete_mod, "data/crete_uvc.csv")
 
 # add to medata:
-medata <- read_csv("data/med_raw.csv")
+medata <- read_csv("data/all_uvc_.csv")
 colnames(medata)
 
 # check for new species:
