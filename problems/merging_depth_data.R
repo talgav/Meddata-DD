@@ -1,5 +1,15 @@
 library(tidyverse)
 
+medata <- read_csv("data/uvc_data_200120.csv")
+summary(medata)
+medata %>% filter(site != "Cret12", site != "Cret13", site != "Cret14", 
+                  site != "Cret16", site != "Cret18", site != "Cret19",
+                  site != "Cret20", site != "Cret22") %>% count(is.na(depth))
+
+new_data %>% count(is.na(depth))
+
+medata %>% filter(country == "Greece") %>% select(site) %>% distinct()
+
 # Data from Ori (from which I'll extract depth)
 new_data <- read_csv("data/all_uvc_data_201119.csv", na = c("", "NA"), col_types = cols(country = "c"))
 (depth_data <- new_data %>% select(site, lon, lat, trans, depth) %>% distinct())
