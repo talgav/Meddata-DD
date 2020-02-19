@@ -23,8 +23,7 @@ This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Avi
 
 
 ```{r setup data}
-med_raw <- read_csv("data/all_uvc_data_101119.csv", na = c("", "NA"),
-                    col_types = cols(depth = "d"))
+med_raw <- read_csv("data/uvc_data_19022020.csv", col_types = cols(depth = "d"))
 
 # locations will be a subset of unique sites: sites that have unique longitude and latitude
 locations <- med_raw %>% 
@@ -74,31 +73,36 @@ summary(med_raw) # examine raw data and check for errors.
 Data was collected from 8 countries:
 
 ```{r review the dataset}
-med_raw %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf)# full country list
+med_raw %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf) # full country list
 
 ```
 
 ## Sites
 
-Data was collected at 65 sites:
-```{r}
-med_raw %>% distinct(site) %>% arrange(.$site) %>% print(n = Inf) # full site list
+Data was collected from 224 sites
+```{r include=FALSE}
+sites <- med_raw %>% distinct(site) %>% arrange(.$site)
+count(sites)
 
 ```
 
 ## Species
 
-Dataset withholds 122 species (NOTE: some are not species but genus or family.)
+Dataset withholds 118 species
 ```{r}
-med_raw %>% distinct(species) %>% arrange(.$species) %>% print(n = Inf) # full species list. 
+spp <- med_raw %>% distinct(species) %>% arrange(.$species)
+count(spp)
+spp %>% filter(!c(grepl("dae", species) | grepl(".spp", species))) %>% print(n = Inf)
+
 ```
+**NOTE**: There are 123 taxa in the dataset but some are not species but genus (Atherina.spp, Symphodus.spp) or family (Labridae, Clupeidae, Belonidae).
 
 # Methods
 
 ## Data collection
-Visual fish census surveys took place in multiple locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database is comprised of approximately 50,0000 observations of 93 species of fish and includes abundance data, as well as presence-absence data. Additional data will be collected during 2019 and will be added to the main database.
+Visual fish census surveys took place in multiple locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database consists of approximately 42,0000 observations of 118 species of fish and includes mostly abundance data (except *Asinara_add* site which contains presence-absence data).
 
-```{r locations map}
+```{r locations map, echo=FALSE}
 med_map <- sf::st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp", quiet = TRUE)
 
 sites_plot <- ggplot(med_raw) +
@@ -114,62 +118,22 @@ sites_plot <- ggplot(med_raw) +
 sites_plot
 
 ```
-
 Figure 1. Survey sites and temperatures (in degrees celsius).
 
-## Acquiring data from other resources
+## Data acquired from other resources
 
 **Environmental data** (temperature, salinity and primary production) were acquired from [Bio-ORACLE](http://http://www.bio-oracle.org) using `sdmpredictors` package.
-
-Fish **traits** data ("fish_traits.csv" including: size, mobility, activity, schooling, position, diet) were aqcuired from [GASPAR](http://cesab.org/index.php/en/projets-passes/28-gaspar). Where data were unavailable we used the information from [Trait structure reveals the processes underlying fish establishment in the Mediterranean. O Givan, V Parravicini, M Kulbicki, J Belmaker - Global ecology and biogeography, 2017](https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12523).
-
-*Size* coded as an ordered categorical variable with 6 levels:
-1. S1 = 0-7cm
-2. S2 = 7.1-15cm
-3. S3 = 15.1- 30cm
-4. S4 = 30.1-50cm
-5. S5 = 50.1-80cm
-6. S6 = >80cm
-
-*Mobility*/Home range coded as an ordered categorical variable with 3 levels:
-1. Sed = sedentary
-2. Mob = mobile within a reef
-3. VMob = highly mobile i.e. between reefs
-
-Period of *Activity* coded as an ordered categorical variable with 3 levels:
-1. Day = diurnal
-2. Both = diurnal & nocturnal
-3. Night = nocturnal
-
-*Schooling* coded as a categorical variable, 5 levels:
-1. Sol = solitary
-2. Pair = pairing
-3. SmallG = small group
-4. MedG = medium group
-5. LargeG = large group
-
-Position in the water column (*Level-water*) coded as an ordered categorical variable with 3 levels:
-1. Bottom = bottom
-2. Low = above bottom
-3. High = pelagic
-
-*Diet* coded as a categorical variable with 7 levels:
-1. HD = herbivorous-detritivorous (undefined organic material, often grouped by many authors under the name detritus and/or undefined vegetal material, turf or filamentous algae)
-2. HM = herbivorous macro-algal (macro algae (large fleshy algae) and sea grass)
-3. IS = invertivorous sessile (sessile invertebrates: coral, sponge, ascidians and so on)
-4. IM = invertivorous mobile (large benthic invertebrates + small benthic invertebrates + undefined invertebrates)
-5. PK = planktonivorous (plankton and small organisms which migrate in the water column, such as many benthic copepods, amphipods, crustacean larvaes etc which migrate in the water column at night)
-6. FC = Pelagic macro-organisms (large organisms living in the water column, usually fish and cephalopods) and benthic fish
-7. OM = omnivorous (herbivorous and/or detritivorous AND carnivorous)
 
 ## Data wrangling
 
 * Linosa and kornati did not have specific coordinates, therefore, an approximate location (lat-lon) was attached to it. If your analysis requires fine-detail for the location, you might want to omit these locations.
 
-* Data from source `azz_asi` are only presence-absence.
+* Data from source `ASINARA_add` site are presence-absence only.
 
 ### Transformations
-Many analyses require species matrix made up of rows and columns where each row is a site (or an environmental factor/covariate) and each column is a species.
+Many analyses require species matrix where each row is a site and each column is a species.
+
+Here's the code to create such matrix with this dataset:
 
 ```{r create species matrix}
 # Create a tibble of metadata
@@ -179,19 +143,16 @@ med_meta <- med_raw %>%
 
 # Create a species matrix with summation of each species in each site (abundance)
 med_mat <- med_raw %>% 
-  group_by(site, lon, lat, species) %>% # Note it only shows sites and species (with coordinate-locations)
+  group_by(site, lon, lat, species) %>% # Sites and species (with coordinate-locations) only
   summarise(n = sum(sp.n)) %>% 
   spread(species, n, fill = 0)
-head(med_mat)
 
 # Put the 2 data sets together (species and metadata)
 full_med_mat <- left_join(med_meta, med_mat, by = c("site", "lon", "lat"))
-head(full_med_mat)
 
-# Convert the abundance matrix to presence-absence matrix
+# Convert the abundance data to pseudo presence-absence
 pres_abs_mat <- full_med_mat
-pres_abs_mat[17:ncol(pres_abs_mat)] <- ifelse(pres_abs_mat[17:ncol(pres_abs_mat)] > 0, 1, 0)
-head(pres_abs_mat)
+pres_abs_mat[17:ncol(pres_abs_mat)] <- ifelse(pres_abs_mat[17:ncol(pres_abs_mat)] > 0, 1, 0) # col 17 is the 1st species
 
 
 ```
