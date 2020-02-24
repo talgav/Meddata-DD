@@ -124,6 +124,17 @@ Figure 1. Survey sites and temperatures (in degrees celsius).
 
 **Environmental data** (temperature, salinity and primary production) were acquired from [Bio-ORACLE](http://http://www.bio-oracle.org) using `sdmpredictors` package.
 
+__Layers__:
+
+- tmean = "BO_sstmean"
+- trange = "BO_sstrange"
+- sal_mean = "BO2_salinitymean_ss"
+- pp_mean = "BO2_ppmean_ss"
+- pp_range = "BO2_pprange_ss"
+
+(See "~/R/bio-oracle extraction code.R" for full extraction code).
+
+
 ## Data wrangling
 
 * Linosa and kornati did not have specific coordinates, therefore, an approximate location (lat-lon) was attached to it. If your analysis requires fine-detail for the location, you might want to omit these locations.

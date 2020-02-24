@@ -1885,6 +1885,15 @@ count(spp)</code></pre>
 <div id="data-acquired-from-other-resources" class="section level2">
 <h2>Data acquired from other resources</h2>
 <p><strong>Environmental data</strong> (temperature, salinity and primary production) were acquired from <a href="http://http://www.bio-oracle.org">Bio-ORACLE</a> using <code>sdmpredictors</code> package.</p>
+<p><strong>Layers</strong>:</p>
+<ul>
+<li>tmean = “BO_sstmean”</li>
+<li>trange = “BO_sstrange”</li>
+<li>sal_mean = “BO2_salinitymean_ss”</li>
+<li>pp_mean = “BO2_ppmean_ss”</li>
+<li>pp_range = “BO2_pprange_ss”</li>
+</ul>
+<p>(See “~/R/bio-oracle extraction code.R” for full extraction code).</p>
 </div>
 <div id="data-wrangling" class="section level2">
 <h2>Data wrangling</h2>
