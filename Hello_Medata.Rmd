@@ -3,6 +3,7 @@ title: "Data acquaintance for Mediterranean dataset (MEData)"
 author: "Shira Salingré"
 output: 
   html_document:
+    code_folding: hide
     toc: true
     toc_depth: 3
     toc_float:
