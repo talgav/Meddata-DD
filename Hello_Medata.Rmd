@@ -12,7 +12,6 @@ output:
 
 ```{r setup, include=FALSE}
 library(sf)
-library(plotly)
 library(tidyverse)
 library(ggspatial)
 ```
