@@ -3,6 +3,7 @@ title: "Data acquaintance for Mediterranean dataset (MEData)"
 author: "Shira Salingré"
 output: 
   html_document:
+    theme: lumen
     code_folding: hide
     toc: true
     toc_depth: 3
@@ -14,6 +15,7 @@ output:
 library(sf)
 library(tidyverse)
 library(ggspatial)
+
 ```
 
 # Introduction
@@ -23,20 +25,15 @@ This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Avi
 
 
 ```{r setup data}
-med_raw <- read_csv("data/uvc_data_19022020.csv", col_types = cols(depth = "d"))
+med_raw <- read_rds("data/medata.Rds")
 
-# locations will be a subset of unique sites: sites that have unique longitude and latitude
-locations <- med_raw %>% 
-  dplyr::select(lon, lat, country, site) %>% 
-  dplyr::distinct(lon, lat, .keep_all = TRUE)
-count(locations)
 ```
 
 # Variables
 
 | variable        | type  | comments                             |
 | :-------------- | :---: | :------------------------------------|
-|  `data.origin`  | *fct* | azz_asi = Azzuro; azz_malta = Azzuro; Belmaker = Belmaker; Claudet = Claudet; Sala - PEW = Sala |
+| `data.origin`  | *fct* | azz_asi = Azzuro; azz_malta = Azzuro; Belmaker = Belmaker; Claudet = Claudet; Sala - PEW = Sala |
 | `country`       | *fct* | Country where `site` is located |
 | `sites`         | *fct* | site names   |
 | `lon`           | *num* | longitude (degrees); approximate for Linosa, Kornati|
@@ -73,16 +70,19 @@ summary(med_raw) # examine raw data and check for errors.
 Data was collected from 8 countries:
 
 ```{r review the dataset}
-med_raw %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf) # full country list
+med_raw %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf)
 
 ```
 
 ## Sites
 
-Data was collected from 224 sites
+Data was collected from 64 unique sites:
 ```{r include=FALSE}
-sites <- med_raw %>% distinct(site) %>% arrange(.$site)
-count(sites)
+med_raw %>% 
+  dplyr::select(lon, lat, country, site) %>% 
+  dplyr::distinct(lon, lat, .keep_all = TRUE) %>%
+  dplyr::distinct(site) %>%
+  print(n = Inf)
 
 ```
 
@@ -90,9 +90,12 @@ count(sites)
 
 Dataset withholds 118 species
 ```{r}
-spp <- med_raw %>% distinct(species) %>% arrange(.$species)
-count(spp)
-spp %>% filter(!c(grepl("dae", species) | grepl(".spp", species))) %>% print(n = Inf)
+med_raw %>% distinct(species) %>% arrange(.$species) %>% count()
+
+# proper species
+med_raw %>% distinct(species) %>% arrange(.$species) %>%
+  filter(!c(grepl("dae", species) | grepl(".spp", species))) %>%
+  print(n = Inf)
 
 ```
 **NOTE**: There are 123 taxa in the dataset but some are not species but genus (Atherina.spp, Symphodus.spp) or family (Labridae, Clupeidae, Belonidae).
@@ -105,7 +108,7 @@ Visual fish census surveys took place in multiple locations along the Mediterran
 ```{r locations map, echo=FALSE}
 med_map <- sf::st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp", quiet = TRUE)
 
-sites_plot <- ggplot(med_raw) +
+ggplot(med_raw) +
   geom_sf(data = med_map$geometry, mapping = aes()) +
   geom_point(aes(x = lon, y = lat, fill = tmean), colour = "black", pch = 21,
              size = 5, alpha = 0.7) +
@@ -114,8 +117,6 @@ sites_plot <- ggplot(med_raw) +
   xlab("Longitude") + 
   ylab("Latitude") +
   labs(fill = "Mean Annual Temp")
-
-sites_plot
 
 ```
 Figure 1. Survey sites and temperatures (in degrees celsius).
@@ -139,7 +140,7 @@ __Layers__:
 
 * Linosa and kornati did not have specific coordinates, therefore, an approximate location (lat-lon) was attached to it. If your analysis requires fine-detail for the location, you might want to omit these locations.
 
-* Data from source `ASINARA_add` site are presence-absence only.
+* Data from source `asinara_add` site are presence-absence only.
 
 ### Transformations
 Many analyses require species matrix where each row is a site and each column is a species.
