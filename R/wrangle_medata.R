@@ -22,13 +22,12 @@ table(med_raw$protection) # just to make sure it works fine
 med_raw %<>% mutate(protection = if_else(protection == "NO", FALSE, TRUE))
 table(med_raw$protection)
 
-# Sites that are outside of MPAs (protection == FALSE) should have `total.mpa.ha` and `size.notake` set to 0
-med_raw %<>% mutate(total.mpa.ha = if_else(protection == FALSE & is.na(total.mpa.ha), 0, total.mpa.ha),
-                    size.notake = if_else(protection == FALSE & is.na(size.notake), 0, size.notake))
+# Sites that are outside of MPAs (protection == FALSE) should have `total.mpa.ha` and `size.notake` set to NA
+med_raw %<>% mutate(total.mpa.ha = ifelse(protection == FALSE & total.mpa.ha == 0, NA, total.mpa.ha),
+                    size.notake = ifelse(protection == FALSE & size.notake == 0, NA, size.notake))
 
 # create an Rdata file of the dataset after all changes:
 write_rds(med_raw, "data/medata.Rds")
-
 
 
 # FIXME:
