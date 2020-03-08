@@ -18,9 +18,23 @@ med_raw %<>% mutate(species = str_trim(species, "both"))
 med_raw %<>% mutate(site = str_replace_all(site, "[[:space:]]", "\\_"), site = str_remove_all(site, "\\,"))
 
 # Change `protection` to logical
-table(med_raw$protection) # just to make sure it works finr
+table(med_raw$protection) # just to make sure it works fine
 med_raw %<>% mutate(protection = if_else(protection == "NO", FALSE, TRUE))
 table(med_raw$protection)
 
+# Sites that are outside of MPAs (protection == FALSE) should have `total.mpa.ha` and `size.notake` set to 0
+med_raw %<>% mutate(total.mpa.ha = if_else(protection == FALSE & is.na(total.mpa.ha), 0, total.mpa.ha),
+                    size.notake = if_else(protection == FALSE & is.na(size.notake), 0, size.notake))
 
-med_raw %>% filter(sp.length == is.na(sp.length))
+# create an Rdata file of the dataset after all changes:
+write_rds(med_raw, "data/medata.Rds")
+
+
+
+# FIXME:
+# (1) sp.n missing
+med_raw %>% filter(sp.length == is.na(sp.length)) %>% distinct(site)
+# (2) species without biomass coefficients
+med_raw %>% filter(is.na(a)) %>% distinct(species) # Some of the species I'm interested in are missing this data
+# (3) locations without salinity data:
+med_raw %>% filter(is.na(sal_mean)) %>% distinct(site)
