@@ -1,5 +1,9 @@
 library(magrittr)
 library(tidyverse)
+library(sf)
+library(raster)
+
+# -------------------------------------------------------------------------
 
 med_raw <- read_csv("data/uvc_data_19022020.csv", col_types = cols(depth = "d"))
 summary(med_raw)
@@ -26,14 +30,37 @@ table(med_raw$protection)
 med_raw %<>% mutate(total.mpa.ha = ifelse(protection == FALSE & total.mpa.ha == 0, NA, total.mpa.ha),
                     size.notake = ifelse(protection == FALSE & size.notake == 0, NA, size.notake))
 
+# Fix depth data from three transects in Crete, where there are 2 depth values:
+medata <- read_rds("data/medata.Rds")
+med_raw[which(med_raw$site == "assecret2210191mlsc_a"),]$depth %<>% mean()
+med_raw[which(med_raw$site == "assecret2210191mlsc_b"),]$depth %<>% mean()
+med_raw[which(med_raw$site == "assecret2210191mlsc_c"),]$depth %<>% mean()
+
 # create an Rdata file of the dataset after all changes:
 write_rds(med_raw, "data/medata.Rds")
 
 
+
+# Continue working on MEDATA after corrections ----------------------------
+
+medata <- read_rds("data/medata.R")
+
 # FIXME:
 # (1) sp.n missing
-med_raw %>% filter(sp.length == is.na(sp.length)) %>% distinct(site)
+medata %>% filter(sp.length == is.na(sp.length)) %>% distinct(site)
 # (2) species without biomass coefficients
-med_raw %>% filter(is.na(a)) %>% distinct(species) # Some of the species I'm interested in are missing this data
+medata %>% filter(is.na(a)) %>% distinct(species) # Some of the species I'm interested in are missing this data
 # (3) locations without salinity data:
-med_raw %>% filter(is.na(sal_mean)) %>% distinct(site)
+medata %>% filter(is.na(sal_mean)) %>% distinct(site)
+
+# Fix salinity
+med_sal <- medata %>% filter(is.na(sal_mean)) # filter all the NAs of salinity
+med_sf <- sf::st_as_sf(med_sal, coords = c("lon", "lat"), crs = 4326) # convert df to sf
+med_sf %<>% sf::st_as_sf() %>% sf::st_transform(crs = 3857) # transform to a WGS84 in meters for buffer creation
+med_buffer <- sf::st_buffer(x = med_sf, dist = 50000) %>% sf::st_transform(crs = 4326) # create a buffer and transform back to crs in lat-lon (ESPG:4326)
+# sdmpredictors::load_layers(layercodes = "BO2_salinitymean_ss", datadir = "data/bio_oracle") # import salinity raster from bio-oracle
+sal_rast <- raster("data/bio_oracle/BO2_salinitymean_ss_lonlat.tif") # load the salinity raster (crs 4326)
+salinity_vals <- raster::extract(x = sal_rast, y = med_buffer, fun = mean, df = TRUE) # extract salinity values for each polygon buffer
+
+
+
