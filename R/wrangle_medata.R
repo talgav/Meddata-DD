@@ -81,15 +81,35 @@ medata <- med_raw %>%
 sum(med_raw$sp.n) == sum(medata$sp.n)
 
 
+# Add local/exotic column -------------------------------------------------
+
+# upload Or Givan's trait data and extract non indigenous information:
+traits_raw <- read.csv("C:\\Users\\Shira\\Documents\\Lab stuff\\Traits\\outsource\\full_traits_orgivan.csv")
+traits <- traits_raw %>%
+  dplyr::select(Species, Non.indigenous) %>%
+  transmute(species = stringr::str_replace(traits_raw$Species, pattern = "\\s", replacement = "\\."),
+            exotic = as.logical(Non.indigenous))
+# checking that the conversion went ok
+table(traits_raw$Non.indigenous)
+table(traits$exotic)
+
+medata %<>% left_join(traits, by = "species")
+
 # Save the new file -------------------------------------------------------
 
-# # create an Rdata file of the dataset after all changes:
+# create an Rdata file of the dataset after all changes:
 # write_rds(medata, "data/medata.Rds")
-# # copy to my project
+# # copy to my project (personal laptop)
 # file.copy("data/medata.Rds",
 #           "C:/Users/shira/Documents/MSc/fish_social_network/data/medata.Rds",
 #           overwrite = TRUE)
+# # copy to my project (personal laptop)
+# file.copy("data/medata.Rds",
+#           "C:/Users/Shira/Documents/R/fish_social_network/data/medata.Rds",
+#           overwrite = TRUE)
 
+# # load the data back after changes:
+# medata <- read_rds("data/medata.Rds")
 
 # Not fixed yet -----------------------------------------------------------
 
