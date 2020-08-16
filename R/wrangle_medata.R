@@ -83,17 +83,89 @@ sum(med_raw$sp.n) == sum(medata$sp.n)
 
 # Add local/exotic column -------------------------------------------------
 
-# upload Or Givan's trait data and extract non indigenous information:
-traits_raw <- read.csv("C:\\Users\\Shira\\Documents\\Lab stuff\\Traits\\outsource\\full_traits_orgivan.csv")
-traits <- traits_raw %>%
-  dplyr::select(Species, Non.indigenous) %>%
-  transmute(species = stringr::str_replace(traits_raw$Species, pattern = "\\s", replacement = "\\."),
-            exotic = as.logical(Non.indigenous))
-# checking that the conversion went ok
-table(traits_raw$Non.indigenous)
-table(traits$exotic)
+# upload Hezi Buba's data to extract non indigenous information:
+indie_raw <- read_csv("data/ab_data_med_hezibuba.csv") %>% 
+  filter(!is.na(species)) %>% 
+  select(species, les)
+indie_data <- indie_raw %>% 
+  mutate(les = case_when(species == "Abudefduf saxatilis" ~ 1,
+                         species == "Balistes carolinensis" ~ 0,
+                         species == "Epinephelus costea" ~ 0,
+                         species == "pagellus erythrinus" ~ 0,
+                         species == "Pagrus coeruleostictus" ~ 0,
+                         species == "Pomatomus saltator" ~ 0,
+                         species == "Rhinobatos cemiculus" ~ 0,
+                         species == "Scomber Japonicus" ~ 1,
+                         species == "Sillago sihama" ~ 1,
+                         species == "Torepedo torpedo" ~ 0,
+                         species == "Umbrina cirrosa" ~ 0,
+                         TRUE ~ les),
+         species = stringr::str_replace(.$species, pattern = "\\s", replacement = "\\."),
+         species = str_to_title(species),
+         species = case_when(species == "Epinephelus costea" ~ "Epinephelus costae",
+                             species == "Pagrus coeruleostictus" ~ "Pagrus caeruleostictus",
+                             species == "Pomatomus saltator" ~ "Pomatomus saltatrix",
+                             species == "Rhinobatos cemiculus" ~ "Glaucostegus cemiculus",
+                             TRUE ~ as.character(species))) %>% 
+  transmute(species = species,
+            exotic = as.logical(les))
 
-medata %<>% left_join(traits, by = "species")
+# checking that the conversion went ok
+table(indie_raw$les)
+table(indie_data$exotic)
+
+medata %<>% 
+  select(-exotic) %>% 
+  left_join(indie_data, by = "species")
+
+# Check for any species that are still 'exotic' == NA:
+medata %>% 
+  ungroup() %>%
+  filter(is.na(exotic)) %>%
+  distinct(species, exotic)
+
+
+medata %<>% mutate(exotic = case_when(species == "Mugil.cephalus" |
+                                        species == "Labrus.merula" |
+                                        species == "Labrus.viridis" |
+                                        species == "Symphodus.melanocercus" |
+                                        species == "Gobius.cruentatus" |
+                                        species == "Parablennius.rouxi" |
+                                        species == "Tripterygion.tripteronotus" |
+                                        species == "Symphodus.ocellatus" |
+                                        species == "Tripterygion.delaisi" |
+                                        species == "Symphodus.rostratus"|
+                                        species == "Labrus.mixtus" |
+                                        species == "Gobius.bucchichi" |
+                                        species == "Symphodus.cinereus" |
+                                        species == "Parablennius.zvonimiri" |
+                                        species == "Tripterygion.melanurus" |
+                                        species == "Parablennius.sanguinolentus" |
+                                        species == "Oedalechilus.labeo" |
+                                        species == "Gobius.paganellus" |
+                                        species == "Parablennius.pilicornis" |
+                                        species == "Belone.belone" |
+                                        species == "Scartella.cristata" |
+                                        species == "Lichia.amia" |
+                                        species == "Gobius.xanthocephalus" |
+                                        species == "Pomatoschistus.quagga" |
+                                        species == "Parablennius.tentacularis" |
+                                        species == "Gobius.auratus" |
+                                        species == "Gobius.cobitis" |
+                                        species == "Gobius.geniporus" |
+                                        species == "Mullus.barbatus" |
+                                        species == "Epinephelus.caninus" |
+                                        species == "Trisopterus.minutus" |
+                                        species == "Gobius.vittatus" |
+                                        species == "Chelon.labrosus"
+                                      ~ FALSE,
+                                      species == "Cheilodipterus.novemstriatus" |
+                                        species == "Pterois.miles" |
+                                        species == "Parupeneus.forsskali" |
+                                        species == "Herklotsichthys.punctatus"
+                                      ~ TRUE,
+                                      TRUE ~ exotic))
+
 
 # Save the new file -------------------------------------------------------
 
