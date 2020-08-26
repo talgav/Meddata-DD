@@ -124,7 +124,6 @@ medata %>%
   filter(is.na(exotic)) %>%
   distinct(species, exotic)
 
-
 medata %<>% mutate(exotic = case_when(species == "Mugil.cephalus" |
                                         species == "Labrus.merula" |
                                         species == "Labrus.viridis" |
@@ -166,12 +165,47 @@ medata %<>% mutate(exotic = case_when(species == "Mugil.cephalus" |
                                       ~ TRUE,
                                       TRUE ~ exotic))
 
+# Add missing length-weight contnstants:
+library("rfishbase")
+
+missing_constants <- medata %>%
+  ungroup() %>% 
+  filter(is.na(a)) %>%
+  distinct(species) %>% 
+  mutate(species = str_replace(.$species, pattern = "\\.", "\\ "))
+
+species_constants <- rfishbase::length_weight(missing_constants$species, fields = c("Species", "a", "b")) %>% 
+  group_by(Species) %>% 
+  summarise(mean_a = mean(a), mean_b = mean(b)) %>% 
+  ungroup() %>% 
+  rename(species = Species) %>% 
+  mutate(species = str_replace(.$species, pattern = "\\ ", "\\."))
+
+medata %<>% 
+  ungroup() %>% 
+  left_join(species_constants, by = "species") %>%
+  mutate(a = if_else(is.na(a), mean_a, a),
+         b = if_else(is.na(b), mean_b, b)) %>% 
+  select(-c("mean_a", "mean_b"))
+
+# Check that the NAs (at least for most species) were completed:
+medata %>%
+  filter(is.na(a)) %>%
+  distinct(species) %>% 
+  print(n = Inf)
+  
+# # Check for fish_networks proj (which of left NAs are of my species?):
+# species_constants %>%
+#   filter(is.na(mean_a)) %>%
+#   filter(species %in% c(groupers, diplodus, herbivores))
+
+
 
 # Save the new file -------------------------------------------------------
 
 # create an Rdata file of the dataset after all changes:
 # write_rds(medata, "data/medata.Rds")
-# # copy to my project (personal laptop)
+# copy to my project (personal laptop)
 # file.copy("data/medata.Rds",
 #           "C:/Users/shira/Documents/MSc/fish_social_network/data/medata.Rds",
 #           overwrite = TRUE)
@@ -184,12 +218,6 @@ medata %<>% mutate(exotic = case_when(species == "Mugil.cephalus" |
 # medata <- read_rds("data/medata.Rds")
 
 # Not fixed yet -----------------------------------------------------------
-
-# species without biomass coefficients
-medata %>%
-  filter(is.na(a)) %>%
-  distinct(species)
-# Some of the species I'm interested in are missing this data
 
 # locations without salinity data:
 medata %>% filter(is.na(sal_mean)) %>% distinct(site)
