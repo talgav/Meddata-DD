@@ -62,7 +62,7 @@ med_raw <- read_rds("data/medata.Rds")
 
 ```{r}
 summary(med_raw) # examine raw data and check for errors.
-
+skimr::skim(med_raw)
 ```
 
 ## Countries
@@ -76,7 +76,7 @@ med_raw %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf)
 
 ## Sites
 
-Data was collected from 64 unique sites:
+Data was collected from 67 unique sites:
 ```{r include=FALSE}
 med_raw %>% 
   dplyr::select(lon, lat, country, site) %>% 
@@ -103,7 +103,7 @@ med_raw %>% distinct(species) %>% arrange(.$species) %>%
 # Methods
 
 ## Data collection
-Visual fish census surveys took place in multiple locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database consists of approximately 42,0000 observations of 118 species of fish and includes mostly abundance data (except *Asinara_add* site which contains presence-absence data).
+Visual fish census surveys took place in multiple locations along the Mediterranean Sea (figure 1) by teams of skilled SCUBA divers. Locations were comprised of sites within MPAs with varying size, age and enforcement level, and unprotected sites which are adjacent to these MPAs. To date, the database consists of approximately 45,346 observations of 118 species of fish and includes mostly abundance data (except *asinara_add* site which contains presence-absence data, without this site, there are 42,513 records).
 
 ```{r locations map, echo=FALSE}
 med_map <- sf::st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp", quiet = TRUE)
