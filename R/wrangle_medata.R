@@ -1,4 +1,3 @@
-library(magrittr)
 library(tidyverse)
 
 # -------------------------------------------------------------------------
@@ -10,30 +9,30 @@ summary(med_raw)
 # Correct seasons ---------------------------------------------------------
 
 # Season exhibits 4 levels, 2 of which are the same (`Fall` and `Autumn`), so let's fix that:
-med_raw %<>% mutate(season = if_else(season == "Fall", "Autumn", season))
+med_raw <- med_raw %>% mutate(season = if_else(season == "Fall", "Autumn", season))
 as.factor(med_raw$season) %>% levels()
 # Convert all data to lower case to make things easier (except `country` and `species`)
-med_raw %<>% mutate(site = str_to_lower(site), season = str_to_lower(season))
+med_raw <- med_raw %>% mutate(site = str_to_lower(site), season = str_to_lower(season))
 
 
 # Remove whitespaces ------------------------------------------------------
 
 # Species names
-med_raw %<>% mutate(species = str_trim(species, "both"))
+med_raw <- med_raw %>% mutate(species = str_trim(species, "both"))
 
 # Sites (plus remove an unneeded `,` in one of the site names):
-med_raw %<>% mutate(site = str_replace_all(site, "[[:space:]]", "\\_"), site = str_remove_all(site, "\\,"))
+med_raw <- med_raw %>% mutate(site = str_replace_all(site, "[[:space:]]", "\\_"), site = str_remove_all(site, "\\,"))
 
 
 # MPAs --------------------------------------------------------------------
 
 # Change `protection` to logical
 table(med_raw$protection) # just to make sure it works fine
-med_raw %<>% mutate(protection = if_else(protection == "NO", FALSE, TRUE))
+med_raw <- med_raw %>% mutate(protection = if_else(protection == "NO", FALSE, TRUE))
 table(med_raw$protection)
 
 # Sites that are outside of MPAs (protection == FALSE) should have `total.mpa.ha` and `size.notake` set to NA
-med_raw %<>% mutate(total.mpa.ha = ifelse(protection == FALSE & total.mpa.ha == 0, NA, total.mpa.ha),
+med_raw <- med_raw %>% mutate(total.mpa.ha = ifelse(protection == FALSE & total.mpa.ha == 0, NA, total.mpa.ha),
                     size.notake = ifelse(protection == FALSE & size.notake == 0, NA, size.notake))
 
 
