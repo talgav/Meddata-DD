@@ -1,3 +1,4 @@
+library(magrittr)
 library(tidyverse)
 
 # -------------------------------------------------------------------------
@@ -8,10 +9,16 @@ summary(med_raw)
 
 # Correct seasons ---------------------------------------------------------
 
-# Season exhibits 4 levels, 2 of which are the same (`Fall` and `Autumn`), so let's fix that:
+# Season exhibits 4 levels, 2 of which are the same (`Fall` and `Autumn`)
+
+med_raw %>% distinct(season)
+
 med_raw <- med_raw %>% mutate(season = if_else(season == "Fall", "Autumn", season))
 as.factor(med_raw$season) %>% levels()
-# Convert all data to lower case to make things easier (except `country` and `species`)
+
+
+# Convert case ------------------------------------------------------------
+
 med_raw <- med_raw %>% mutate(site = str_to_lower(site), season = str_to_lower(season))
 
 
@@ -49,14 +56,7 @@ med_raw %>%
 med_raw %>%
   dplyr::select(site, lon, lat, trans, depth) %>%
   distinct() %>%
-  filter(site == "assecret2210191mlsc_b") %>%
-  count(site, lon, lat, trans)
-
-med_raw %>%
-  dplyr::select(site, lon, lat, trans, depth) %>%
-  distinct() %>%
-  filter(site == "assecret2210191mlsc_b") %>%
-  filter(trans == 1)
+  filter(site == "assecret2210191mlsc_b")
 
 # Then fix them
 med_raw[which(med_raw$site == "assecret2210191mlsc_a"),]$depth %<>% mean()
