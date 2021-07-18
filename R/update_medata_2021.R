@@ -133,15 +133,27 @@ missing_constants <- medata %>%
   mutate(species = str_replace(.$species, pattern = "\\.", "\\ "))
 
 length_weight(missing_constants$species, 
-                fields = c("Species", "a", "b", "Type", "Method")) %>% print(n = Inf)
+              fields = c("Species", "a", "b", "Type", "Method")) %>% print(n = Inf)
 # All are NA, cannot complete missing ratios
+
+
+# Add family --------------------------------------------------------------
+
+species_family <- rfishbase::load_taxa() %>% 
+  as_tibble() %>% 
+  filter(Species %in% species_info$species) %>%
+  select(Species, Family) %>% 
+  mutate(species = str_replace(.$Species, pattern = "\\.", "\\ ")) %>% 
+  select(species, family = Family)
 
 
 # Combine and save the new file -------------------------------------------
 
 medata <- medata %>% 
-  left_join(species_diet %>% mutate(species = str_replace(.$Species, pattern = "\\.", "\\ "))) %>% 
-  select(-Species)
+  left_join(species_diet %>%
+              mutate(species = str_replace(.$Species, pattern = "\\.", "\\ ")) %>% select(-Species)) %>%
+  left_join(species_family)
+
 
 write_rds(medata, "data/medata.Rds")
 
