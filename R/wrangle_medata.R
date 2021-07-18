@@ -153,24 +153,28 @@ medata <- medata %>% left_join(species_family)
 medata %>% filter(is.na(family)) %>% distinct(species) %>% arrange(species)
 
 medata <- medata %>% mutate(family = case_when(str_detect(species, "Symphodus") ~ "Labridae",
-                                     species == "Atherina.spp" ~ "Atherinidae",
-                                     species == "Belonidae" ~ "Belonidae",
-                                     species == "Clupeidae" ~ "Clupeidae",
-                                     species == "Labridae" ~ "Labridae",
-                                     species == "Liza.aurata" ~ "Mugilidae",
-                                     species == "Mullus.barbatus" ~ "Mullidae",
-                                     str_detect(species, "Tripterygion") ~ "Tripterygiidae",
-                                     TRUE ~ as.character(family)))
+                                               species == "Atherina.spp" ~ "Atherinidae",
+                                               species == "Belonidae" ~ "Belonidae",
+                                               species == "Clupeidae" ~ "Clupeidae",
+                                               species == "Labridae" ~ "Labridae",
+                                               species == "Liza.aurata" ~ "Mugilidae",
+                                               species == "Mullus.barbatus" ~ "Mullidae",
+                                               str_detect(species, "Tripterygion") ~ "Tripterygiidae",
+                                               TRUE ~ as.character(family)))
 
 # Save --------------------------------------------------------------------
 
 skimr::skim(medata)
 summary(medata)
 
-medata <- medata %>% select(data.origin, country, season, lon, lat, site, trans, 
-                  protection, enforcement, total.mpa.ha, size.notake, yr.creation, age.reserve.yr,
-                  depth, tmean, trange, sal_mean, pp_mean, pp_range, 
-                  species, sp.n, sp.length, a, b, family, exotic, FoodTroph, FoodSeTroph)
+medata <- medata %>% 
+  mutate(across(.cols = c("data.origin", "country", "season", "site", "enforcement", "yr.creation", 
+                          "age.reserve.yr", "species", "family"), .fns = as.factor)) %>% 
+  select(data.origin, country, season, lon, lat, site, trans, 
+         protection, enforcement, total.mpa.ha, size.notake, yr.creation, age.reserve.yr,
+         depth, tmean, trange, sal_mean, pp_mean, pp_range, 
+         species, sp.n, sp.length, a, b, family, exotic, FoodTroph, FoodSeTroph)
+
 
 write_rds(medata, "data/medata.Rds")
 
