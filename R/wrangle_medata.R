@@ -1,5 +1,6 @@
 library(magrittr)
 library(tidyverse)
+library(rfishbase)
 
 # -------------------------------------------------------------------------
 
@@ -65,17 +66,115 @@ med_raw[which(med_raw$site == "assecret2210191mlsc_b"),]$depth %<>% mean()
 med_raw[which(med_raw$site == "assecret2210191mlsc_c"),]$depth %<>% mean()
 
 
-# Redundancy --------------------------------------------------------------
+# write_rds(med_raw, "data/med_raw.Rds")
 
-# Minimise unnecessary rows so that multiple counts of the same species in a transect
-# will recieve one row (observation) by summing up count of individual:
-medata <- med_raw %>% 
-  group_by_at(setdiff(names(.), "sp.n")) %>% 
-  summarise(abundance = sum(sp.n), .groups = "drop") %>% 
-  rename(sp.n = abundance)
 
-# check that there is no data loss:
-sum(med_raw$sp.n) == sum(medata$sp.n)
+# Add species information -------------------------------------------------
+
+medata <- read_rds("data/med_raw.Rds")
+
+species_info <- medata %>% 
+  distinct(species) %>% 
+  mutate(species = str_replace(species, "\\.", "\\ ")) %>% 
+  filter(!str_detect(species, "dae")) %>% 
+  filter(!str_detect(species, "spp"))
+
+species_info %>% arrange(species) %>% print(n = Inf)
+
+
+# Add diet information ----------------------------------------------------
+
+species_diet <- ecology(species_info$species, 
+                        fields = c("Species", "DietTroph", "DietSeTroph", "FoodTroph", "FoodSeTroph"))
+
+# Which metric (DietTroph/FoodTroph) has more NAs?
+sapply(species_diet, function(x) sum(is.na(x)))
+
+species_diet %>% 
+  filter(is.na(FoodTroph))
+
+# Species with missing FoodTroph also have missing DietTroph (except Parablennius zvonimiri)
+# so we'll keep 'FoodTroph'
+species_troph <- species_diet %>% 
+  mutate(species = str_replace(Species, "\\ ", "\\.")) %>% 
+  select(species, FoodTroph, FoodSeTroph)
+
+species_troph
+
+# Join
+medata <- medata %>% left_join(species_troph)
+
+# Lessepsian migrants -----------------------------------------------------
+
+indie_species <- read_csv("data/exotic_species.csv")
+
+medata <- medata %>% left_join(indie_species)
+
+# write_rds(medata, "data/medata.rds")
+
+# Add Length-Weight ratio constants ---------------------------------------
+
+length_weight(species_info$species) %>% colnames()
+
+missing_constants <- medata %>%
+  filter(is.na(a)) %>%
+  filter(is.na(b)) %>% 
+  distinct(species) %>% 
+  mutate(species = str_replace(.$species, pattern = "\\.", "\\ "))
+
+species_LW <- length_weight(missing_constants$species, 
+                            fields = c("Species", "a", "b", "Type", "Method")) %>% 
+  filter(Method == "type I linear regression" & Type == "TL" | Method == "Type I linear regression" & Type == "TL") %>% 
+  group_by(Species) %>% summarise(mean_a = mean(a), mean_b = mean(b)) %>% ungroup() %>% 
+  mutate(species = str_replace(.$Species, pattern = "\\ ", "\\.")) %>% 
+  select(-Species)
+
+# Add to medata
+
+medata <- medata %>% 
+  left_join(species_LW) %>% 
+  mutate(a = if_else(is.na(a), mean_a, a),
+         b = if_else(is.na(b), mean_b, b)) %>% 
+  select(-mean_a, -mean_b)
+
+
+# Add family --------------------------------------------------------------
+
+species_family <- rfishbase::load_taxa() %>% 
+  as_tibble() %>% 
+  filter(Species %in% species_info$species) %>%
+  select(Species, Family) %>% 
+  mutate(species = str_replace(.$Species, pattern = "\\ ", "\\.")) %>% 
+  select(species, family = Family)
+
+medata <- medata %>% left_join(species_family)
+
+# Manually add families where applicable:
+medata %>% filter(is.na(family)) %>% distinct(species) %>% arrange(species)
+
+medata <- medata %>% mutate(family = case_when(str_detect(species, "Symphodus") ~ "Labridae",
+                                     species == "Atherina.spp" ~ "Atherinidae",
+                                     species == "Belonidae" ~ "Belonidae",
+                                     species == "Clupeidae" ~ "Clupeidae",
+                                     species == "Labridae" ~ "Labridae",
+                                     species == "Liza.aurata" ~ "Mugilidae",
+                                     species == "Mullus.barbatus" ~ "Mullidae",
+                                     str_detect(species, "Tripterygion") ~ "Tripterygiidae",
+                                     TRUE ~ as.character(family)))
+
+# Save --------------------------------------------------------------------
+
+skimr::skim(medata)
+summary(medata)
+
+medata <- medata %>% select(data.origin, country, season, lon, lat, site, trans, 
+                  protection, enforcement, total.mpa.ha, size.notake, yr.creation, age.reserve.yr,
+                  depth, tmean, trange, sal_mean, pp_mean, pp_range, 
+                  species, sp.n, sp.length, a, b, family, exotic, FoodTroph, FoodSeTroph)
+
+write_rds(medata, "data/medata.Rds")
+
+
 
 
 
