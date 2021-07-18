@@ -14,7 +14,6 @@ output:
 ```{r setup, include=FALSE}
 library(sf)
 library(tidyverse)
-library(ggspatial)
 
 ```
 
@@ -25,7 +24,7 @@ This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Avi
 
 
 ```{r setup data}
-med_raw <- read_rds("data/medata.Rds")
+medata <- read_rds("data/medata.Rds")
 
 ```
 
@@ -35,34 +34,41 @@ med_raw <- read_rds("data/medata.Rds")
 | :-------------- | :---: | :------------------------------------|
 | `data.origin`  | *fct* | azz_asi = Azzuro; azz_malta = Azzuro; Belmaker = Belmaker; Claudet = Claudet; Sala - PEW = Sala |
 | `country`       | *fct* | Country where `site` is located |
-| `sites`         | *fct* | site names   |
-| `lon`           | *num* | longitude (degrees); approximate for Linosa, Kornati|
-| `lat`           | *num* | latitude (degrees); approximate for Linosa, Kornati |
+| `season`        | *fct* | The season in which the survey was conducted; levels: `Autumn`, `Spring`, `Summer` |
+| `lon`           | *num* | longitude (decimal degrees); approximate for Linosa, Kornati|
+| `lat`           | *num* | latitude (decimal degrees); approximate for Linosa, Kornati |
+| `site`          | *fct* | site names   |
 | `trans`         | *int* | transect number |
-| `species`       | *fct* | species scientific name (*Genus.species*); some species are recognised to Genus (spp)  or Family (-dae suffix) level |
-| `sp.length`     | *num* | length of fish in cm |
-| `sp.n`          | *int* | fish count - how many individuals of this species were observed? |
-| `season`        | *fct* | levels: `Autumn`, `Spring`, `Summer` - The season in which the survey was conducted |
-| `protection`    | *fct* | inside MPA = `YES`; outside MPA = `NO` |
-| `enforcement`   | *int* | type of enforcement. 3 levels: `1` = Minimal protection; `2` = Medium protection; `3` = Fully protected. Complements `protection` |
+| `protection`    | *logical* | inside MPA/unfished (`TRUE`)  or outside MPA/fished (`FALSE`); derived from `enforcement` level |
+| `enforcement`   | *int* | type of enforcement. 3 levels: `1` = Minimal enforcement; `2` = Medium enforcement; `3` = Fully protected (strongest enforcement). Complements `protection` |
 | `total.mpa.ha`  | *num* | total MPA area in hactare; [Source for Ustica](http://www.parks.it/indice/RM/Eindex.php); [Source for Marettimo](http://www.ampisoleegadi.it/?idx=1620) |
 | `size.notake`   | *num* | area size of no-take zone (in ha); [Source for Ustica](http://www.mmmpa.eu/UST-MPA.asp) |
 | `yr.creation`   | *int* | MPA establishment year |
-| `age.reserve.yr`| *int* | age of the MPA in years (corresponds to `yr.creation`) |
-| `depth`         | *num* | depth of survey in metres (where applicable) |
-| `a`             | *num* | species length-weight relationship constant |
-| `b`             | *num* | species length-weight relationship constant |
+| `age.reserve.yr`| *int* | age of the MPA in years (corresponds to `yr.creation`) - should be updated before used, since this is time, and time goes by... |
+| `depth`         | *num* | depth of survey in metres |
 | `tmean`         | *num* | annual mean temperature (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
 | `trange`        | *num* | annual temperature range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
 | `sal_mean`      | *num* | annual mean salinity (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
 | `pp_mean`       | *num* | annual mean primary productivity (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
 | `pp_range`      | *num* | annual primary production range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `pp_range`      | *num* | annual primary production range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `pp_range`      | *num* | annual primary production range (Source: [Bio-ORACLE](http://www.bio-oracle.org/index.php)) |
+| `species`       | *fct* | species scientific name (format: *Genus.species*); some species are identified to Genus level (includes 'spp' suffix)  or family level (includes -dae suffix) |
+| `sp.n`          | *int* | fish count - how many individuals of this species were observed? |
+| `sp.length`     | *num* | length of fish in cm |
+| `a`             | *num* | species length-weight relationship constant (Source: [FishBase](https://www.fishbase.de/summary/citation.php); Type = TL; using method 'Type I linear regression') |
+| `b`             | *num* | species length-weight relationship constant (Source: [FishBase](https://www.fishbase.de/summary/citation.php); Type = TL; using method 'Type I linear regression') |
+| `family`        | *fct* | taxonomic family    |
+| `exotic`        | *logical* | whether this species is local (indigenous, `FALSE`) or introduced (lessepsian migrant, `TRUE`) |
+| `FoodTroph`     | *num* | trophic level of the species. Extracted from [FishBase](https://www.fishbase.de/summary/citation.php)
+| `FoodSeTroph`   | *num* | standard error for trophic level calculation (`FoodTroph`. Extracted from [FishBase](https://www.fishbase.de/summary/citation.php)
+
 
 # Overview
 
 ```{r}
-summary(med_raw) # examine raw data and check for errors.
-skimr::skim(med_raw)
+summary(medata)
+skimr::skim(medata)
 ```
 
 ## Countries
@@ -70,7 +76,7 @@ skimr::skim(med_raw)
 Data was collected from 8 countries:
 
 ```{r review the dataset}
-med_raw %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf)
+medata %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf)
 
 ```
 
@@ -78,7 +84,7 @@ med_raw %>% distinct(country) %>% arrange(.$country) %>% print(n = Inf)
 
 Data was collected from 67 unique sites:
 ```{r include=FALSE}
-med_raw %>% 
+medata %>% 
   dplyr::select(lon, lat, country, site) %>% 
   dplyr::distinct(lon, lat, .keep_all = TRUE) %>%
   dplyr::distinct(site) %>%
@@ -90,10 +96,10 @@ med_raw %>%
 
 Dataset withholds 118 species
 ```{r}
-med_raw %>% distinct(species) %>% arrange(.$species) %>% count()
+medata %>% distinct(species) %>% arrange(.$species) %>% count()
 
 # proper species
-med_raw %>% distinct(species) %>% arrange(.$species) %>%
+medata %>% distinct(species) %>% arrange(.$species) %>%
   filter(!c(grepl("dae", species) | grepl(".spp", species))) %>%
   print(n = Inf)
 
@@ -108,7 +114,7 @@ Visual fish census surveys took place in multiple locations along the Mediterran
 ```{r locations map, echo=FALSE}
 med_map <- sf::st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp", quiet = TRUE)
 
-ggplot(med_raw) +
+ggplot(medata) +
   geom_sf(data = med_map$geometry, mapping = aes()) +
   geom_point(aes(x = lon, y = lat, fill = tmean), colour = "black", pch = 21,
              size = 5, alpha = 0.7) +
@@ -149,12 +155,12 @@ Here's the code to create such matrix with this dataset:
 
 ```{r create species matrix}
 # Create a tibble of metadata
-med_meta <- med_raw %>% 
+med_meta <- medata %>% 
   distinct(country, site, lon, lat, season, protection, enforcement, total.mpa.ha, size.notake, 
            yr.creation, age.reserve.yr, tmean, trange, sal_mean, pp_mean, pp_range)
 
 # Create a species matrix with summation of each species in each site (abundance)
-med_mat <- med_raw %>% 
+med_mat <- medata %>% 
   group_by(site, lon, lat, species) %>% # Sites and species (with coordinate-locations) only
   summarise(n = sum(sp.n)) %>% 
   spread(species, n, fill = 0)
@@ -169,4 +175,14 @@ pres_abs_mat[17:ncol(pres_abs_mat)] <- ifelse(pres_abs_mat[17:ncol(pres_abs_mat)
 
 ```
 
+
+# References
+
+Froese, R. and D. Pauly. Editors. 2021.FishBase. World Wide Web electronic publication. www.fishbase.org, (06/2021)
+
+Boettiger C, Temple Lang D, Wainwright P (2012). “rfishbase: exploring, manipulating and visualizing FishBase data from R.” Journal of Fish Biology
+
+Assis J, Tyberghein L, Bosch S, Heroen V, SerrÃ£o E, De Clerck O, Tittensor D (2018). Bio-ORACLE v2.0: Extending marine data layers for bioclimatic modelling." _Global Ecology and Biogeography_, *27*(3),277-284. doi: 10.1111/geb.12693 (https://doi.org/10.1111/geb.12693).                             
+
+Tyberghein L, Heroen V, Pauly K, Troupin C, Mineur F, De Clerck O (2012). Bio-ORACLE: a global environmental dataset for marine speciesdistribution modelling.\" _Global Ecology and Biogeography_, *21*(2),272-281. doi: 10.1111/j.1466-8238.2011.00656.x (https://doi.org/10.1111/j.1466-8238.2011.00656.x).
 
