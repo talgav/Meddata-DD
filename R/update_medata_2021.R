@@ -123,8 +123,7 @@ species_LW <- length_weight(species_info$species,
                             fields = c("Species", "a", "b", "Type", "Method"))
 
 species_LW <- species_LW %>% 
-  filter(Method == "type I linear regression", Method == "Type I linear regression") %>% 
-  filter(Type == "TL") %>% 
+  filter(Method == "type I linear regression" & Type == "TL" | Method == "Type I linear regression" & Type == "TL") %>% 
   group_by(Species) %>% summarise(mean_a = mean(a), mean_b = mean(b)) %>% ungroup()
 
 missing_constants <- medata %>%
