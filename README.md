@@ -8,6 +8,6 @@ Environmental information (temperature, salinity and primary production) was acq
 
 This is a collaboration of [Belmaker Lab](https://belmaker.weebly.com/) (Tel Aviv University, Israel), [Ernesto Azzuro](https://www.researchgate.net/profile/Ernesto_Azzurro) (ISPRA, Italy), [Joachim Claudet](http://www.joachimclaudet.com/) (CNRS, France) and [Enric Sala](https://www.researchgate.net/profile/Enric_Sala). We would like to acknowledge Dive2gether Marine Field Station Plakias for assisting with Crete data collection.
 
-:information_source: Please see the [`Hello_Medata.html`](https://htmlpreview.github.io/?https://github.com/shirasal/medata/blob/master/Hello_Medata.html) file for detailed information.
+:information_source: Please see the [`Hello_Medata`](https://htmlpreview.github.io/?https://github.com/shirasal/medata/blob/master/Hello_Medata.html) file for detailed information.
 
 ![](figures/1ObservationsMapsGIF.gif)
