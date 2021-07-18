@@ -140,7 +140,8 @@ length_weight(missing_constants$species,
 # Combine and save the new file -------------------------------------------
 
 medata <- medata %>% 
-  left_join(species_diet %>% mutate(species = str_replace(.$Species, pattern = "\\.", "\\ ")))
+  left_join(species_diet %>% mutate(species = str_replace(.$Species, pattern = "\\.", "\\ "))) %>% 
+  select(-Species)
 
 write_rds(medata, "data/medata.Rds")
 
