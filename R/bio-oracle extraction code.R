@@ -5,7 +5,6 @@ gc()
 # Load package 
 library(sdmpredictors)
 library(tidyverse)
-# library(leaflet) file.copy("C:\\Users\\shira\\Documents\\MSc\\fish_social_network\\data\\medata.R", "C:\\Users\\shira\\Documents\\MSc\\medata\\data\\medata.R")
 
 medata <- read_rds("data/medata.Rds")
 
