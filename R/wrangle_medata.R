@@ -110,8 +110,6 @@ indie_species <- read_csv("data/exotic_species.csv")
 
 medata <- medata %>% left_join(indie_species)
 
-# write_rds(medata, "data/medata.rds")
-
 # Add Length-Weight ratio constants ---------------------------------------
 
 length_weight(species_info$species) %>% colnames()
@@ -161,6 +159,16 @@ medata <- medata %>% mutate(family = case_when(str_detect(species, "Symphodus") 
                                                species == "Mullus.barbatus" ~ "Mullidae",
                                                str_detect(species, "Tripterygion") ~ "Tripterygiidae",
                                                TRUE ~ as.character(family)))
+
+
+# Better site names for Crete expedition ----------------------------------
+# The Crete 'sites' are actually transects here. Separate them (+ remove data that is problematic from 'azz_as')
+
+medata <- medata %>% 
+  mutate(site = case_when(str_starts(site, "assecret") ~ 
+                            str_extract(site, "assecret\\d\\d\\d\\d\\d\\d\\d"),
+                          TRUE ~ as.character(site))) %>% 
+  filter(data.origin != "azz_asi")
 
 # Save --------------------------------------------------------------------
 
