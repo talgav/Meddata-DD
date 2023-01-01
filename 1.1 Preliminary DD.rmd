@@ -20,6 +20,8 @@ library(vegan)
 library(mobr)
 library(viridis)
 library(plotrix)
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\Initial DD plots"
 ```
 
 
@@ -112,7 +114,7 @@ dark_diversity$dark_sp<-ifelse(dark_diversity$pa != "1" & dark_diversity$beal > 
                                "dark",
                                "normal")
 
-exotic<- medata_raw %>% select(species,exotic) %>% distinct(,.keep_all = T)
+exotic<- medata_raw %>% select(species,exotic) %>% distinct(.keep_all = T)
 
 
 
@@ -213,9 +215,10 @@ ggplot()+
 enf %>%  na.omit() %>% filter(type == "dark") %>% 
 ggplot()+
        aes(x=enforcement,y = mean_richness,fill = type )+
-  geom_bar(stat="identity",position=position_dodge(.9))+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
-                 position=position_dodge(.9))+ylab("Mean richness per transect") 
+                 position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()
+
 ```
 plot the mean richness, DD and Total by protection levels
 
@@ -249,21 +252,30 @@ ggplot()+
 protection %>%  na.omit() %>% filter(type != "total") %>% 
 ggplot()+
        aes(x=protection,y = mean_richness,fill = type )+
-  geom_bar(stat="identity")+ylab("Mean richness per transect")
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()
+
+
+ggsave(path = plot_dir, filename = "mean dd and richness by mpa.png")
 
 protection %>%  na.omit() %>% filter(type == "dark") %>% 
 ggplot()+
        aes(x=protection,y = mean_richness)+
-  geom_bar(stat="identity",position=position_dodge(.9))+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
-                 position=position_dodge(.9))+ylab("Mean DD richness per transect") 
+                 position=position_dodge(.9))+ylab("Mean DD richness per transect")+
+  theme_classic()
+
+ggsave(path = plot_dir, filename = "mean dd by mpa.png")
 
 protection %>%  na.omit() %>% filter(type == "observed") %>% 
 ggplot()+
        aes(x=protection,y = mean_richness,fill = type )+
-  geom_bar(stat="identity",position=position_dodge(.9))+
+  geom_bar(stat="identity",position=position_dodge(.9),fill ="#F7D54A")+
   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
-                 position=position_dodge(.9))+ylab("Mean richness per transect") 
+                 position=position_dodge(.9))+ylab("Mean richness per transect") +theme_classic()
+
+ggsave(path = plot_dir, filename = "mean richness by mpa.png")
 
 ```
 
@@ -315,6 +327,12 @@ ggplot()+
   geom_bar(stat="identity",position=position_dodge(.9))+
   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
                  position=position_dodge(.9))+ylab("Mean richness per transect") 
+
+protection %>%  na.omit() %>% filter(type == "total") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9))+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,position=position_dodge(.9))+ylab("Mean richness per transect") 
 ```
 by temp
 
@@ -336,6 +354,11 @@ ggplot()+aes(x=tmean,y=richness,color = type)+
   geom_point()+geom_smooth(method = "lm")+
   facet_wrap(~protection)
 
+
+temp %>% filter(type == "dark") %>% 
+ggplot()+aes(x=tmean,y=richness,color = protection)+
+  geom_point()+geom_smooth(method = "lm")+
+  ylab("Dark diversity")
 
 ```
 
