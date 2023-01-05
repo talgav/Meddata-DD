@@ -211,7 +211,10 @@ ggplot()+
 enf %>%  na.omit() %>% filter(type != "total") %>% 
 ggplot()+
        aes(x=enforcement,y = mean_richness,fill = type )+
-  geom_bar(stat="identity")+ylab("Mean richness per transect")
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))
+
+#ggsave(path = plot_dir, filename = "mean dd and richness by enforcement.png")
 
 enf %>%  na.omit() %>% filter(type == "dark") %>% 
 ggplot()+
@@ -220,6 +223,7 @@ ggplot()+
   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
                  position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()
 
+#ggsave(path = plot_dir, filename = "mean dd by enforcement.png")
 ```
 plot the mean richness, DD and Total by protection levels
 
