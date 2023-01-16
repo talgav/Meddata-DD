@@ -339,6 +339,12 @@ ggplot()+
   geom_bar(stat="identity",position=position_dodge(.9))+
   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,position=position_dodge(.9))+ylab("Mean richness per transect") 
 ```
+
+by reserve size:
+
+by reserve age:
+
+
 by temp
 
 ```{r}

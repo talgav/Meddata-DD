@@ -1,0 +1,296 @@
+---
+title: "1.2 Prilaminary DD with cyprus"
+author: "TG"
+date: "2023-01-09"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+in this script I used beal on 0/1 data
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(ggplot2)
+library(stringr)
+library(rfishbase)
+library(Hmisc)
+library(vegan)
+library(mobr)
+library(viridis)
+library(plotrix)
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\Initial DD plots with cyprus"
+```
+
+
+```{r}
+
+medata_raw <- readRDS("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/cyprus fix/medata_from_git_after_cyp.Rds") # the original data (not really the row-row one)
+
+
+medata<-medata_raw # the verstion ill play with
+
+
+zero_obs<- medata %>% filter(sp.n == 0)
+```
+
+kornati217015286494381202NA
+
+kornati217615472824388942NA
+
+kornati216815286494381202NA
+
+kornati216915286494381202NA
+
+gdor164534866923241672NA
+
+brijuni210313817044485674NA
+
+
+```{r}
+
+```
+
+
+
+convert to wide
+
+
+```{r}
+
+
+medata<-medata %>% select(1:20)
+
+medata<-medata %>% group_by(across(1:19)) %>% summarise(amount = sum(sp.n))
+
+medata_wide<-spread(medata,species,amount,fill = 0)
+
+not_unique<-medata_wide %>% group_by(unique_trans_id) %>% summarise(n = n()) %>% filter(n>1)
+
+
+```
+
+
+convert to presence/absence
+
+```{r}
+
+medata_wide[,19:153]<-decostand(medata_wide[,19:153],method = "pa") 
+
+```
+
+
+crate different sp matrix that contains the beal index value for each species
+
+Beals smoothing replaces each entry in the community data with a probability of a target species occurring in that particular site, based on the joint occurrences of the target species with the species that actually occur in the site. 
+
+* should i calculate beals index sepertly for each contry?
+
+```{r}
+beals <- medata_wide 
+
+beals[,19:153] <- beals(beals[,19:153],type = 0,include = FALSE) 
+
+
+```
+
+```{r}
+boxplot(unlist(beals[,19:153]) ~ unlist(medata_wide[,19:153]), xlab="Presence", ylab="Beals")
+
+
+```
+
+
+
+see for each species if it was present or absent form a site/year along side with its Beals probability  
+
+```{r}
+g_beals <-gather(beals,"species","beal",19:ncol(beals))
+g_beals<-g_beals %>% arrange(site,trans)
+
+g_pa<-gather(medata_wide,"species","pa",19:ncol(medata_wide))
+g_pa<-g_pa %>% arrange(site,trans)
+
+dark_diversity<-left_join(g_beals,g_pa) 
+
+dark_diversity<-dark_diversity %>%
+  mutate(unique_id =paste(site,trans,sep = " "),.after = trans) %>%
+  mutate(region = country,.after = country)
+
+```
+
+
+set a threshold for being included in dark diversity -  the mean beal probability for each species **present** in each country in the data
+
+
+```{r}
+
+threshold <- dark_diversity %>%
+  filter(pa >0) %>% # present species
+  group_by(species,country) %>%
+  summarise(avg_beal_pr =mean(beal)) # mean beal value for the species when present
+
+dark_diversity<- left_join(dark_diversity,threshold)
+
+dark_diversity$avg_plus_five<-dark_diversity$avg_beal_pr+0.05
+
+dark_diversity$dark_sp<-ifelse(dark_diversity$pa == "0" & dark_diversity$beal > dark_diversity$avg_plus_five,
+                               "dark",
+                               "normal")
+
+exotic<- medata_raw %>% select(species,exotic) %>% distinct(.keep_all = T)
+
+
+
+dark_diversity<-left_join(dark_diversity,exotic,by = "species")
+
+```
+
+lets see what species are in the dd assamlege
+
+```{r}
+
+only_dark <-dark_diversity %>% filter(dark_sp=="dark")
+
+
+summary(only_dark$protection)
+summary(only_dark$enforcement)
+summary.factor(only_dark$species)
+
+only_dark
+
+```
+
+
+```{r}
+
+dark_diversity<-dark_diversity %>% drop_na(avg_beal_pr) # remove rows that 
+
+
+#rmove species that wasnt observed and we didint expect tham to be there
+
+dark_diversity$remove = ifelse(dark_diversity$pa ==0 & dark_diversity$dark_sp=="normal",
+                               "rm","keep")
+
+
+dark_diversity<- dark_diversity %>% filter(remove =="keep") %>% select(-remove)
+
+dark_diversity$dark_sp[dark_diversity$dark_sp=="normal"]<-"observed"
+
+dark_diversity<-dark_diversity %>% relocate(dark_sp,.after = species)
+
+dark_diversity$protection[dark_diversity$protection=="TRUE"]<-"MPA"
+dark_diversity$protection[dark_diversity$protection=="FALSE"]<-"outside MPA"
+
+
+```
+
+plot the mean richness, DD and Total by protection levels
+
+```{r}
+
+enf<-dark_diversity %>%
+  group_by(enforcement,dark_sp,unique_id) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(unique_id)
+
+
+enf<-spread(enf,dark_sp,richness,fill = 0)
+
+enf$total<-enf$dark + enf$observed
+
+enf <- gather(enf,type,richness,3:5)
+enf <- enf %>% arrange(unique_id)
+
+enf <- enf %>%
+  group_by(enforcement,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+enf %>%  na.omit() %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9))+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean richness per transect")
+
+enf %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))
+
+#ggsave(path = plot_dir, filename = "mean dd and richness by enforcement.png")
+
+enf %>%  na.omit() %>% filter(type == "dark") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()
+
+#ggsave(path = plot_dir, filename = "mean dd by enforcement.png")
+```
+
+
+plot the mean richness, DD and Total by protection levels
+
+```{r}
+
+protection<-dark_diversity %>%
+  group_by(protection,dark_sp,unique_id) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(unique_id)
+
+
+protection<-spread(protection,dark_sp,richness,fill = 0)
+
+protection$total<-protection$dark + protection$observed
+
+protection <- gather(protection,type,richness,3:5)
+protection <- protection %>% arrange(unique_id)
+
+protection <- protection %>%
+  group_by(protection,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+protection %>%  na.omit() %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9))+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean richness per transect")
+
+protection %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()
+
+
+#ggsave(path = plot_dir, filename = "mean dd and richness by mpa.png")
+
+protection %>%  na.omit() %>% filter(type == "dark") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness)+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean DD richness per transect")+
+  theme_classic()
+
+#ggsave(path = plot_dir, filename = "mean dd by mpa.png")
+
+protection %>%  na.omit() %>% filter(type == "observed") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill ="#F7D54A")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean richness per transect") +theme_classic()
+
+#ggsave(path = plot_dir, filename = "mean richness by mpa.png")
+
+```

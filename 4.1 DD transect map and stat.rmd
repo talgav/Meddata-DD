@@ -1,0 +1,198 @@
+---
+title: "4.1 DD transect map and stat"
+author: "TG"
+date: "2023-01-15"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+Get my final data, statistic and map:
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(ggplot2)
+library(stringr)
+library(rfishbase)
+library(Hmisc)
+library(vegan)
+library(mobr)
+library(viridis)
+library(plotrix)
+library(sjmisc)
+library(sf)
+library(ggspatial)
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\4.1 plots"
+```
+
+
+# MEDATA
+
+```{r}
+
+medata_raw <- readRDS("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/cyprus fix/medata_from_git_after_cyp.Rds") # the original data (not really the row-row one)
+
+
+medata<-medata_raw # the verstion ill play with
+
+
+
+```
+
+## Data cleaning
+
+Remove transects that have only 0 and seems like mistakes:
+
+```{r}
+
+zero_obs<- medata %>% filter(sp.n == 0)
+
+transect_to_remove<-c("kornati217015286494381202NA",
+                      "kornati216815286494381202NA",
+                      "kornati216915286494381202NA",
+                      "gdor164534866923241672NA")
+
+medata<-medata %>% filter(!unique_trans_id %in% transect_to_remove)
+
+```
+
+Examine the species list:
+
+```{r}
+
+species<- medata %>% distinct(species)
+
+```
+
+Remove `.spp` species:
+
+```{r}
+
+Species_to_remove <-species$species[which(str_detect(species$species,".spp")==T)]
+
+medata <-medata %>% filter(!species %in% Species_to_remove)
+
+species<- medata %>% distinct(species,family)
+
+
+```
+
+Remove cryptic species:
+
+Gobiidae, Blenniidae & Tripterygiidae
+
+
+```{r}
+
+Families_to_remove<- c("Gobiidae","Blenniidae","Tripterygiidae")
+
+medata <-medata %>% filter(!family %in% Families_to_remove)
+
+species<- medata %>% distinct(species,family)
+
+```
+
+## some data statistics
+
+count transects per location
+
+```{r}
+
+transect_per_site<-medata %>%
+    group_by(country,site,protection,enforcement) %>%
+  summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+```
+
+Get Transect per:
+
+1. country
+2. country & protection
+3. protecion (Yes/no)
+4. Enforcment level
+
+```{r}
+
+#1
+transect_per_country<-medata %>% group_by(country) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#2
+transect_per_country_pro<-medata %>% group_by(country,protection) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#3
+
+transect_per_protection<-medata %>% group_by(protection) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+#4
+
+transect_per_enforcment<-medata %>% group_by(enforcement) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+
+```
+
+## Study site map
+
+get only distinct point with different lat and lon:
+
+```{r}
+unique_coords<-medata %>% distinct(lat,lon,protection,.keep_all = T) %>% select(country,site,lat,lon,protection,enforcement)
+
+```
+
+
+
+option for map - note Cyprus not here for some reason...
+
+```{r}
+unique_coords$latitude<-ifelse(unique_coords$country=="Cyprus",
+                               unique_coords$lon,
+                               unique_coords$lat)
+
+unique_coords$longtitude<-ifelse(unique_coords$country=="Cyprus",
+                               unique_coords$lat,
+                               unique_coords$lon)
+
+unique_coords<-unique_coords %>% drop_na(protection)
+```
+
+
+
+
+```{r}
+med_seas <- st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp")
+
+
+ggplot(unique_coords) +
+  geom_sf(data = med_seas$geometry, mapping = aes(),fill= "#D4ECFF") +
+  geom_point(data =unique_coords,aes(x = longtitude, y = latitude, color = enforcement), 
+             size = 4,alpha = 0.9,position=position_jitter(h=0.12, w=0.12)) + 
+  xlab("Longitude") + 
+  ylab("Latitude") +
+   annotation_scale(location = "bl", width_hint = 0.4) +
+    annotation_north_arrow(location = "bl", which_north = "true", 
+        pad_x = unit(0.0, "in"), pad_y = unit(0.2, "in"))+
+  theme(panel.background = element_rect(fill = "#FFFAF7"),
+        text=element_text(size=24, family = "serif"))+
+    geom_sf_text(data =med_seas, aes(label = med_seas$NAME),
+                 family = "serif")+
+  scale_color_manual("Enforcment level",values=c("#C42E1C","#D4B04A","#70A34E","#446441"),
+                     labels = c("No protection","Low protection","Medium protection","Full protection"))
+  
+
+ggsave(filename = "med_map.pdf", width=15, height=10)
+
+```
+`#C42E1C` - red
+`#D4B04A`- yellow
+`#70A34E`- light green
+`#446441` - dark green
+
+Ill take it to QGIS!
+
+# Complexity data
+
+
+

@@ -12,10 +12,8 @@ output:
 in this script I used beal on abundance data
 
 ```{r message=FALSE, warning=FALSE}
-library(dplyr)
-library(tidyr)
+
 library(lubridate)
-library(ggplot2)
 library(stringr)
 library(rfishbase)
 library(Hmisc)
@@ -23,6 +21,7 @@ library(vegan)
 library(mobr)
 library(viridis)
 library(plotrix)
+library(tidyverse)
 
 plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\Initial DD plots\\abundane_beal_size_filter"
 ```
@@ -37,6 +36,8 @@ medata<-medata_raw # the verstion ill play with
 
 fish_size_raw<-read_csv("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/data/L_W_shahar_nets.csv")
 
+
+fishbase_maturity<-read.csv("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/maturity.csv")
 ```
 
 ```{r}
@@ -58,12 +59,75 @@ unique_species[which(!unique_species$species %in% fish_size$species),]
 ```
 
 
+
+
+```{r}
+maturity <- fishbase_maturity %>% select(Species,Sex,Type1,LengthMatMin,Lm,Locality)
+
+maturity<-maturity %>% filter(Type1 == "TL")
+
+maturity<-maturity %>% 
+  group_by(Species) %>%
+  summarise("mean_Lm" = mean(Lm,na.rm = T),
+            "mean_Lm_min"= mean(LengthMatMin,na.rm = T)) %>% rename(species = Species)
+
+
+
+unique_species[which(!unique_species$species %in% maturity$Species),]
+
+sp_lm <- left_join(unique_species,maturity)
+
+
+sp_lm<-left_join(sp_lm,fish_size)
+
+sp_lm$united_Lm<-sp_lm$mean_Lm
+
+sp_lm <- sp_lm %>% mutate(united_Lm = coalesce(united_Lm,first_maturity))
+sp_lm <- sp_lm %>% mutate(united_Lm = coalesce(united_Lm,mean_Lm_min))
+
+
+sp_lm_unite <- sp_lm %>% select(species, united_Lm)
+
+
+```
+
+filter my data based on the matuerity:
+
+this is a helf-assed analysis. i have 3 diffrant sources for the data (lm and min lm mixed) and only for 65 species
+
+for now im gonna filter only the species i have data for them and keep the rest as it is...
+
+
+```{r}
+
+medata <- left_join(medata,sp_lm_unite)
+
+
+medata$mature_abundance <- ifelse(is.na(medata$united_Lm) == T,
+                                  medata$sp.n,
+                                  ifelse(medata$sp.length<medata$united_Lm,
+                                         0,
+                                         medata$sp.n))
+
+
+medata$mature_abundance<-ifelse(is.na(medata$mature_abundance)==T,
+                                medata$sp.n,
+                                medata$mature_abundance)
+
+
+medata <- medata %>% relocate(mature_abundance,.after = sp.n)
+
+
+```
+
+
+
 convert to wide
 
 
 ```{r}
-medata<-medata %>% select(1:21)
-medata<-medata %>% group_by(across(1:20)) %>% summarise(amount = sum(sp.n))
+medata<-medata %>% select(1:22)
+medata<-medata %>% group_by(across(1:20)) %>% summarise(amount = sum(mature_abundance))
 medata_wide<-spread(medata,species,amount,fill = 0)
 
 ```
