@@ -1,0 +1,287 @@
+---
+title: "2.2 complexity analyses"
+author: "TG"
+date: "2023-01-03"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(ggplot2)
+library(stringr)
+library(rfishbase)
+library(Hmisc)
+library(vegan)
+library(mobr)
+library(viridis)
+library(plotrix)
+library(mltools)
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\Initial DD plots\\complexity_1"
+```
+
+
+```{r}
+
+comp_data_raw <-read.csv("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/data/Mediterranean_data_COMPLEX.csv")
+
+lab_fish_data_raw <- read.csv("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/data/Med_analyses_data.csv")
+
+comp_data_raw$X<-NULL
+lab_fish_data_raw$X<-NULL
+```
+
+unite data frames
+
+```{r}
+
+colnames(comp_data_raw)
+colnames(lab_fish_data_raw)
+
+
+all_data<-left_join(lab_fish_data_raw,comp_data_raw)
+
+
+```
+
+keep one observer only
+
+```{r}
+one_observer<-list()
+loop<-1
+set.seed(1)
+
+for (i in unique(all_data$id)) {
+  
+  data <- all_data %>% filter(id == i)
+  
+  obs_amount <- length(unique(data$Observer))
+  obs_name <- unique(data$observer)
+  chosen_obs <- sample(obs_name,1)  
+ 
+  filter_data<-data %>% filter(observer == chosen_obs)
+  one_observer[[loop]]<-filter_data
+  loop<-loop+1
+  
+  
+}
+
+one_observer<- bind_rows(one_observer)
+rm(data,filter_data)
+```
+
+
+
+```{r}
+
+one_observer <-one_observer %>% select(-right_observer,-left_observer,-ID,-length,-new_a,-new_b, -new_id,-observer_num,-distance,-direction,-campaign) %>% relocate(species,.after = earth_movers) %>%
+  relocate(abundance,.after = species)
+
+wide_data<- one_observer %>% group_by(across(1:38)) %>% summarise("total_abundance"= sum(abundance))
+
+wide_data<-spread(wide_data,species,total_abundance,fill = 0)
+
+
+
+```
+
+add quantiles to some complexity indeces
+
+```{r}
+wide_data$q_vr<-ntile(wide_data$VerRelief,4)
+wide_data$q_curve<-ntile(wide_data$Curvature,4)
+wide_data$q_freeS<-ntile(wide_data$FreeSpace,4)
+wide_data$q_rug<-ntile(wide_data$Rugosity,4)
+
+wide_data<- wide_data %>% relocate(c(77:80),.after = earth_movers)
+
+```
+
+
+calculate the dark diversity
+
+abundance based beal index:
+
+```{r}
+beals <- wide_data 
+
+beals[,42:80] <- beals(beals[,42:80],type = 1,include = FALSE) 
+```
+
+see for each species if it was present or absent form a site/year along side with its Beals probability  
+
+```{r}
+g_beals <-gather(beals,"species","beal",42:ncol(beals))
+g_beals<-g_beals %>% arrange(date,location,id)
+
+g_pa<-gather(wide_data,"species","pa",42:ncol(wide_data))
+g_pa<-g_pa %>% arrange(date,location,id)
+
+dark_diversity<-left_join(g_beals,g_pa) 
+
+
+```
+
+set a threshold for being included in dark diversity -  the mean beal probability for each species **present** in each country in the data
+
+
+```{r}
+
+threshold <- dark_diversity %>%
+  filter(pa > 0) %>% # present species
+  group_by(species) %>%
+  summarise(avg_beal_pr =mean(beal)) # mean beal value for the species when present
+
+dark_diversity<- left_join(dark_diversity,threshold)
+
+dark_diversity$avg_plus_five<-dark_diversity$avg_beal_pr+0.05
+
+dark_diversity$dark_sp<-ifelse(dark_diversity$pa == "0" & dark_diversity$beal > dark_diversity$avg_plus_five,
+                               "dark",
+                               "normal")
+
+
+```
+
+
+lets see what species are in the dd assamlege
+
+```{r}
+
+only_dark <-dark_diversity %>% filter(dark_sp=="dark")
+
+
+summary.factor(only_dark$species)
+
+
+
+```
+
+```{r}
+dark_diversity$remove = ifelse(dark_diversity$pa ==0 & dark_diversity$dark_sp=="normal",
+                               "rm","keep")
+
+dark_diversity<- dark_diversity %>% ungroup() %>% filter(remove =="keep") %>% select(-remove,-max_richness)
+
+dark_diversity$dark_sp[dark_diversity$dark_sp=="normal"]<-"observed"
+
+dark_diversity<-dark_diversity %>% relocate(dark_sp,.after = species)
+
+
+```
+
+
+```{r}
+complexity<-dark_diversity %>%
+  group_by(id,reserve,enforcement,VerRelief,Curvature,FreeSpace,Rugosity,dark_sp,
+           q_vr,q_curve,q_freeS,q_rug) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(id)
+
+
+complexity<-spread(complexity,dark_sp,richness,fill = 0)
+
+complexity$total<-complexity$dark + complexity$observed
+
+
+
+complexity <- gather(complexity,type,richness,12:14)
+
+complexity <- complexity %>% arrange(id) %>% na.omit()
+
+complexity %>% 
+ggplot()+aes(x=VerRelief,y=richness,color = type)+
+  geom_point()+geom_smooth(method = "lm")+xlab("Vertical relif")
+
+#ggsave(path = plot_dir, filename = "ver_relif.png")
+
+complexity %>% 
+ggplot()+aes(x=Curvature,y=richness,color = type)+
+  geom_point()+geom_smooth(method = "lm")+xlab("curvature index")
+
+ggsave(path = plot_dir, filename = "curvature.png")
+
+
+complexity %>% 
+ggplot()+aes(x=FreeSpace,y=richness,color = type)+
+  geom_point()+geom_smooth(method = "lm")+xlab("Free space")
+
+complexity %>% 
+ggplot()+aes(x=Rugosity,y=richness,color = type)+
+  geom_point()+geom_smooth(method = "lm")+xlab("rugosity")
+
+```
+complexity bins:
+
+vertical relif
+
+```{r}
+
+complex_bins<-dark_diversity %>%
+  group_by(id,reserve,enforcement,VerRelief,Curvature,FreeSpace,Rugosity,dark_sp,
+           q_vr,q_curve,q_freeS,q_rug) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(id)
+
+complex_bins<-spread(complex_bins,dark_sp,richness,fill = 0)
+
+complex_bins$total<-complex_bins$dark + complex_bins$observed
+
+complex_bins <- gather(complex_bins,type,richness,12:14)
+complex_bins <- complex_bins %>% arrange(id)
+
+complex_bins_qvr <- complex_bins %>%
+  group_by(q_vr,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+complex_bins_qvr %>%   
+ggplot()+
+       aes(x=q_vr,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9))+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean richness per transect")
+
+complex_bins_qvr %>%  filter(type != "total") %>% 
+ggplot()+
+       aes(x=q_vr,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+
+  xlab("Complexity (Vertical relif)")
+
+
+ggsave(path = plot_dir, filename = "complexity_bin_vr.png")
+```
+
+Curvature
+
+```{r}
+complex_bins_curve <- complex_bins %>%
+  group_by(q_curve,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+complex_bins_curve %>%   
+ggplot()+
+       aes(x=q_curve,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9))+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean richness per transect")
+
+complex_bins_curve %>%  filter(type != "total") %>% 
+ggplot()+
+       aes(x=q_curve,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+
+  xlab("Complexity (Curvature)")
+
+
+ggsave(path = plot_dir, filename = "complexity_bin_curveature.png")
+```
+
