@@ -50,7 +50,7 @@ low occupancy per basin
 
 medata <-medata %>% group_by(alt_basin,species) %>% mutate(occupancy = n())
 
-medata<-medata %>% filter(occupancy > 5)
+#medata<-medata %>% filter(occupancy > 0)
 
 medata$occupancy<-NULL
 
@@ -180,9 +180,9 @@ ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alp
 remove species which threshold was determine by less than 5 occurrences 
 
 ```{r}
-# dark_diversity <- dark_diversity %>% filter(n > 5)
+dark_diversity <- dark_diversity %>% filter(n > 5)
 
-# ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")
+ ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")
 
 ```
 
