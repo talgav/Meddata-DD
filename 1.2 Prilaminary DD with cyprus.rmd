@@ -50,11 +50,6 @@ gdor164534866923241672NA
 brijuni210313817044485674NA
 
 
-```{r}
-
-```
-
-
 
 convert to wide
 

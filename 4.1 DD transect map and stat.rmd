@@ -25,6 +25,8 @@ library(plotrix)
 library(sjmisc)
 library(sf)
 library(ggspatial)
+library(rgeos)
+library(maptools)
 
 plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\4.1 plots"
 ```
@@ -38,7 +40,6 @@ medata_raw <- readRDS("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/cyprus fix/me
 
 
 medata<-medata_raw # the verstion ill play with
-
 
 
 ```
@@ -96,6 +97,176 @@ species<- medata %>% distinct(species,family)
 
 ```
 
+
+## fix cyprus coords
+
+the lat and lon of cyprus
+
+```{r}
+
+medata$lat_n<-ifelse(medata$country=="Cyprus",
+                               medata$lon,
+                               medata$lat)
+
+medata$lon_n<-ifelse(medata$country=="Cyprus",
+                              medata$lat,
+                              medata$lon)
+
+medata<-medata %>% select(-lat,-lon) %>% 
+  rename("lat" = "lat_n","lon" = "lon_n") %>%
+  relocate(lat, .after = season) %>% 
+  relocate(lon,.before = site)
+
+medata<-medata %>% drop_na(protection)
+
+
+```
+
+## load map
+
+```{r}
+med_seas <- st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp")
+
+```
+
+
+### which points in which polygon
+
+```{r}
+sf_medata<- st_as_sf(medata, coords = c("lon","lat"),crs = "WGS84")
+
+ggplot() +
+  geom_sf(data = med_seas) + # plot the polygons first
+  geom_sf(data= sf_medata)
+```
+
+```{r}
+map_n_point <- st_join(sf_medata, med_seas, join = st_within)
+
+
+ggplot() +
+  geom_sf(data = med_seas) + # plot the polygons first
+  geom_sf(data= map_n_point,aes(color = NAME))
+
+map_n_point %>% filter(is.na(NAME))
+
+rm(sf_medata)
+rm(map_n_point)
+```
+what happens is that I have many points that fall on land...
+I used for loop to fix it: 
+
+ 
+```{r}
+med_seas_sp <- as_Spatial(med_seas)  #create a version of the shp in sp
+
+for (i in 1:nrow(med_seas_sp)) {
+  
+  region <- med_seas_sp[i,]  #select each region
+  region_bf <- gBuffer(region, width = 0.01) #make a buffer around the region
+  other_regs <- med_seas_sp[-i,]  #select all other regions
+  region_bf_land <- gDifference(region_bf, other_regs) #delete part of the buffer overlapping other regions
+  region_bf_land <- spChFIDs(region_bf_land, paste(i))  #indicate ID of each feature
+  region_bf_land <-  SpatialPolygonsDataFrame(region_bf_land, region@data) #give back the info stollen by evil functions
+  
+  if(i == 1){
+    med_seas_bf <- region_bf_land #for the first loop
+  }else{
+    med_seas_bf <- spRbind(med_seas_bf, region_bf_land) #for teh other loopa
+  }
+  
+  print(i)
+}
+
+#get the info of see for each point
+
+medata_sp <- as.data.frame(medata) #make a spatialPointsDataFrame object
+coordinates(medata_sp) <- ~ lon + lat  #inform lon and lat to transform into spatial object
+proj4string(medata_sp) <- proj4string(med_seas_bf) #inform sp points obj coordinate info system
+points_regions <- over(medata_sp, med_seas_bf) #extract bassin info for each point
+medata_sp$Basin <- points_regions$NAME
+medata_sp$colour <- as.integer(as.factor(medata_sp$Basin))
+unique(is.na(medata_sp$Basin))
+
+plot(med_seas_bf,col = 'azure', border = NA, bg = 'grey90')
+plot(medata_sp, add = T, pch = 19, cex = 0.5, col = medata_sp$colour)
+text(med_seas_bf$Longitude, y = med_seas_bf$Latitude,med_seas_bf$NAME) 
+
+```
+
+cool!
+
+now ill add to my non-spatiat medata the basin
+
+```{r}
+basin <-medata_sp@data
+
+basin <- basin %>%  select(Basin,unique_trans_id) %>% distinct(unique_trans_id,.keep_all = T)
+
+medata<-left_join(medata,basin)
+
+medata<-medata %>% relocate(Basin,.after = country)
+
+```
+
+
+Create alternative basin division which:
+
+* add the `Ionian Sea` to the `Adriatic Sea`
+* add the `Ligurian Sea` to the `Mediterranean Sea - Western Basin`
+* separate Israel or Cyprus to the `Levantine Sea`
+
+
+
+```{r}
+medata<-medata %>% mutate(alt_basin = Basin) %>% relocate(alt_basin,.after = Basin)
+
+medata$alt_basin<-ifelse(medata$Basin == "Ionian Sea",
+                         "Adriatic Sea",
+                         medata$alt_basin)
+
+medata$alt_basin<-ifelse(medata$Basin == "Ligurian Sea",
+                         "Mediterranean Sea - Western Basin",
+                         medata$alt_basin)
+
+medata$alt_basin<-ifelse(medata$country %in% c("Israel","Cyprus"),
+                         "Levantine Sea",
+                         medata$alt_basin)
+
+```
+
+fix some point in turkey that needed to be added to the levent
+
+smaller that lat 29.472579
+
+```{r}
+
+medata$alt_basin<-ifelse(medata$country == "Turkey" & medata$lon > 29.472579,"Levantine Sea",medata$alt_basin)
+
+```
+
+
+
+
+change `TRUE` & `FALSE` variables
+
+```{r}
+
+medata$protection<-ifelse(medata$protection==TRUE,"Protected","Not protected")
+
+medata$exotic<-ifelse(medata$exotic==TRUE,"Invasive","Native")
+
+```
+
+# save medata
+
+```{r}
+
+#save(medata,file = "clean_dd_medata.Rdata")
+
+```
+
+
 ## some data statistics
 
 count transects per location
@@ -114,6 +285,9 @@ Get Transect per:
 2. country & protection
 3. protecion (Yes/no)
 4. Enforcment level
+5. basin
+6. alternative basin
+7. alternative basin + protection
 
 ```{r}
 
@@ -130,6 +304,17 @@ transect_per_protection<-medata %>% group_by(protection) %>% summarise("number_o
 
 transect_per_enforcment<-medata %>% group_by(enforcement) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
 
+#5
+
+transect_per_basin <- medata %>% group_by(Basin) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#6
+
+transect_per_altbasin <- medata %>% group_by(alt_basin) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#7
+
+transect_per_altbasin_protection <- medata %>% group_by(alt_basin,protection) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
 
 ```
 
@@ -138,53 +323,37 @@ transect_per_enforcment<-medata %>% group_by(enforcement) %>% summarise("number_
 get only distinct point with different lat and lon:
 
 ```{r}
-unique_coords<-medata %>% distinct(lat,lon,protection,.keep_all = T) %>% select(country,site,lat,lon,protection,enforcement)
+unique_coords<-medata %>% distinct(lat,lon,enforcement,protection,.keep_all = T) %>% select(country,site,lat,lon,protection,enforcement)
 
 ```
 
-
-
-option for map - note Cyprus not here for some reason...
-
+#,position=position_jitter(h=0.12, w=0.12)
 ```{r}
-unique_coords$latitude<-ifelse(unique_coords$country=="Cyprus",
-                               unique_coords$lon,
-                               unique_coords$lat)
-
-unique_coords$longtitude<-ifelse(unique_coords$country=="Cyprus",
-                               unique_coords$lat,
-                               unique_coords$lon)
-
-unique_coords<-unique_coords %>% drop_na(protection)
-```
-
-
-
-
-```{r}
-med_seas <- st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp")
 
 
 ggplot(unique_coords) +
-  geom_sf(data = med_seas$geometry, mapping = aes(),fill= "#D4ECFF") +
-  geom_point(data =unique_coords,aes(x = longtitude, y = latitude, color = enforcement), 
-             size = 4,alpha = 0.9,position=position_jitter(h=0.12, w=0.12)) + 
+  geom_sf(data = med_seas$geometry, mapping = aes(),fill= "azure",color = NA) + ##D4ECFF
+  geom_point(data =unique_coords,aes(x = lon, y = lat, color = enforcement), 
+             size = 2.5,alpha = 0.9,position=position_jitter(h=0.06, w=0.06)) + 
   xlab("Longitude") + 
   ylab("Latitude") +
    annotation_scale(location = "bl", width_hint = 0.4) +
     annotation_north_arrow(location = "bl", which_north = "true", 
         pad_x = unit(0.0, "in"), pad_y = unit(0.2, "in"))+
-  theme(panel.background = element_rect(fill = "#FFFAF7"),
-        text=element_text(size=24, family = "serif"))+
+  theme(panel.background = element_rect(fill = "grey90"),##FFFAF7
+        text=element_text(size=24, family = "serif"),
+        panel.grid.major = element_line(colour = "transparent"))+
     geom_sf_text(data =med_seas, aes(label = med_seas$NAME),
                  family = "serif")+
   scale_color_manual("Enforcment level",values=c("#C42E1C","#D4B04A","#70A34E","#446441"),
                      labels = c("No protection","Low protection","Medium protection","Full protection"))
   
 
-ggsave(filename = "med_map.pdf", width=15, height=10)
+#ggsave(filename = "med_map_v1.pdf", width=15, height=10)
 
 ```
+
+
 `#C42E1C` - red
 `#D4B04A`- yellow
 `#70A34E`- light green
@@ -192,7 +361,100 @@ ggsave(filename = "med_map.pdf", width=15, height=10)
 
 Ill take it to QGIS!
 
-# Complexity data
+### save data
 
+save the unique coordinates data
+
+
+```{r}
+#save(unique_coords,file = "unique_coords.Rdata")
+#write.csv(unique_coords,"unique_coords.csv")
+
+```
+
+# complexity data
+
+```{r}
+
+comp_data_raw <-read.csv("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/data/Mediterranean_data_COMPLEX.csv")
+
+lab_fish_data_raw <- read.csv("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/data/Med_analyses_data.csv")
+
+comp_data_raw$X<-NULL
+lab_fish_data_raw$X<-NULL
+```
+
+unite data frames
+
+```{r}
+
+colnames(comp_data_raw)
+colnames(lab_fish_data_raw)
+
+
+all_data<-left_join(lab_fish_data_raw,comp_data_raw)
+
+```
+
+keep one observer only
+
+```{r}
+one_observer<-list()
+loop<-1
+set.seed(1)
+
+for (i in unique(all_data$id)) {
+  
+  data <- all_data %>% filter(id == i)
+  
+  obs_amount <- length(unique(data$Observer))
+  obs_name <- unique(data$observer)
+  chosen_obs <- sample(obs_name,1)  
+ 
+  filter_data<-data %>% filter(observer == chosen_obs)
+  one_observer[[loop]]<-filter_data
+  loop<-loop+1
+  
+  
+}
+
+one_observer<- bind_rows(one_observer)
+rm(data,filter_data)
+```
+
+
+
+```{r}
+
+one_observer <-one_observer %>% select(-right_observer,-left_observer,-ID,-new_a,-new_b, -new_id,-observer_num,-distance,-direction,-campaign) %>% relocate(species,.after = earth_movers) %>%
+  relocate(abundance,.after = species) %>% 
+  relocate(length,.before = abundance)
+
+
+one_observer<-one_observer %>%  select(-visibility,-time,-max_richness,-max_abundance,-max_biomass,-shannon,-site_n,-season,-year)
+
+
+one_observer<- one_observer %>% group_by(across(1:30)) %>% summarise("total_abundance"= sum(abundance)) %>% ungroup()
+
+```
+
+change columns names and values to fit the medata
+
+```{r}
+
+complexity_clean_data <-one_observer %>% rename("protection" = "reserve", 
+                                                "site" = "location",
+                                                "unique_trans_id" = "id",
+                                                "sp.n" = "total_abundance",
+                                                "sp.length" = "length")
+complexity_clean_data$protection<-ifelse(complexity_clean_data$protection=="In","Protected","Not protected")
+
+```
+
+## save complexity data:
+
+```{r}
+#save(complexity_clean_data,file = "complexity_clean_data.Rdata")
+```
 
 

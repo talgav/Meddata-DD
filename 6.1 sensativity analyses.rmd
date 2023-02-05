@@ -1,0 +1,953 @@
+---
+title: "6.1 sensativity analyses"
+author: "TG"
+date: "2023-01-29"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+# Goals:
+
+In this code I want to check my results sensativity to:
+
+* tresholds: 5%,10% & 50% quantlies
+* species occopancy: 3,5,10,20,50 (before and after calculating beals index)
+* beals on abundances vs presnt/absance data
+* separting israel from the levant basin
+
+
+# Data prep and DD calculations
+
+* load libraries
+
+```{r}
+library(tidyverse)
+library(vegan)
+library(plotrix)
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\results\\Sensativity"
+plot_dir_st1<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\results\\Sensativity\\stage_1"
+```
+
+* load data
+
+This is the **clean** version that have no NA in protection and no cryptic species
+
+```{r}
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/clean_dd_medata.rdata")
+
+clean_dd_medata<-medata # keep the original
+
+```
+
+convert to wide and add column that separte israel
+
+
+```{r}
+medata<-medata %>% select(1:22) # keep only metadate and abundances
+
+medata<-medata %>% group_by(across(1:21)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum ind from the same sp in each transect
+
+
+medata<-medata %>% mutate("alt_alt_basin"= alt_basin) %>% relocate(alt_alt_basin,.after = alt_basin)
+
+medata$alt_alt_basin<-ifelse(medata$country == "Israel",
+                             "Israel",
+                             medata$alt_alt_basin)
+```
+
+# first stage
+
+I will compare the diffrent occupany and quantile
+while the beal will be set on present/abasence, israel will be included in the Levant and occupancy filtering will happened before beal calculation
+
+
+
+```{r}
+
+comper <- data.frame("occup"= rep(c(3,5,10,20,50),each = 3))
+comper$quantile<-rep(c(5,10,50))
+comper$quantile_prob<-rep(c(0.05,0.1,0.5))
+
+comper$id<-paste0("oc",comper$occup,"_qu",comper$quantile)
+
+```
+
+
+```{r}
+
+all_options<-list()
+
+for (i in unique(comper$id)) {
+  
+  #set the conditions
+  
+  comp <-comper %>% filter(id == i)
+  
+  oc<-comp$occup
+  prob<- comp$quantile_prob
+  
+  plot_dir_st1<-paste0("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\results\\Sensativity\\stage_1\\",i)
+  
+  medata_loop <-medata %>% group_by(alt_basin,species) %>% mutate(occupancy = n())
+  medata_loop<-medata_loop %>% filter(occupancy > oc)
+  medata_loop$occupancy<-NULL
+  
+  medata_wide<-spread(medata_loop,species,amount,fill = 0) # convert to wide format
+
+  beals <- medata_wide 
+  beals[,22:ncol(beals)] <- beals(beals[,22:ncol(beals)],type = 0,include = FALSE) 
+ 
+  gather_beals <-gather(beals,"species","beal",22:ncol(beals))
+  gather_beals<-gather_beals %>% arrange(site,trans)
+  dark_diversity<-left_join(gather_beals,medata_loop) 
+  dark_diversity$amount[is.na(dark_diversity$amount)]<-0 # now each transect have list of all species. add 0 instead of NA to the newly created species
+
+  threshold <- dark_diversity %>%
+  filter(amount >0) %>% 
+  group_by(species,alt_basin) %>% # set threshold for each species & basin (alt_basin) 
+  summarise(quantile =quantile(beal, probs = prob), # 5% quantile
+             n = n()) # number of transects used to set threshold
+
+  dark_diversity<- left_join(dark_diversity,threshold)
+
+  dark_diversity<-dark_diversity %>% drop_na(n) # remove the species that did not occur at all in a given basin and thus don't have a threshold
+
+  
+dark_diversity$species_status <- ifelse(dark_diversity$amount == "0" & dark_diversity$beal > dark_diversity$quantile,
+                               "Dark diversity",
+                               "Observed richness")
+
+dark_diversity<- dark_diversity %>% filter(!(species_status == "Observed richness" & amount == 0))
+
+dark_diversity$occup<-rep(oc)
+dark_diversity$quantile_prob<-rep(prob)
+
+all_options[[i]]<-dark_diversity
+
+#plots:
+
+hist <- ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")+ggtitle(i)
+
+ggsave(hist,filename = paste0("hist_",i,".png"),path = plot_dir_st1)
+
+
+# plot by protection
+
+protection <- dark_diversity %>%
+  group_by(unique_trans_id,protection,species_status) %>% 
+  summarise(richness = n_distinct(species)) %>% 
+  arrange(unique_trans_id)
+
+  
+protection<-spread(protection,species_status,richness,fill = 0)
+
+protection$total<-protection$`Dark diversity` + protection$`Observed richness`
+
+
+protection <- gather(protection,type,richness,3:5)
+protection <- protection %>% arrange(unique_trans_id)
+
+
+protection <- protection %>%
+  group_by(protection,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+protection %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+
+  ggtitle(i)+
+  theme(legend.position="none")
+
+ggsave(filename = paste("obs_dd_protection_",i,".png"),path = plot_dir_st1)
+
+protection %>%  filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness)+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean DD richness per transect")+
+  theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("dd_protection_",i,".png"),path = plot_dir_st1)
+ 
+ 
+ enf<-dark_diversity %>%
+  group_by(enforcement,species_status,unique_trans_id) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(unique_trans_id)
+
+
+enf<-spread(enf,species_status,richness,fill = 0)
+
+enf$total<-enf$`Dark diversity` + enf$`Observed richness`
+
+enf <- gather(enf,type,richness,3:5)
+enf <- enf %>% arrange(unique_trans_id)
+
+
+enf <- enf %>%
+  group_by(enforcement,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+enf %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+ggtitle(i)+
+  theme(legend.position="none")
+
+ ggsave(filename = paste("obs_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+
+enf %>%  na.omit() %>% filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+print(i)
+}
+```
+# part 2
+
+same but occurances are calculated after the beals
+
+```{r}
+all_options_oc_after_beal<-list()
+
+for (i in unique(comper$id)) {
+  
+  #set the conditions
+  
+  comp <-comper %>% filter(id == i)
+  
+  oc<-comp$occup
+  oc
+  prob<- comp$quantile_prob
+  
+  plot_dir_st1<-paste0("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\results\\Sensativity\\stage_2\\",i)
+  
+
+  
+  medata_wide<-spread(medata_loop,species,amount,fill = 0) # convert to wide format
+
+  beals <- medata_wide 
+  beals[,22:ncol(beals)] <- beals(beals[,22:ncol(beals)],type = 0,include = FALSE) 
+ 
+  gather_beals <-gather(beals,"species","beal",22:ncol(beals))
+  gather_beals<-gather_beals %>% arrange(site,trans)
+  dark_diversity<-left_join(gather_beals,medata_loop) 
+  dark_diversity$amount[is.na(dark_diversity$amount)]<-0 # now each transect have list of all species. add 0 instead of NA to the newly created species
+
+  threshold <- dark_diversity %>%
+  filter(amount >0) %>% 
+  group_by(species,alt_basin) %>% # set threshold for each species & basin (alt_basin) 
+  summarise(quantile =quantile(beal, probs = prob), # 5% quantile
+             n = n()) # number of transects used to set threshold
+
+  dark_diversity<- left_join(dark_diversity,threshold)
+
+  dark_diversity<-dark_diversity %>% drop_na(n) # remove the species that did not occur at all in a given basin and thus don't have a threshold
+
+  
+dark_diversity$species_status <- ifelse(dark_diversity$amount == "0" & dark_diversity$beal > dark_diversity$quantile,
+                               "Dark diversity",
+                               "Observed richness")
+
+dark_diversity<- dark_diversity %>% filter(!(species_status == "Observed richness" & amount == 0))
+
+dark_diversity$occup<-rep(oc)
+dark_diversity$quantile_prob<-rep(prob)
+
+dark_diversity <- dark_diversity %>% filter(n > oc)
+
+all_options_oc_after_beal[[i]]<-dark_diversity
+
+#plots:
+
+hist <- ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")+ggtitle(i)
+
+ggsave(hist,filename = paste0("b_af_","hist_",i,".png"),path = plot_dir_st1)
+
+
+# plot by protection
+
+protection <- dark_diversity %>%
+  group_by(unique_trans_id,protection,species_status) %>% 
+  summarise(richness = n_distinct(species)) %>% 
+  arrange(unique_trans_id)
+
+  
+protection<-spread(protection,species_status,richness,fill = 0)
+
+protection$total<-protection$`Dark diversity` + protection$`Observed richness`
+
+
+protection <- gather(protection,type,richness,3:5)
+protection <- protection %>% arrange(unique_trans_id)
+
+
+protection <- protection %>%
+  group_by(protection,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+protection %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+
+  ggtitle(i)+
+  theme(legend.position="none")
+
+ggsave(filename = paste("b_af_obs_dd_protection_",i,".png"),path = plot_dir_st1)
+
+protection %>%  filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness)+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean DD richness per transect")+
+  theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("b_af_dd_protection_",i,".png"),path = plot_dir_st1)
+ 
+ 
+ enf<-dark_diversity %>%
+  group_by(enforcement,species_status,unique_trans_id) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(unique_trans_id)
+
+
+enf<-spread(enf,species_status,richness,fill = 0)
+
+enf$total<-enf$`Dark diversity` + enf$`Observed richness`
+
+enf <- gather(enf,type,richness,3:5)
+enf <- enf %>% arrange(unique_trans_id)
+
+
+enf <- enf %>%
+  group_by(enforcement,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+enf %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+ggtitle(i)+
+  theme(legend.position="none")
+
+ ggsave(filename = paste("b_af_obs_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+
+enf %>%  na.omit() %>% filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("b_af_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+print(i)
+}
+
+```
+
+# part 3
+
+now ill rerun previews loops for Beals based on abundance and not PA
+
+occupancy is filterd before cakculating beals index
+```{r}
+pa_before_all_options<-list()
+
+for (i in unique(comper$id)) {
+  
+  #set the conditions
+  
+  comp <-comper %>% filter(id == i)
+  
+  oc<-comp$occup
+  prob<- comp$quantile_prob
+  
+  plot_dir_st1<-paste0("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\results\\Sensativity\\stage_3\\before\\",i)
+  
+  medata_loop <-medata %>% group_by(alt_basin,species) %>% mutate(occupancy = n())
+  medata_loop<-medata_loop %>% filter(occupancy > oc)
+  medata_loop$occupancy<-NULL
+  
+  medata_wide<-spread(medata_loop,species,amount,fill = 0) # convert to wide format
+
+  beals <- medata_wide 
+  beals[,22:ncol(beals)] <- beals(beals[,22:ncol(beals)],type = 1,include = FALSE) 
+ 
+  gather_beals <-gather(beals,"species","beal",22:ncol(beals))
+  gather_beals<-gather_beals %>% arrange(site,trans)
+  dark_diversity<-left_join(gather_beals,medata_loop) 
+  dark_diversity$amount[is.na(dark_diversity$amount)]<-0 # now each transect have list of all species. add 0 instead of NA to the newly created species
+
+  threshold <- dark_diversity %>%
+  filter(amount >0) %>% 
+  group_by(species,alt_basin) %>% # set threshold for each species & basin (alt_basin) 
+  summarise(quantile =quantile(beal, probs = prob), # 5% quantile
+             n = n()) # number of transects used to set threshold
+
+  dark_diversity<- left_join(dark_diversity,threshold)
+
+  dark_diversity<-dark_diversity %>% drop_na(n) # remove the species that did not occur at all in a given basin and thus don't have a threshold
+
+  
+dark_diversity$species_status <- ifelse(dark_diversity$amount == "0" & dark_diversity$beal > dark_diversity$quantile,
+                               "Dark diversity",
+                               "Observed richness")
+
+dark_diversity<- dark_diversity %>% filter(!(species_status == "Observed richness" & amount == 0))
+
+dark_diversity$occup<-rep(oc)
+dark_diversity$quantile_prob<-rep(prob)
+
+pa_before_all_options[[i]]<-dark_diversity
+
+#plots:
+
+hist <- ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")+ggtitle(i)
+
+ggsave(hist,filename = paste0("pa_before_hist_",i,".png"),path = plot_dir_st1)
+
+
+# plot by protection
+
+protection <- dark_diversity %>%
+  group_by(unique_trans_id,protection,species_status) %>% 
+  summarise(richness = n_distinct(species)) %>% 
+  arrange(unique_trans_id)
+
+  
+protection<-spread(protection,species_status,richness,fill = 0)
+
+protection$total<-protection$`Dark diversity` + protection$`Observed richness`
+
+
+protection <- gather(protection,type,richness,3:5)
+protection <- protection %>% arrange(unique_trans_id)
+
+
+protection <- protection %>%
+  group_by(protection,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+protection %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+
+  ggtitle(i)+
+  theme(legend.position="none")
+
+ggsave(filename = paste("pa_before_obs_dd_protection_",i,".png"),path = plot_dir_st1)
+
+protection %>%  filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness)+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean DD richness per transect")+
+  theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("pa_before_dd_protection_",i,".png"),path = plot_dir_st1)
+ 
+ 
+ enf<-dark_diversity %>%
+  group_by(enforcement,species_status,unique_trans_id) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(unique_trans_id)
+
+
+enf<-spread(enf,species_status,richness,fill = 0)
+
+enf$total<-enf$`Dark diversity` + enf$`Observed richness`
+
+enf <- gather(enf,type,richness,3:5)
+enf <- enf %>% arrange(unique_trans_id)
+
+
+enf <- enf %>%
+  group_by(enforcement,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+enf %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+ggtitle(i)+
+  theme(legend.position="none")
+
+ ggsave(filename = paste("pa_before_obs_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+
+enf %>%  na.omit() %>% filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("pa_before_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+print(i)
+}
+```
+
+occupancy is filterd after calculating beals index
+
+```{r}
+all_options_oc_after_beal_abundance<-list()
+
+for (i in unique(comper$id)) {
+  
+  #set the conditions
+  
+  comp <-comper %>% filter(id == i)
+  
+  oc<-comp$occup
+  prob<- comp$quantile_prob
+  
+  plot_dir_st1<-paste0("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\results\\Sensativity\\stage_3\\after\\",i)
+  
+
+  
+  medata_wide<-spread(medata_loop,species,amount,fill = 0) # convert to wide format
+
+  beals <- medata_wide 
+  beals[,22:ncol(beals)] <- beals(beals[,22:ncol(beals)],type = 1,include = FALSE) 
+ 
+  gather_beals <-gather(beals,"species","beal",22:ncol(beals))
+  gather_beals<-gather_beals %>% arrange(site,trans)
+  dark_diversity<-left_join(gather_beals,medata_loop) 
+  dark_diversity$amount[is.na(dark_diversity$amount)]<-0 # now each transect have list of all species. add 0 instead of NA to the newly created species
+
+  threshold <- dark_diversity %>%
+  filter(amount >0) %>% 
+  group_by(species,alt_basin) %>% # set threshold for each species & basin (alt_basin) 
+  summarise(quantile =quantile(beal, probs = prob), # 5% quantile
+             n = n()) # number of transects used to set threshold
+
+  dark_diversity<- left_join(dark_diversity,threshold)
+
+  dark_diversity<-dark_diversity %>% drop_na(n) # remove the species that did not occur at all in a given basin and thus don't have a threshold
+
+  
+dark_diversity$species_status <- ifelse(dark_diversity$amount == "0" & dark_diversity$beal > dark_diversity$quantile,
+                               "Dark diversity",
+                               "Observed richness")
+
+dark_diversity<- dark_diversity %>% filter(!(species_status == "Observed richness" & amount == 0))
+
+dark_diversity$occup<-rep(oc)
+dark_diversity$quantile_prob<-rep(prob)
+
+dark_diversity <- dark_diversity %>% filter(n > oc)
+
+all_options_oc_after_beal_abundance[[i]]<-dark_diversity
+
+#plots:
+
+hist <- ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")+ggtitle(i)
+
+ggsave(hist,filename = paste0("b_af_abun","hist_",i,".png"),path = plot_dir_st1)
+
+
+# plot by protection
+
+protection <- dark_diversity %>%
+  group_by(unique_trans_id,protection,species_status) %>% 
+  summarise(richness = n_distinct(species)) %>% 
+  arrange(unique_trans_id)
+
+  
+protection<-spread(protection,species_status,richness,fill = 0)
+
+protection$total<-protection$`Dark diversity` + protection$`Observed richness`
+
+
+protection <- gather(protection,type,richness,3:5)
+protection <- protection %>% arrange(unique_trans_id)
+
+
+protection <- protection %>%
+  group_by(protection,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+protection %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+
+  ggtitle(i)+
+  theme(legend.position="none")
+
+ggsave(filename = paste("b_af_abun_obs_dd_protection_",i,".png"),path = plot_dir_st1)
+
+protection %>%  filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness)+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean DD richness per transect")+
+  theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("b_af_abun_dd_protection_",i,".png"),path = plot_dir_st1)
+ 
+ 
+ enf<-dark_diversity %>%
+  group_by(enforcement,species_status,unique_trans_id) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(unique_trans_id)
+
+
+enf<-spread(enf,species_status,richness,fill = 0)
+
+enf$total<-enf$`Dark diversity` + enf$`Observed richness`
+
+enf <- gather(enf,type,richness,3:5)
+enf <- enf %>% arrange(unique_trans_id)
+
+
+enf <- enf %>%
+  group_by(enforcement,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+enf %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+ggtitle(i)+
+  theme(legend.position="none")
+
+ ggsave(filename = paste("b_af_abun_obs_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+
+enf %>%  na.omit() %>% filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("b_af_abun_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+print(i)
+}
+
+```
+# part 4
+
+separate Israel...ill do that for occupancy filter before and after
+
+## before
+
+```{r}
+israel_before<-list()
+
+for (i in unique(comper$id)) {
+  
+  #set the conditions
+  
+  comp <-comper %>% filter(id == i)
+  
+  oc<-comp$occup
+  prob<- comp$quantile_prob
+  
+  plot_dir_st1<-paste0("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\results\\Sensativity\\stage_4\\before\\",i)
+  
+  medata_loop <-medata %>% group_by(alt_alt_basin,species) %>% mutate(occupancy = n())
+  medata_loop<-medata_loop %>% filter(occupancy > oc)
+  medata_loop$occupancy<-NULL
+  
+  medata_wide<-spread(medata_loop,species,amount,fill = 0) # convert to wide format
+
+  beals <- medata_wide 
+  beals[,22:ncol(beals)] <- beals(beals[,22:ncol(beals)],type = 0,include = FALSE) 
+ 
+  gather_beals <-gather(beals,"species","beal",22:ncol(beals))
+  gather_beals<-gather_beals %>% arrange(site,trans)
+  dark_diversity<-left_join(gather_beals,medata_loop) 
+  dark_diversity$amount[is.na(dark_diversity$amount)]<-0 # now each transect have list of all species. add 0 instead of NA to the newly created species
+
+  threshold <- dark_diversity %>%
+  filter(amount >0) %>% 
+  group_by(species,alt_alt_basin) %>% 
+  summarise(quantile =quantile(beal, probs = prob),
+             n = n()) 
+
+  dark_diversity<- left_join(dark_diversity,threshold)
+
+  dark_diversity<-dark_diversity %>% drop_na(n) 
+
+  
+dark_diversity$species_status <- ifelse(dark_diversity$amount == "0" & dark_diversity$beal > dark_diversity$quantile,
+                               "Dark diversity",
+                               "Observed richness")
+
+dark_diversity<- dark_diversity %>% filter(!(species_status == "Observed richness" & amount == 0))
+
+dark_diversity$occup<-rep(oc)
+dark_diversity$quantile_prob<-rep(prob)
+
+israel_before[[i]]<-dark_diversity
+
+#plots:
+
+hist <- ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")+ggtitle(i)
+
+ggsave(hist,filename = paste0("isr_before_hist_",i,".png"),path = plot_dir_st1)
+
+
+# plot by protection
+
+protection <- dark_diversity %>%
+  group_by(unique_trans_id,protection,species_status) %>% 
+  summarise(richness = n_distinct(species)) %>% 
+  arrange(unique_trans_id)
+
+  
+protection<-spread(protection,species_status,richness,fill = 0)
+
+protection$total<-protection$`Dark diversity` + protection$`Observed richness`
+
+
+protection <- gather(protection,type,richness,3:5)
+protection <- protection %>% arrange(unique_trans_id)
+
+
+protection <- protection %>%
+  group_by(protection,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+protection %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+
+  ggtitle(i)+
+  theme(legend.position="none")
+
+ggsave(filename = paste("isr_before_obs_dd_protection_",i,".png"),path = plot_dir_st1)
+
+protection %>%  filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness)+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean DD richness per transect")+
+  theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("isr_before_dd_protection_",i,".png"),path = plot_dir_st1)
+ 
+ 
+ enf<-dark_diversity %>%
+  group_by(enforcement,species_status,unique_trans_id) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(unique_trans_id)
+
+
+enf<-spread(enf,species_status,richness,fill = 0)
+
+enf$total<-enf$`Dark diversity` + enf$`Observed richness`
+
+enf <- gather(enf,type,richness,3:5)
+enf <- enf %>% arrange(unique_trans_id)
+
+
+enf <- enf %>%
+  group_by(enforcement,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+enf %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+ggtitle(i)+
+  theme(legend.position="none")
+
+ ggsave(filename = paste("isr_before_obs_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+
+enf %>%  na.omit() %>% filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("isr_before_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+print(i)
+}
+```
+
+## after
+
+```{r}
+isr_after<-list()
+
+for (i in unique(comper$id)) {
+  
+  #set the conditions
+  
+  comp <-comper %>% filter(id == i)
+  
+  oc<-comp$occup
+  prob<- comp$quantile_prob
+  
+  plot_dir_st1<-paste0("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\results\\Sensativity\\stage_4\\after\\",i)
+  
+
+  
+  medata_wide<-spread(medata_loop,species,amount,fill = 0) # convert to wide format
+
+  beals <- medata_wide 
+  beals[,22:ncol(beals)] <- beals(beals[,22:ncol(beals)],type = 0,include = FALSE) 
+ 
+  gather_beals <-gather(beals,"species","beal",22:ncol(beals))
+  gather_beals<-gather_beals %>% arrange(site,trans)
+  dark_diversity<-left_join(gather_beals,medata_loop) 
+  dark_diversity$amount[is.na(dark_diversity$amount)]<-0 # now each transect have list of all species. add 0 instead of NA to the newly created species
+
+  threshold <- dark_diversity %>%
+  filter(amount >0) %>% 
+  group_by(species,alt_alt_basin) %>% # set threshold for each species & basin (alt_basin) 
+  summarise(quantile =quantile(beal, probs = prob), # 5% quantile
+             n = n()) # number of transects used to set threshold
+
+  dark_diversity<- left_join(dark_diversity,threshold)
+
+  dark_diversity<-dark_diversity %>% drop_na(n) # remove the species that did not occur at all in a given basin and thus don't have a threshold
+
+  
+dark_diversity$species_status <- ifelse(dark_diversity$amount == "0" & dark_diversity$beal > dark_diversity$quantile,
+                               "Dark diversity",
+                               "Observed richness")
+
+dark_diversity<- dark_diversity %>% filter(!(species_status == "Observed richness" & amount == 0))
+
+dark_diversity$occup<-rep(oc)
+dark_diversity$quantile_prob<-rep(prob)
+
+dark_diversity <- dark_diversity %>% filter(n > oc)
+
+isr_after[[i]]<-dark_diversity
+
+#plots:
+
+hist <- ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")+ggtitle(i)
+
+ggsave(hist,filename = paste0("isr_af_abun","hist_",i,".png"),path = plot_dir_st1)
+
+
+# plot by protection
+
+protection <- dark_diversity %>%
+  group_by(unique_trans_id,protection,species_status) %>% 
+  summarise(richness = n_distinct(species)) %>% 
+  arrange(unique_trans_id)
+
+  
+protection<-spread(protection,species_status,richness,fill = 0)
+
+protection$total<-protection$`Dark diversity` + protection$`Observed richness`
+
+
+protection <- gather(protection,type,richness,3:5)
+protection <- protection %>% arrange(unique_trans_id)
+
+
+protection <- protection %>%
+  group_by(protection,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+protection %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+
+  ggtitle(i)+
+  theme(legend.position="none")
+
+ggsave(filename = paste("isr_af_obs_dd_protection_",i,".png"),path = plot_dir_st1)
+
+protection %>%  filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness)+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean DD richness per transect")+
+  theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("isr_af_dd_protection_",i,".png"),path = plot_dir_st1)
+ 
+ 
+ enf<-dark_diversity %>%
+  group_by(enforcement,species_status,unique_trans_id) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(unique_trans_id)
+
+
+enf<-spread(enf,species_status,richness,fill = 0)
+
+enf$total<-enf$`Dark diversity` + enf$`Observed richness`
+
+enf <- gather(enf,type,richness,3:5)
+enf <- enf %>% arrange(unique_trans_id)
+
+
+enf <- enf %>%
+  group_by(enforcement,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+enf %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+ggtitle(i)+
+  theme(legend.position="none")
+
+ ggsave(filename = paste("isr_af_obs_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+
+enf %>%  na.omit() %>% filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()+ggtitle(i)
+
+ ggsave(filename = paste("isr_af_dd_enforcment_",i,".png"),path = plot_dir_st1)
+
+print(i)
+}
+
+```
+

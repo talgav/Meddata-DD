@@ -1,0 +1,285 @@
+---
+title: "5.1 dark diversity results"
+author: "TG"
+date: "2023-01-23"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+Abundance based Beals index
+
+# Data prep and DD calculations
+
+* load libraries
+
+```{r}
+library(tidyverse)
+library(vegan)
+library(plotrix)
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\results\\Dark diversity"
+```
+
+* load data
+
+This is the **clean** version that have no NA in protection and no cryptic species
+
+```{r}
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/clean_dd_medata.rdata")
+
+clean_dd_medata<-medata # keep the original
+
+```
+
+convert to wide
+
+
+```{r}
+medata<-medata %>% select(1:22) # keep only metadate and abundances
+
+medata<-medata %>% group_by(across(1:21)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum ind from the same sp in each transect
+
+
+```
+low occupancy per basin
+
+```{r}
+
+medata <-medata %>% group_by(alt_basin,species) %>% mutate(occupancy = n())
+
+medata<-medata %>% filter(occupancy > 5)
+
+medata$occupancy<-NULL
+
+```
+
+
+```{r}
+medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
+
+```
+
+Convert the abundance data to probabilities using Beals index
+
+note - we used presence absence data, type 0, include = False as done in previews papers
+
+```{r}
+
+beals <- medata_wide 
+
+beals[,21:ncol(beals)] <- beals(beals[,21:ncol(beals)],type = 0,include = FALSE) 
+
+```
+
+gather the beal data and unite the species probability data with the abundance data 
+
+```{r}
+gather_beals <-gather(beals,"species","beal",21:ncol(beals))
+gather_beals<-gather_beals %>% arrange(site,trans)
+
+dark_diversity<-left_join(gather_beals,medata) 
+
+dark_diversity$amount[is.na(dark_diversity$amount)]<-0 # now each transect have list of all species. add 0 instead of NA to the newly created species
+
+
+```
+
+
+Set the threshold for being included in the dark diversity:
+
+the mean Beals probability for each **present** species in each basin in the data
+
+
+```{r}
+
+threshold <- dark_diversity %>%
+  filter(amount >0) %>% 
+  group_by(species,alt_basin) %>% # set threshold for each species & basin (alt_basin) 
+  summarise(beal_mean_prob_when_present = mean(beal),# mean beal value for the species when present
+            beal_mean_plus_5 = beal_mean_prob_when_present + 0.05, # mean + 0.05 (old version)
+            beal_quantile_5 =quantile(beal, probs = 0.05), # 5% quantile
+            beal_quantile_1 = quantile(beal, probs = 0.01), # 1% quantile
+            beal_quantile_10 =quantile(beal, probs = 0.1), # 10% quantile 
+            beal_quantile_50 =quantile(beal, probs = 0.5), # 50 % quantile (median)
+            min_beal = min(beal), # minimum value
+            max_beal = max(beal), # maximum value
+            n = n()) # number of transects used to set threshold
+
+
+```
+
+Test for one species in one basin
+
+
+```{r}
+
+threshold_test <- dark_diversity %>%
+  filter(amount > 0,species =="Epinephelus.marginatus",alt_basin =="Levantine Sea") %>%
+  mutate(beal_mean_prob_when_present = mean(beal),
+            beal_quantile_5 =quantile(beal, probs = 0.05),
+            beal_quantile_1 = quantile(beal, probs = 0.01),
+            beal_quantile_10 =quantile(beal, probs = 0.1),
+            beal_mean_plus_5 = beal_mean_prob_when_present +0.05,
+            beals_median  = median(beal),
+            min_beal = min(beal),
+            max_beal = max(beal),
+            n = n())
+
+
+
+ggplot(data = threshold_test,aes(x= beal))+geom_histogram()+
+geom_vline(xintercept = threshold_test$beal_quantile_5,col = "blue")+
+geom_vline(xintercept = threshold_test$beal_mean_prob_when_present,col = "green")+
+geom_vline(xintercept = threshold_test$beal_quantile_10,col = "brown")+
+geom_vline(xintercept = threshold_test$beal_mean_plus_5,col = "red")
+```
+
+
+join with dark diversity data
+
+```{r}
+
+dark_diversity<- left_join(dark_diversity,threshold)
+
+dark_diversity<-dark_diversity %>% drop_na(n) # remove the species that did not occur at all in a given basin and thus don't have a threshold
+
+
+```
+
+
+determine which species should be included in the dark diversity
+
+`amount == 0` - the species is absent
+`dark_diversity$beal > dark_diversity$beal_quantile_X` - its probability to occur is larger than X% quantile
+
+```{r}
+
+dark_diversity$species_status <- ifelse(dark_diversity$amount == "0" & dark_diversity$beal > dark_diversity$beal_quantile_5,
+                               "Dark diversity",
+                               "Observed richness")
+
+```
+
+
+remove observation that are not on the site species pool, i.e., `status = Observed richness` and `amount = 0`
+
+```{r}
+
+dark_diversity<- dark_diversity %>% filter(!(species_status == "Observed richness" & amount == 0))
+
+
+```
+
+```{r}
+ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")
+```
+
+remove species which threshold was determine by less than 5 occurrences 
+
+```{r}
+# dark_diversity <- dark_diversity %>% filter(n > 5)
+
+# ggplot(data = dark_diversity,aes(x= n,fill = species_status))+geom_histogram(alpha = 0.5,color = "black")
+
+```
+
+
+lets take a look at the dark assemblage
+
+```{r}
+only_dark <-dark_diversity %>% filter(species_status =="Dark diversity")
+
+summary.factor(only_dark$protection)
+summary(only_dark$enforcement)
+summary.factor(only_dark$species)
+
+```
+
+
+# Dark diversity by protection
+
+```{r}
+
+protection <- dark_diversity %>%
+  group_by(unique_trans_id,protection,species_status) %>% 
+  summarise(richness = n_distinct(species)) %>% 
+  arrange(unique_trans_id)
+
+  
+protection<-spread(protection,species_status,richness,fill = 0)
+
+protection$total<-protection$`Dark diversity` + protection$`Observed richness`
+
+
+protection <- gather(protection,type,richness,3:5)
+protection <- protection %>% arrange(unique_trans_id)
+
+
+ggplot(protection,aes(x = protection,y = richness, fill = type))+geom_boxplot()
+
+protection <- protection %>%
+  group_by(protection,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+
+protection %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()
+
+
+protection %>%  filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=protection,y = mean_richness)+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean DD richness per transect")+
+  theme_classic()
+
+```
+
+# Dark diversity by enforcment
+
+```{r}
+
+enf<-dark_diversity %>%
+  group_by(enforcement,species_status,unique_trans_id) %>%
+  summarise(richness = n_distinct(species)) %>% arrange(unique_trans_id)
+
+
+enf<-spread(enf,species_status,richness,fill = 0)
+
+enf$total<-enf$`Dark diversity` + enf$`Observed richness`
+
+enf <- gather(enf,type,richness,3:5)
+enf <- enf %>% arrange(unique_trans_id)
+
+
+ggplot(enf,aes(x = enforcement,y = richness, fill = type))+geom_boxplot()
+
+enf <- enf %>%
+  group_by(enforcement,type) %>%
+  summarise("mean_richness"= mean(richness),
+            "se"=std.error(richness)) 
+
+enf %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity")+ylab("Mean richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()
+
+
+
+enf %>%  na.omit() %>% filter(type == "Dark diversity") %>% 
+ggplot()+
+       aes(x=enforcement,y = mean_richness,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()
+
+```
