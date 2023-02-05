@@ -21,18 +21,16 @@ medata<-medata %>% select(1:22) # keep only metadate and abundances
 
 medata<-medata %>% group_by(across(1:21)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum ind from the same sp in each transect
 
+medata$alt_basin<- ifelse(medata$country == "Israel","Israel",medata$alt_basin)
+
 medata <-medata %>% group_by(alt_basin,species) %>% mutate(occupancy = n())  
 
-medata<-medata %>% filter(occupancy > 3)
+medata<-medata %>% filter(occupancy >5)
 
 medata$occupancy<-NULL
 
 medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
 
-
-
-
-#dd<-DarkDiv(medata_wide[,21:ncol(medata_wide)])
 ```
 
 
@@ -44,17 +42,29 @@ data_list<-list()
 for (i in unique(medata_wide$alt_basin)) {
  
    basin_data<-medata_wide %>% filter(alt_basin == i)
-   dd<-DarkDiv(basin_data[,21:ncol(basin_data)],method = "Hypergeometric")
+   
+   sp_matrix<-basin_data[,21:ncol(basin_data)]
+   
+   sp_matrix<-sp_matrix[, colSums(sp_matrix != 0) > 0]
+  
+   dd<-DarkDiv(sp_matrix,method = "Hypergeometric",wa =F)
+   
+   #dd<-DarkDiv(sp_matrix,method = "ThresholdBeals",limit = "outlier",const = 0.05)
+   #dd<-DarkDiv(sp_matrix,method = "Favorability",wa =F)
    
    index_list[[i]]<-dd
    
    dd_dark<-dd[["Dark"]]
    dd_dark<-as.data.frame(dd_dark)
+   dd_dark[dd_dark<0.9]<-0
+  # dd_dark[dd_dark>0]<-1
    dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T))
    dd_dark_sum<- dd_dark %>% select(dark)
    
    dd_pool<-dd[["Pool"]]
    dd_pool<-as.data.frame(dd_pool)
+   dd_pool[dd_pool<0.9]<-0
+  # dd_pool[dd_pool>0]<-1
    dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T))
    dd_pool_sum<-dd_pool %>% select(total)
    
@@ -78,36 +88,18 @@ dd_data<-bind_rows(data_list)
 
 plot
 
-```{r}
-
-
-
-protection <- gather(dd_data,type,richness,21:23)
-protection <- protection %>% arrange(unique_trans_id)
-
-
-protection <- protection %>%
-  group_by(protection,type) %>%
-  summarise("mean_richness"= mean(richness),
-            "se"=std.error(richness)) 
-
-
-protection %>%  na.omit() %>% filter(type != "total") %>% 
-ggplot()+
-       aes(x=protection,y = mean_richness,fill = type )+
-  geom_bar(stat="identity")+ylab("Mean richness per transect")+
-  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()
-```
 
 ```{r}
 enf <- gather(dd_data,type,richness,21:23)
-enf <- enf %>% arrange(unique_trans_id)
+
 
 
 enf <- enf %>%
   group_by(enforcement,type) %>%
   summarise("mean_richness"= mean(richness),
-            "se"=std.error(richness)) 
+            "median"=median(richness),
+            "se"=std.error(richness),
+            "n"=n()) 
 
 
 enf %>%  na.omit() %>% filter(type != "total") %>% 
@@ -116,16 +108,29 @@ ggplot()+
   geom_bar(stat="identity")+ylab("Mean richness per transect")+
   scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()
 
+
+
+enf %>%  na.omit() %>% filter(type != "total") %>% 
+ggplot()+
+       aes(x=enforcement,y = median,fill = type )+
+  geom_bar(stat="identity")+ylab("Median richness per transect")+
+  scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()
+
+
+
 enf %>%  na.omit() %>% filter(type == "dark") %>% 
 ggplot()+
        aes(x=enforcement,y = mean_richness,fill = type )+
   geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
                  position=position_dodge(.9))+ylab("Mean Dark diversity per transect") +theme_classic()
+
+
+enf %>%  na.omit() %>% filter(type == "dark") %>% 
+ggplot()+
+       aes(x=enforcement,y = median,fill = type )+
+  geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
+  ylab("Median Dark diversity per transect") +theme_classic()
+
+
 ```
-fished vs non fished
-
-```{r}
-
-```
-
