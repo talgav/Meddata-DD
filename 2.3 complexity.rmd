@@ -1,0 +1,285 @@
+---
+title: "2.3 complexity"
+author: "TG"
+date: "2023-02-20"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(stringr)
+#library(Hmisc)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+#library(gridExtra)
+#library(ggiraphExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(glmmTMB)
+library(DHARMa)
+library(ggeffects)
+library(DarkDiv)
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/complexity_clean_data.Rdata")
+
+```
+
+```{r}
+comp<-complexity_clean_data
+
+comp$sp.length<-NULL
+
+comp<-comp %>%  group_by(across(1:29)) %>% summarise(amount = sum(sp.n)) %>% ungroup()
+
+comp_wide<-spread(comp,species,amount,fill = 0)
+
+```
+
+
+
+```{r}
+sp_matrix<-comp_wide[,29:ncol(comp_wide)]
+   
+sp_matrix<-sp_matrix[, colSums(sp_matrix != 0) > 0] # Remove species with all 0
+  
+dd<-DarkDiv(sp_matrix,method = "Hypergeometric")
+
+dd_dark<-dd[["Dark"]]
+dd_dark<-as.data.frame(dd_dark)
+   
+dd_dark[dd_dark<0.9]<-0 # Set threshold
+dd_dark[dd_dark>0]<-1 # convert to 1 sp adbove the th
+
+dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T))
+dd_dark_sum<- dd_dark %>% select(dark)
+
+
+dd_pool<-dd[["Pool"]]
+dd_pool<-as.data.frame(dd_pool)
+  
+dd_pool[dd_pool<0.9]<-0
+dd_pool[dd_pool>0]<-1
+   
+dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T))
+dd_pool_sum<-dd_pool %>% select(total)
+
+
+comp_dd<-comp_wide[,1:28]
+comp_dd<-as.data.frame(comp_dd)
+
+comp_dd<-bind_cols(comp_dd,dd_pool_sum)
+comp_dd<-bind_cols(comp_dd,dd_dark_sum)
+
+comp_dd$observed_richness<-comp_dd$total-comp_dd$dark
+
+```
+
+```{r}
+comp_dd$enforcement<-as.character(comp_dd$enforcement)
+comp_dd$enforcement<-as.numeric(comp_dd$enforcement)
+
+
+hist(comp_dd$dark)
+hist(comp_dd$observed_richness)
+hist(comp_dd$total)
+
+data_for_model<-comp_dd %>% filter(observed_richness >1)
+
+hist(data_for_model$dark)
+hist(data_for_model$observed_richness)
+hist(data_for_model$total)
+
+ggplot(data = data_for_model,aes(x =VerRelief,y = total,color = protection ))+geom_point()+geom_smooth(method = "lm")
+
+
+ggplot(data = data_for_model,aes(x=VerRelief,color = protection))+ geom_histogram()+facet_wrap(~ site)
+
+ggplot(data = data_for_model,aes(x=Curvature,color = protection))+ geom_histogram()
+
+```
+
+
+# vertical relif models
+
+## species pool
+
+```{r}
+
+mean(data_for_model$total)
+var(data_for_model$total)
+
+# need to use poisson
+
+
+vr_pool_2<- glmmTMB(log(total) ~  VerRelief+site, data=data_for_model,family = gaussian())
+
+summary(vr_pool_2)
+
+vr_pool_2<- glmmTMB(log(total) ~  VerRelief*protection +(1|site), data=data_for_model,family = gaussian())
+
+vr_pool_2<- glmmTMB(total ~  VerRelief  
+                    , data=data_for_model,family = poisson())
+
+vr_pool_2<- glmmTMB(total ~  VerRelief + protection, data=data_for_model,family = poisson())
+
+
+
+
+
+
+vr_pool_2<- glm(total ~  VerRelief + protection , data=data_for_model,family = quasipoisson())
+
+summary(vr_pool_2)
+
+plot(simulateResiduals(vr_pool_2))
+
+
+
+
+
+
+
+
+# Print the model summary
+
+
+summary(vr_pool_1)
+
+plot_model(vr_pool_2, type = "pred", terms = c("VerRelief"),allow.new.levels=TRUE)
+
+plot_model(vr_pool_1, type = "pred", terms = c("protection","VerRelief"),allow.new.levels=TRUE)
+
+diagnose(vr_pool_2)
+
+vr_pool_2<-glmmTMB(total ~  VerRelief * protection, data=data_for_model,family = poisson)
+
+summary(vr_pool_2)
+
+
+plot_model(vr_pool_2, type = "pred", terms = c("VerRelief","protection"),allow.new.levels=TRUE)
+
+vr_pool_3<-glmmTMB(total ~  VerRelief , data=data_for_model,family = gaussian())
+summary(vr_pool_3)
+plot_model(vr_pool_3, type = "pred", terms =c("VerRelief"))
+
+
+vr_pool_4<-glmmTMB(total ~  VerRelief + mean_depth , data=data_for_model,family = poisson)
+summary(vr_pool_4)
+
+
+plot_model(vr_pool_4, type = "pred", terms = c("VerRelief","mean_depth"),allow.new.levels=TRUE)
+
+```
+
+
+
+
+
+## dark
+
+```{r}
+vr_1<-glmmTMB(log(dark+1) ~  VerRelief + protection+ (1|site), data=data_for_model,family = gaussian())
+
+summary(vr_1)
+
+
+plot(simulateResiduals(vr_1))
+
+plot_model(vr_1, type = "pred", terms = c("VerRelief","protection"),allow.new.levels=TRUE)
+
+
+vr_2<-glmmTMB(dark ~  VerRelief * protection+ (1|site), data=data_for_model,family = poisson)
+
+summary(vr_2)
+
+plot_model(vr_2, type = "pred", terms = c("VerRelief","protection"),allow.new.levels=TRUE)
+
+vr_1<-glmer.nb(dark ~  VerRelief + protection+ (1|site), data=data_for_model)
+
+
+```
+
+## observed
+
+```{r}
+vr_obs_1<-glmmTMB(log(observed_richness) ~  VerRelief + protection +(1|site) , data=data_for_model,family = gaussian())
+summary(vr_obs_1)
+
+
+vr_1_res = simulateResiduals(vr_obs_1)
+plot(vr_1_res)
+
+
+vr_obs_1<-glmer.nb(observed_richness ~  VerRelief + protection +(1|site) , data=data_for_model)
+
+vr_obs_1<-glm(observed_richness ~  VerRelief + protection,data=data_for_model,family =negative.binomial(2))
+
+
+
+
+plot_model(vr_obs_1, type = "pred", terms = c("VerRelief","protection"))
+
+
+
+
+
+vr_obs_2<-glmmTMB(observed_richness ~  VerRelief + protection, data=data_for_model,family = poisson)
+
+
+summary(vr_obs_2)
+
+
+plot_model(vr_obs_2, type = "pred", terms = c("VerRelief","protection"),allow.new.levels=TRUE)
+
+
+```
+
+
+
+# curvature
+
+## dark
+
+```{r}
+curv_1<-glmmTMB(dark~ protection + Curvature +(1|site), data=data_for_model,family = poisson())
+summary(curv_1)
+plot_model(curv_1, type = "pred", terms = c("Curvature","protection"))
+
+
+curv_1_res = simulateResiduals(curv_1)
+plot(curv_1_res)
+
+```
+
+
+```{r}
+curv_obs_1<-glmmTMB(observed_richness~ protection + Curvature +(1|site), data=data_for_model,family = poisson)
+summary(curv_obs_1)
+
+
+curv_obs_2<-glmmTMB(observed_richness~  Curvature , data=data_for_model,family = poisson)
+summary(curv_obs_2)
+```
+
+```{r}
+curv_total_1<-glmmTMB(total~ Curvature + protection + (1|site),data=data_for_model,family = gaussian())
+summary(curv_total_1)
+AIC(curv_total_1)
+
+plot_model(curv_total_1, type = "pred", terms = c("Curvature","protection"))
+
+curv_total_1_res = simulateResiduals(curv_total_1)
+plot(curv_total_1_res)
+
+
+curv_total_2<-glmmTMB(total~ Curvature * protection + (1|site),data=data_for_model,family = gaussian)
+summary(curv_total_2)
+AIC(curv_total_2)
+
+plot_model(curv_total_2, type = "pred", terms = c("Curvature","protection"))
+```
+
+

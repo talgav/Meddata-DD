@@ -1,0 +1,268 @@
+---
+title: "2.4 complexity"
+author: "TG"
+date: "2023-03-01"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(stringr)
+#library(Hmisc)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+#library(gridExtra)
+#library(ggiraphExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(glmmTMB)
+library(DHARMa)
+library(ggeffects)
+library(DarkDiv)
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/complexity_clean_data.Rdata")
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\complexity model plots"
+
+```
+
+# final data orgenaizing
+
+```{r}
+comp<-complexity_clean_data
+
+comp$sp.length<-NULL
+
+comp<-comp %>%  group_by(across(1:29)) %>% summarise(amount = sum(sp.n)) %>% ungroup()
+
+comp_wide<-spread(comp,species,amount,fill = 0)
+
+```
+
+# Dark diversity estimation
+
+```{r}
+sp_matrix<-comp_wide[,29:ncol(comp_wide)]
+   
+sp_matrix<-sp_matrix[, colSums(sp_matrix != 0) > 0] # Remove species with all 0
+  
+dd<-DarkDiv(sp_matrix,method = "Hypergeometric")
+
+dd_dark<-dd[["Dark"]]
+dd_dark<-as.data.frame(dd_dark)
+   
+dd_dark[dd_dark<0.9]<-0 # Set threshold
+dd_dark[dd_dark>0]<-1 # convert to 1 sp adbove the th
+
+dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T))
+dd_dark_sum<- dd_dark %>% select(dark)
+
+
+dd_pool<-dd[["Pool"]]
+dd_pool<-as.data.frame(dd_pool)
+  
+dd_pool[dd_pool<0.9]<-0
+dd_pool[dd_pool>0]<-1
+   
+dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T))
+dd_pool_sum<-dd_pool %>% select(total)
+
+
+comp_dd<-comp_wide[,1:28]
+comp_dd<-as.data.frame(comp_dd)
+
+comp_dd<-bind_cols(comp_dd,dd_pool_sum)
+comp_dd<-bind_cols(comp_dd,dd_dark_sum)
+
+comp_dd$observed_richness<-comp_dd$total-comp_dd$dark
+
+```
+
+# data prepartion for model
+
+```{r}
+comp_dd$enforcement<-as.character(comp_dd$enforcement)
+comp_dd$enforcement<-as.numeric(comp_dd$enforcement)
+
+data_for_model<-comp_dd %>% filter(observed_richness >1)
+data_for_model$protection<-as.factor(data_for_model$protection)
+
+```
+
+clean environment
+
+```{r}
+rm(list = setdiff(ls(), c("comp_dd","comp","data_for_model","plot_dir")))
+
+```
+
+# Models
+
+## Vertical relif
+
+### Dark
+
+```{r}
+vr_dark<-glmmTMB(log(dark+1) ~  VerRelief + protection+ (1|site), data=data_for_model,family = gaussian())
+
+summary(vr_dark)
+
+plot(simulateResiduals(vr_dark))
+
+plot_model(vr_dark, type = "pred", terms = c("VerRelief","protection"),allow.new.levels=TRUE)
+
+gg_dark_vr=ggpredict(vr_dark,terms = c('VerRelief[-2:4 by=0.5]'))
+
+ggplot()+
+  theme_classic()+
+  geom_line(data = gg_dark_vr,aes(x= x,y = predicted),size=1.5,color= "darkblue")+
+  geom_ribbon(data = gg_dark_vr,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="darkblue")+
+  xlab("Vertical relif") +
+  ylab("Dark diversity")
+
+ggsave("vr_dark.png",path = plot_dir,width = 12,height = 7)
+
+```
+
+### Observed
+
+
+```{r}
+vr_observed<-glmmTMB(log(observed_richness) ~  VerRelief + protection+ (1|site), data=data_for_model,family = gaussian())
+
+summary(vr_observed)
+
+plot(simulateResiduals(vr_observed))
+
+
+gg_obs_vr=ggpredict(vr_observed,terms = c('VerRelief[-2:4 by=0.5]'))
+
+
+ggplot()+
+  theme_classic()+
+  geom_line(data = gg_obs_vr,aes(x= x,y = predicted),size=1.5,color= "gold")+
+  geom_ribbon(data = gg_obs_vr,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="gold")+
+  xlab("Vertical relif") +
+  ylab("Observed richness")
+
+ggsave("vr_observed.png",path = plot_dir,width = 12,height = 7)
+
+```
+
+### Total
+
+```{r}
+vr_total<-glmmTMB(log(total) ~  VerRelief + protection + (1|site), data=data_for_model,family = gaussian())
+
+summary(vr_total)
+
+plot(simulateResiduals(vr_total))
+
+
+gg_total_vr=ggpredict(vr_total,terms = c('VerRelief[-2:4 by=0.5]'))
+
+
+ggplot()+
+  theme_classic()+
+  geom_line(data = gg_total_vr,aes(x= x,y = predicted),size=1.5,color= "darkgreen")+
+  geom_ribbon(data = gg_total_vr,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="darkgreen")+
+  xlab("Vertical relif") +
+  ylab("Species pool")
+
+ggsave("vr_total.png",path = plot_dir,width = 12,height = 7)
+
+```
+
+
+```{r}
+tab_model(vr_total,vr_observed,vr_dark, dv.labels = c("Total", "Observed","Dark"),file = "vr_results.xls")
+```
+
+
+
+## Curvature
+
+### Dark
+
+```{r}
+curv_dark<-glmmTMB(log(dark+1) ~  Curvature + protection + (1|site), data=data_for_model,family = gaussian())
+
+summary(curv_dark)
+
+plot(simulateResiduals(curv_dark))
+
+plot_model(curv_dark, type = "pred", terms = c("Curvature","protection"),allow.new.levels=TRUE)
+
+gg_dark_curv=ggpredict(curv_dark,terms = c('Curvature[-2:4 by=0.5]'))
+
+ggplot()+
+  theme_classic()+
+  geom_line(data = gg_dark_curv,aes(x= x,y = predicted),size=1.5,color= "darkblue")+
+  geom_ribbon(data = gg_dark_curv,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="darkblue")+
+  xlab("Curvature") +
+  ylab("Dark diversity")
+
+ggsave("Curvature_dark.png",path = plot_dir,width = 12,height = 7)
+```
+
+
+### Observed
+
+```{r}
+curv_observed<-glmmTMB(log(observed_richness) ~  Curvature + protection + (1|site), data=data_for_model,family = gaussian())
+
+summary(curv_observed)
+
+plot(simulateResiduals(curv_observed))
+
+plot_model(curv_observed, type = "pred", terms = c("Curvature","protection"),allow.new.levels=TRUE)
+
+
+gg_obs_curv=ggpredict(curv_observed,terms = c('Curvature[-2:4 by=0.5]'))
+
+ggplot()+
+  theme_classic()+
+  geom_line(data = gg_obs_curv,aes(x= x,y = predicted),size=1.5,color= "gold")+
+  geom_ribbon(data = gg_obs_curv,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="gold")+
+  xlab("Curvature") +
+  ylab("Observed richness")
+
+ggsave("Curvature_obs.png",path = plot_dir,width = 12,height = 7)
+```
+
+
+### Total
+
+
+```{r}
+curv_total<-glmmTMB(log(total) ~  Curvature + protection + (1|site), data=data_for_model,family = gaussian())
+
+summary(curv_total)
+
+plot(simulateResiduals(curv_total))
+
+plot_model(curv_total, type = "pred", terms = c("Curvature","protection"),allow.new.levels=TRUE)
+
+gg_total_curv=ggpredict(curv_total,terms = c('Curvature[-2:4 by=0.5]'))
+
+ggplot()+
+  theme_classic()+
+  geom_line(data = gg_total_curv,aes(x= x,y = predicted),size=1.5,color= "darkgreen")+
+  geom_ribbon(data = gg_total_curv,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="darkgreen")+
+  xlab("Curvature") +
+  ylab("Observed richness")
+
+ggsave("Curvature_total.png",path = plot_dir,width = 12,height = 7)
+```
+
+models summary table
+
+```{r}
+tab_model(curv_total,curv_observed,curv_dark, dv.labels = c("Total", "Observed","Dark"),file = "curve_results.xls")
+
+```
+

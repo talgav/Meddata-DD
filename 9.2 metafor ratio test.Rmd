@@ -1,0 +1,476 @@
+---
+title: "9.2 metafor ratio test"
+author: "TG"
+date: "2023-08-23"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r}
+library(DarkDiv)
+library(tidyverse)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+library(gridExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(glmmTMB)
+library(DHARMa)
+library(ggeffects)
+library(SingleCaseES)
+library(metafor)
+
+select <- dplyr::select
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/clean_dd_medata.rdata")
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\Pairwise"
+
+library(metafor)
+```
+
+
+## Final data prepartion
+
+```{r}
+
+clean_dd_medata<-medata # keep the original
+
+medata<-medata %>% select(1:23) # keep only metadata and abundances
+
+medata<-medata %>% group_by(across(1:22)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum ind from the same sp in each transect
+
+medata$alt_basin<- ifelse(medata$country == "Israel","Israel",medata$alt_basin) # Sep Israel
+
+medata<-medata %>% filter(country != "Cyprus") # Remove cyprus data
+
+
+medata$alt_basin[medata$new_site_name=="cabrera"]<-"Balearic (Iberian Sea)" # one basin for the site
+
+medata$alt_basin[medata$new_site_name=="illa_de_l'aire"]<-"Balearic (Iberian Sea)" # one basin for the site
+
+medata$alt_basin<-ifelse(medata$alt_basin == "Levantine Sea","Mediterranean Sea - Eastern Basin",medata$alt_basin)# restore turkey transect to previos basin
+
+medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
+
+# remove this site - outlyar since there is feeding of groupers in the site
+
+medata_wide<-medata_wide %>% filter(new_site_name !="Crete_Kalydon")
+
+```
+
+
+
+```{r}
+index_list<-list()
+data_list<-list()
+
+for (i in unique(medata_wide$alt_basin)) {
+ 
+   basin_data<-medata_wide %>% filter(alt_basin == i)
+   
+   sp_matrix<-basin_data[,22:ncol(basin_data)]
+   
+   sp_matrix<-sp_matrix[, colSums(sp_matrix != 0) > 0] # Remove species with all 0
+  
+   dd<-DarkDiv(sp_matrix,method = "Hypergeometric")
+   
+   index_list[[i]]<-dd
+   
+   dd_dark<-dd[["Dark"]]
+   dd_dark<-as.data.frame(dd_dark)
+   
+   dd_dark[dd_dark<0.9]<-0 # Set threshold
+   dd_dark[dd_dark>0]<-1 # convert to 1 species above the th
+   
+   dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T))
+   dd_dark_sum<- dd_dark %>% select(dark)
+   
+   dd_pool<-dd[["Pool"]]
+   dd_pool<-as.data.frame(dd_pool)
+  
+   dd_pool[dd_pool<0.9]<-0
+   dd_pool[dd_pool>0]<-1
+   
+   dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T))
+   dd_pool_sum<-dd_pool %>% select(total)
+   
+   medata_dd<-basin_data[,1:21]
+   medata_dd<-as.data.frame(medata_dd)
+
+   medata_dd<-bind_cols(medata_dd,dd_pool_sum)
+   medata_dd<-bind_cols(medata_dd,dd_dark_sum)
+
+   medata_dd$observed_richness<-medata_dd$total-medata_dd$dark
+   
+   data_list[[i]]<-medata_dd
+}
+
+dd_data<-bind_rows(data_list)
+```
+
+clean 
+
+```{r}
+rm(list=setdiff(ls(), "dd_data"))
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\Pairwise"
+
+labl<-c(dark = "Dark diversity",
+        observed_richness = "Observed richness",
+        total="Total species pool")
+
+pair_list<-list()
+site_list<-list()
+```
+
+
+
+* brijoni
+
+
+```{r}
+Brijoni <- dd_data %>% filter(site == "brijuni")
+
+Brijoni<-gather(Brijoni,"index","richness",22:24)
+
+Brijoni$pair<-"Brijoni"
+
+site_list[[1]]<-Brijoni
+
+Brijoni <- Brijoni %>% group_by(country,site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+Brijoni$pair<-"Brijoni"
+
+pair_list[[1]]<-Brijoni
+```
+
+* israel
+
+```{r}
+isr<-dd_data %>% filter(country == "Israel",site != "habonim")
+
+isr<-gather(isr,"index","richness",22:24)
+isr$pair<-isr$site
+site_list[[2]]<-isr
+
+isr <- isr %>% group_by(country,site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+isr$pair<-isr$site
+
+pair_list[[2]]<-isr
+
+```
+
+* France
+
+```{r}
+Banyuls <- dd_data %>% filter(new_site_name == "Banyuls")
+
+Banyuls<-gather(Banyuls,"index","richness",22:24)
+
+Banyuls$pair <-"Banyuls"
+
+site_list[[3]]<-Banyuls
+
+Banyuls <- Banyuls %>% group_by(country,new_site_name,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+Banyuls$pair <-"Banyuls"
+
+pair_list[[3]]<-Banyuls
+```
+
+* spain
+
+note - there are two possible control sites for Cabrera MPA, I used Dragonera because it a bit closer and also an island  and omit formentor *but* we might change it later or use 2 pairs (or aggregate the two control sites...)
+
+note 2- same goes for cap_de_creus - no pair so i ommited but we should talk to the team and see what they think.
+
+```{r}
+spain<-dd_data %>% filter(country == "Spain")
+
+spain<-gather(spain,"index","richness",22:24)
+
+spain <- spain %>% mutate(pair = case_when(
+  new_site_name == "formentera"~ "Formentera",
+  new_site_name == "eivissa"~ "Formentera",
+  new_site_name == "cabrera"~"Cabrera",
+  new_site_name == "dragonera"~ "Cabrera",
+  new_site_name == "cavalleria"~ "Cavalleria",
+  new_site_name == "illa_de_l'aire"~ "Cavalleria",
+  new_site_name == "medes"~ "Medes"
+  
+  ))
+
+spain<-spain %>% drop_na(pair)
+
+
+site_list[[4]]<-spain
+
+spain$site<-spain$pair
+
+spain <- spain %>% group_by(country,site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+spain$pair <- spain$site
+
+pair_list[[4]] <- spain
+
+```
+
+Italy
+
+Need to decide how to treat those 3 sites...
+
+  new_site_name == "carloforte"~"pair_2" , # control
+  new_site_name == "asinara"~ "pair_2", # protected 3 & 2
+  new_site_name == "tavolara"~ "pair_2", # protected 3
+  
+i did two different comparison with carloforta as the control for both MPAs  
+  
+  
+
+```{r}
+itl<-dd_data %>% filter(country == "Italy",data.origin != "Belmaker")
+
+
+itl<-gather(itl,"index","richness",22:24)
+
+itl <- itl %>% mutate(pair = case_when(
+  new_site_name == "portofino"~ "Portofino",
+  new_site_name == "genova"~ "Portofino",
+  new_site_name == "torre_guaceto"~ "Torre guaceto",
+  new_site_name == "otranto"~ "Torre guaceto",
+  new_site_name == "asinara"~ "Asinara", 
+  new_site_name == "carloforte"~"Asinara"
+  ))
+
+itl<-itl %>% drop_na(pair)
+
+itl_2<-dd_data %>% filter(country == "Italy",new_site_name %in% c("tavolara","carloforte"))
+
+itl_2<-gather(itl_2,"index","richness",22:24)
+
+itl_2$pair = "Tavolara"
+
+itl<-rbind(itl,itl_2)
+
+site_list[[5]]<-itl
+itl$site<-itl$pair
+
+itl <- itl %>% group_by(country,site,protection,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+itl$pair <- itl$site
+
+pair_list[[5]] <- itl
+
+
+```
+
+
+```{r}
+
+
+
+log_data_raw<-bind_rows(site_list)
+
+
+rm(list=setdiff(ls(), "log_data_raw"))
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\Pairwise"
+
+labl<-c(dark = "Dark diversity",
+        observed_richness = "Observed richness",
+        total="Total species pool")
+
+
+metafor_data<-log_data_raw
+
+metafor_data$protection<-ifelse(metafor_data$protection=="Protected","MPA","control")
+
+
+```
+
+the example for the code was taken from
+
+[link] https://bookdown.org/robcrystalornelas/meta-analysis_of_ecological_data/random-effects-meta-analysis.html
+
+
+# dark diversity
+
+organize the data for the `escalc` function 
+
+```{r}
+
+metafor_dark<-metafor_data %>%
+  filter(index =="dark") %>%
+  group_by(pair,protection) %>% 
+  summarise("mean"= mean(richness),
+            "sd"=sd(richness),
+            "n" = n()) %>% 
+  pivot_wider(names_from=protection, 
+              values_from=c(mean, 
+                            sd,
+                            n)) 
+
+head(metafor_dark)
+
+```
+
+
+the `escalc` can calculate the effect size based on many different indexes:
+
+### Standardized Mean Difference
+
+The Standardized Mean Difference (SMD) was one of the first effect sizes used in published meta-analyses and it remains widely used in both ecological meta-research. There are many ways to calculate the SMD for a dataset, the one we will use here, and the default for the metafor package is called Hedge’s g. Hedges’ g is a useful effect size in ecological meta-analysis because it statistically corrects for variance that may be introduced when sample sizes are small. Another benefit of using Hedges’ g as an effect size is that by having a “standardized” effect we can synthesize data that were measured on a different scales. 
+
+The term scales here depends on your research question and systems. For example, we would likely not want to directly pool the raw data on species richness from many different articles because the articles likely vary in their exact definition of how they quantified species richness (i.e., did authors measure richness of all native tree species or richness of native tree and herbaceous plants?).
+
+*in my case i can do direct comparison as species richness was surveyed in similar methods*
+
+The Hedges’ g effect size converts all of these richness measurements to a common unitless scale for each study, so that eventually pooling of the data together in a meta-analytic framework is more appropriate. The Hedges’ g calculations in metafor also take into account sample size for treatment and control groups as well as measures of variation for both groups.
+
+
+```{r}
+SMD_effect_sizes_dark <- escalc( # Function for calculating effect sizes.
+    "SMD",
+    # Specify the effect size we want to calculate. In this case ROM for the Ratio of Means or Response Ratio
+    m1i = mean_MPA,              # MPA mean richness  
+    n1i = n_MPA,                 # MPA sample size
+    sd1i = sd_MPA,               # MPA SD
+    m2i = mean_control,          # control mean richness
+    n2i = n_control,             # control sample size
+    sd2i = sd_control,           # control site SD
+    data = metafor_dark # This is where the escalc function can find all the data for our meta-analysis
+  )
+```
+
+`yi` =  Effect size calculated for each row in the database
+`vi` =  Variance for each effect size.
+
+### Response Ratio (aka Ratio of Means)
+
+Another way to calculate the effect size.
+
+The next effect size we’ll discuss is called the Response Ratio (RR). It’s another frequently used effect size in both ecological and medical meta-analysis. This effect size is most often used when the effects being compared both have positive signs or both have negative signs. For example, in our invasion impact dataset, but values from the invaded and control sites will have positive signs since richness values (the average number of species at a site or across several sites) can’t be negative.
+
+*same in my case, only positive values*
+
+Using our example data, an effect size is calculated for each paired richness measurements, and it is a ratio of the average richness at invaded sites in one article over the average richness of sites without the focal invasive species. The mathematical representation of the response ratio is relatively straightforward : 
+
+`ln(mean_mpa/mean_control)`
+
+As you will see in later calculations, a positive value for  
+ln(RR)means that the numerator of the response ratio is larger than the denominator, and a negative value would indicate that the denominator is larger than the numerator. In the context of our example data, a positive ln(RR) suggest that invasive species increase richness where they are found, and negative ln(RR) suggests that invasive species decrease richness.
+
+One benefit of using the Response Ratio is that ln(RR) can quickly be back-transformed to the RR to provide % increases or decreases in richness with invasive species.
+
+You can find many examples of ecological meta-analyses that use the response ratio as an effect size from a wide variety of disciplines. For example there are meta-analyses using the Response Ratio that investigate how cover crops change biomass on farms, how bee density influences crop production, bat activity in wet vs. dry Australian landscapes, and how changes in natural habitat affects reptile abundance.
+
+
+```{r}
+RR_effect_sizes_dark <- escalc( # Function for calculating effect sizes.
+    "ROM",
+    # Specify the effect size we want to calculate. In this case ROM for the Ratio of Means or Response Ratio
+    m1i = mean_MPA,              # MPA mean richness  
+    n1i = n_MPA,                 # MPA sample size
+    sd1i = sd_MPA,               # MPA SD
+    m2i = mean_control,          # control mean richness
+    n2i = n_control,             # control sample size
+    sd2i = sd_control,           # control site SD
+    data = metafor_dark # This is where the escalc function can find all the data for our meta-analysis
+  )
+
+```
+
+
+```{r}
+random_effect_model_results <- rma(yi, # this is the effect size from each row in database
+                                   vi, # measure of variance from each row in database
+                                   method = "REML", # Specifies fixed effects model
+                                   slab = pair, #  prepares  labels for the forest plot 
+                                   data = RR_effect_sizes_dark) # Let R know the dataframe we'll use for our model calculations
+
+random_effect_model_results
+
+
+
+forest(
+  RR_effect_sizes_dark$yi, # These are effect sizes from each row in database
+  RR_effect_sizes_dark$vi, # These are variances from each row in database
+  annotate = T,            # Setting this to false prevents R from including CIs for each effect sizes 
+  order="obs",             # set the order of the sites 
+  slab = random_effect_model_results$slab, # A individual effect size labeled 
+  xlab = "ln(Response Ratio)", # Label for x-axis
+  cex = .8,                    # Text side for study labels
+  pch = 15,                    # shape of bars in forest plot
+  cex.lab = 1                  # Size of x-axis label
+)
+
+```
+
+
+# observed richness
+
+
+
+```{r}
+metafor_obs<-metafor_data %>%
+  filter(index =="observed_richness") %>%
+  group_by(pair,protection) %>% 
+  summarise("mean"= mean(richness),
+            "sd"=sd(richness),
+            "n" = n()) %>% 
+  pivot_wider(names_from=protection, 
+              values_from=c(mean, 
+                            sd,
+                            n)) 
+
+
+
+RR_effect_sizes_obs <- escalc( # Function for calculating effect sizes.
+    "ROM",
+    # Specify the effect size we want to calculate. In this case ROM for the Ratio of Means or Response Ratio
+    m1i = mean_MPA,              # MPA mean richness  
+    n1i = n_MPA,                 # MPA sample size
+    sd1i = sd_MPA,               # MPA SD
+    m2i = mean_control,          # control mean richness
+    n2i = n_control,             # control sample size
+    sd2i = sd_control,           # control site SD
+    data = metafor_obs # This is where the escalc function can find all the data for our meta-analysis
+  )
+
+
+
+obs_random_effect_model_results <- rma(yi, # this is the effect size from each row in database
+                                   vi, # measure of variance from each row in database
+                                   method = "REML", # Specifies fixed effects model
+                                   slab = pair, #  prepares  labels for the forest plot 
+                                   data = RR_effect_sizes_obs) # Let R know the dataframe we'll use for our model calculations
+
+obs_random_effect_model_results
+
+
+
+forest(
+  RR_effect_sizes_obs$yi, # These are effect sizes from each row in database
+  RR_effect_sizes_obs$vi, # These are variances from each row in database
+  annotate = T,            # Setting this to false prevents R from including CIs for each effect sizes 
+  order="obs",             # set the order of the sites 
+  slab = random_effect_model_results$slab, # A individual effect size labeled 
+  xlab = "ln(Response Ratio)", # Label for x-axis
+  cex = .8,                    # Text side for study labels
+  pch = 15,                    # shape of bars in forest plot
+  cex.lab = 1                  # Size of x-axis label
+)
+```
+
+
+
+
+
+

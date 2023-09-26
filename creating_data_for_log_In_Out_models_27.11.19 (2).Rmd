@@ -1,0 +1,324 @@
+---
+title: "log_In_Out"
+author: "ori frid"
+date: "6/23/2019"
+output: html_document
+---
+
+```{r}
+
+#glm_uvc_data <- read.csv("D:/Google Drive/PhD/MPA/data/glm_uvc_data.csv")
+
+#glm_uvc_data <- read.csv("C:/Users/Farida/Google Drive/PhD/MPA/data/glm_uvc_data_26.11.19.csv")
+
+glm_uvc_data <- read.csv("D:/Google Drive/PhD/MPA/data/glm_uvc_data_26.11.19.csv")
+
+
+```
+
+```{r}
+library(lme4)
+library(MuMIn)
+library(tidyverse)
+library(MASS)
+library(relaimpo)
+library(gridExtra)
+library(lmerTest)
+library(readr) 
+library(data.table)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(pROC)
+library(gtools)
+library(boot)
+library(bestglm)
+library(tidyr)
+library(tidyverse)
+library(sjPlot)
+library(sjmisc)
+#theme_set(theme_sjplot())
+library(vegan)
+library(nlme)
+library(mgcv)
+library(reshape2)
+
+```
+
+
+```{r}
+
+#most of the sites were removed because they were in the area of greece and there are no real reserves over there
+#the site TREMITI wich is a reserve was removed for these analysis because there were no refernce unprotected sites for it. 
+
+remove_sites=c("AYVALIK","PIPERI","GOKOVA","FETHIYE",
+               "KAS","ADRASAN","KARPATHOS","KIMOLOS","GYAROS",
+               "ALONISSOS","MARATEA","TREMITI","Linosa","Habonim","Lampedusa","Malta")
+
+str(glm_uvc_data)
+
+glm_uvc_data$site=as.character(glm_uvc_data$site)
+
+glm_data<-glm_uvc_data %>% filter(!site %in% remove_sites)
+
+
+#here i change the catergory 1 of protection to NOT protected
+
+#and so it is that 0 and 1 are fished and 2 and 3 are protected
+
+glm_data$protection=as.character(glm_data$protection)
+
+glm_data$protection=ifelse(glm_data$enforcement==1,"NO",glm_data$protection)
+
+#insert a colomn for east and west
+
+glm_data$levant="WEST"
+
+glm_data$levant=ifelse(glm_data$country=="Israel","EAST",glm_data$levant)
+
+glm_data$levant[is.na(glm_data$levant)] <-"WEST"
+
+unique(glm_data$levant)
+
+```
+
+
+```{r}
+
+#to identify specie that are in both east and west med sea and with a suffucuent sample size
+
+species_numbers=glm_data%>%
+group_by(species,levant)%>%
+summarise(abundance=sum(abundance),biomass=sum(biomass,na.rm=T))
+
+good_species=species_numbers%>%
+    filter(abundance>15)
+
+good_species=as.data.frame(good_species)
+good_species$species=as.character(good_species$species)
+
+final_sp=data.frame()
+
+for (i in unique(good_species$species)){
+  
+    sp=good_species%>%
+    filter(species==i)
+  
+    sp=as.data.frame(sp)
+    
+    number=as.numeric(nrow(sp))
+    
+  sp_1=as.data.frame(ifelse(number>1,i,"no_good"))
+
+  colnames(sp_1)<-"sp_1"
+  
+   final_sp=rbind.data.frame(final_sp,sp_1)
+}
+
+final_sp=final_sp%>%
+  filter(sp_1!="no_good")
+ 
+```
+
+```{r}
+
+species=unique(glm_data$species)
+
+glm_data$species=as.character(glm_data$species)
+
+save_species=c("Atherina.boyeri","Boops.boops","Caranx.crysos","Chromis.chromis","Coris.julis","Diplodus.annularis","Diplodus.sargus","Diplodus.vulgaris","Epinephelus.costae","Epinephelus.marginatus","Mugil.cephalus","Mullus.surmuletus","Mycteroperca.rubra","Oblada.melanura","Scorpaena.maderensis","Serranus.cabrilla","Serranus.scriba","Sparisoma.cretense","Sparus.aurata","Symphodus.tinca","Symphodus.roissali","Symphodus.mediterraneus","Thalassoma.pavo")
+
+
+glm_data<-glm_data %>% filter(species %in% save_species)
+
+#mean_biomass=species_data%>%
+#group_by(site,protection)%>%
+#summarize(biomass=mean(biomass))
+
+```
+
+```{r}
+
+#ogenize data by coupled site name
+
+#one name for a site with yes and no in the protection
+
+glm_data$site <- as.character(glm_data$site)
+
+unique(glm_data$site)
+
+glm_data$site[glm_data$country=="Croatia"] <-"Croatia"
+
+glm_data$site[glm_data$country=="Sicily"] <-"Sicily"
+
+glm_data$site[glm_data$site == "TORRE GUACETO"] <- "Italy"
+glm_data$site[glm_data$site == "OTRANTO"] <- "Italy"
+glm_data$site[glm_data$site == "PORTO CESAREO"] <- "Italy"
+glm_data$site[glm_data$site == "PORTO CESAREO"] <- "Italy"
+
+glm_data$site[glm_data$site == "GENOVA"] <- "Italy_west"
+glm_data$site[glm_data$site == "PORTOFINO"] <- "Italy_west"
+
+#glm_data$site[glm_data$site == "Lampedusa"] <- "Lampedusa_Malta"
+#glm_data$site[glm_data$site == "Malta"] <- "Lampedusa_Malta"
+
+glm_data$site[glm_data$site == "ASINARA_add"] <- "Sardinia"
+glm_data$site[glm_data$site == "Asinara"] <- "Sardinia"
+glm_data$site[glm_data$site == "TAVOLARA"] <- "Sardinia"
+glm_data$site[glm_data$site == "CAPO CACCIA"] <- "Sardinia"
+glm_data$site[glm_data$site == "CARLOFORTE"] <- "Sardinia"
+
+glm_data$site[glm_data$site == "ILLA DE L'AIRE"] <- "Minorca"
+glm_data$site[glm_data$site == "CAVALLERIA"] <- "Minorca"
+
+
+glm_data$site[glm_data$site == "DRAGONERA"] <- "Mallorca"
+glm_data$site[glm_data$site == "FORMENTOR"] <- "Mallorca"
+glm_data$site[glm_data$site == "CABRERA"] <- "Mallorca"
+
+glm_data$site[glm_data$site == "FORMENTERA"] <- "Ibiza"
+glm_data$site[glm_data$site == "EIVISSA"] <- "Ibiza"
+
+glm_data$site[glm_data$site == "CAP DE CREUS"] <- "Spain"
+glm_data$site[glm_data$site == "MONTGRI"] <- "Spain"
+glm_data$site[glm_data$site == "MEDES"] <- "Spain"
+
+unique(glm_data$site)
+
+```
+
+```{r}
+
+species_sample_size=glm_data%>%
+  group_by(species)%>%
+  summarize(sum_abundance=sum(abundance))
+
+```
+
+
+```{r}
+
+#caclulating the mean biomass for each species in a site 
+
+mean_biomass=glm_data%>%
+dplyr::group_by(site,protection,species)%>%
+dplyr::summarize(mean_biomass=mean(biomass,na.rm=T))
+
+mean_temp=glm_data%>%
+  group_by(site)%>%
+  summarize(mean_tmean=mean(tmean,na.rm=T))
+
+mean_biomass=merge(mean_biomass,mean_temp,all.x = T)
+
+
+#turn to a matrix
+
+mean_biomass_2 <- dcast(mean_biomass, site + species + mean_tmean ~ protection, value.var ="mean_biomass")
+
+#there is one site in banyuls that i could not categorize acording to protected or fished so there is a colomn of na i now remove
+
+mean_biomass_2=mean_biomass_2[ , -which(names(mean_biomass_2) %in% "NA")]
+
+#creating log biomass
+
+mean_biomass_2$log_ratio=log((mean_biomass_2$YES+1)/(mean_biomass_2$NO+1))
+
+```
+
+```{r}
+
+#enter the sample size for each site
+
+#number of transects in a site including protected and fished. 
+#each site apears twice once for protectedd and once for fished
+
+
+number_of_transects=glm_data%>%
+dplyr:: group_by(site,protection)%>%
+dplyr:: summarize(number_of_transects=length(unique(trans)))
+
+number_of_transects=na.omit(number_of_transects) 
+
+names(number_of_transects)[names(number_of_transects) == "protection"] <- "sample_size"
+
+number_of_transects$sample_size=revalue(number_of_transects$sample_size, c("YES"="sample_in","NO"="sample_out"))
+
+number_of_transects_2= acast(number_of_transects, site~sample_size,  value.var= "number_of_transects" , fun.aggregate =sum, margIns = F)
+
+number_of_transects_2=data.frame(number_of_transects_2)
+
+library(data.table)
+setDT(number_of_transects_2, keep.rownames = TRUE)[]
+
+names(number_of_transects_2)[names(number_of_transects_2) == "rn"] <- "site"
+
+number_of_transects_2
+
+mean_biomass_2=merge(mean_biomass_2,number_of_transects_2,all.x = T)
+
+```
+
+```{r}
+
+#calculate SD pooled 
+
+colnames(mean_biomass_2)
+
+mean_biomass_2$Spooled=sqrt(((mean_biomass_2$sample_in-1)) * sd(mean_biomass_2$YES)^2+
+(mean_biomass_2$sample_out-1) * (sd(mean_biomass_2$NO)^2)/
+((mean_biomass_2$sample_in + mean_biomass_2$sample_out)-2))
+
+mean_biomass_2$Varlogresponse=(mean_biomass_2$Spooled)^2*(1/mean_biomass_2$sample_in*(mean_biomass_2$YES)^2)+(1/mean_biomass_2$sample_out*(mean_biomass_2$NO)^2)
+
+```
+
+
+
+
+```{r}
+
+unique(glm_data$site)
+#climatic affinity 
+
+#Temp_pref <- read.csv("D:/Google Drive/PhD/MPA/pref_temptature/Chung/Temp preference - chueng 2013.csv")
+#for chung there are many species missing. 
+
+# So i use my climatice afinity caclulated from fish base
+
+sp_cf<- read.csv("D:/Google Drive/PhD/MPA/pref_temptature/sp_climatic_afinity_14.04.19.csv")
+#sp_cf <- read.csv("C:/Users/Farida/Google #Drive/PhD/MPA/pref_temptature/sp_climatic_afinity_14.04.19.csv")
+
+mean_biomass_3=merge(mean_biomass_2,sp_cf,all.x = T)
+
+#vulnrability to fishing
+
+good_fish_data <- read.csv("D:/Google Drive/PhD/MPA/good_fish_data.csv")
+#good_fish_data <- read.csv("C:/Users/Farida/Google Drive/PhD/MPA/good_fish_data.csv")
+
+vulnrability_data=good_fish_data[c(1,5)]
+
+mean_biomass_4=merge(mean_biomass_3,vulnrability_data)
+
+#aspect ratio
+
+#as <- read.csv("C:/Users/Farida/Google Drive/PhD/MPA/data/aspect_ratio_mean.csv")
+#as<- read.csv("D:/Google Drive/PhD/MPA/data/aspect_ratio_mean.csv")
+#as$species=sub(' ', '.', as$species)
+
+ca_fb <- read.csv("D:/Google Drive/PhD/MPA/data/climatic_afinity__and_resilience_fish_base.csv")
+
+#ca_fb <- read.csv("C:/Users/Farida/Google Drive/PhD/MPA/data/climatic_afinity__and_resilience_fish_base.csv")
+
+mean_biomass_5=merge(mean_biomass_4,ca_fb,all.x=T)
+
+#mean_biomass_6=mean_biomass_6%>%
+#filter(species!="Caranx.crysos")
+
+mean_biomass_5$mean_mean <- ifelse(is.na(mean_biomass_5$mean_mean), mean_biomass_5$mean_ca_fb, mean_biomass_5$mean_mean)
+
+write.csv(mean_biomass_5,"D:/Google Drive/PhD/MPA/data/data_for_log_inout_model_01.12.19.csv")
+
+#write.csv(mean_biomass_5,"C:/Users/Farida/Google Drive/PhD/MPA/data/data_for_log_inout_model_01.12.19.csv")
+
+```
+

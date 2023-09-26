@@ -1,0 +1,427 @@
+---
+title: "9.1 log ratio plot"
+author: "TG"
+date: "2023-06-11"
+output: html_document
+---
+
+
+```{r}
+library(DarkDiv)
+library(tidyverse)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+library(gridExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(glmmTMB)
+library(DHARMa)
+library(ggeffects)
+library(SingleCaseES)
+select <- dplyr::select
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/clean_dd_medata.rdata")
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\Pairwise"
+```
+
+## Final data prepartion
+
+```{r}
+
+clean_dd_medata<-medata # keep the original
+
+medata<-medata %>% select(1:23) # keep only metadata and abundances
+
+medata<-medata %>% group_by(across(1:22)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum ind from the same sp in each transect
+
+medata$alt_basin<- ifelse(medata$country == "Israel","Israel",medata$alt_basin) # Sep Israel
+
+medata<-medata %>% filter(country != "Cyprus") # Remove cyprus data
+
+
+medata$alt_basin[medata$new_site_name=="cabrera"]<-"Balearic (Iberian Sea)" # one basin for the site
+
+medata$alt_basin[medata$new_site_name=="illa_de_l'aire"]<-"Balearic (Iberian Sea)" # one basin for the site
+
+medata$alt_basin<-ifelse(medata$alt_basin == "Levantine Sea","Mediterranean Sea - Eastern Basin",medata$alt_basin)# restore turkey transect to previos basin
+
+medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
+
+# remove this site - outlyar since there is feeding of groupers in the site
+
+medata_wide<-medata_wide %>% filter(new_site_name !="Crete_Kalydon")
+
+```
+
+
+
+```{r}
+index_list<-list()
+data_list<-list()
+
+for (i in unique(medata_wide$alt_basin)) {
+ 
+   basin_data<-medata_wide %>% filter(alt_basin == i)
+   
+   sp_matrix<-basin_data[,22:ncol(basin_data)]
+   
+   sp_matrix<-sp_matrix[, colSums(sp_matrix != 0) > 0] # Remove species with all 0
+  
+   dd<-DarkDiv(sp_matrix,method = "Hypergeometric")
+   
+   index_list[[i]]<-dd
+   
+   dd_dark<-dd[["Dark"]]
+   dd_dark<-as.data.frame(dd_dark)
+   
+   dd_dark[dd_dark<0.9]<-0 # Set threshold
+   dd_dark[dd_dark>0]<-1 # convert to 1 species above the th
+   
+   dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T))
+   dd_dark_sum<- dd_dark %>% select(dark)
+   
+   dd_pool<-dd[["Pool"]]
+   dd_pool<-as.data.frame(dd_pool)
+  
+   dd_pool[dd_pool<0.9]<-0
+   dd_pool[dd_pool>0]<-1
+   
+   dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T))
+   dd_pool_sum<-dd_pool %>% select(total)
+   
+   medata_dd<-basin_data[,1:21]
+   medata_dd<-as.data.frame(medata_dd)
+
+   medata_dd<-bind_cols(medata_dd,dd_pool_sum)
+   medata_dd<-bind_cols(medata_dd,dd_dark_sum)
+
+   medata_dd$observed_richness<-medata_dd$total-medata_dd$dark
+   
+   data_list[[i]]<-medata_dd
+}
+
+dd_data<-bind_rows(data_list)
+```
+
+clean 
+
+```{r}
+rm(list=setdiff(ls(), "dd_data"))
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\Pairwise"
+
+labl<-c(dark = "Dark diversity",
+        observed_richness = "Observed richness",
+        total="Total species pool")
+
+pair_list<-list()
+site_list<-list()
+```
+
+
+
+* brijoni
+
+
+```{r}
+Brijoni <- dd_data %>% filter(site == "brijuni")
+
+Brijoni<-gather(Brijoni,"index","richness",22:24)
+
+Brijoni$pair<-"Brijoni"
+
+site_list[[1]]<-Brijoni
+
+Brijoni <- Brijoni %>% group_by(country,site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+Brijoni$pair<-"Brijoni"
+
+pair_list[[1]]<-Brijoni
+```
+
+* israel
+
+```{r}
+isr<-dd_data %>% filter(country == "Israel",site != "habonim")
+
+isr<-gather(isr,"index","richness",22:24)
+isr$pair<-isr$site
+site_list[[2]]<-isr
+
+isr <- isr %>% group_by(country,site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+isr$pair<-isr$site
+
+pair_list[[2]]<-isr
+
+```
+
+* France
+
+```{r}
+Banyuls <- dd_data %>% filter(new_site_name == "Banyuls")
+
+Banyuls<-gather(Banyuls,"index","richness",22:24)
+
+Banyuls$pair <-"Banyuls"
+
+site_list[[3]]<-Banyuls
+
+Banyuls <- Banyuls %>% group_by(country,new_site_name,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+Banyuls$pair <-"Banyuls"
+
+pair_list[[3]]<-Banyuls
+```
+
+* spain
+
+note - there are two possible control sites for Cabrera MPA, I used Dragonera because it a bit closer and also an island  and omit formentor *but* we might change it later or use 2 pairs (or aggregate the two control sites...)
+
+note 2- same goes for cap_de_creus - no pair so i ommited but we should talk to the team and see what they think.
+
+```{r}
+spain<-dd_data %>% filter(country == "Spain")
+
+spain<-gather(spain,"index","richness",22:24)
+
+spain <- spain %>% mutate(pair = case_when(
+  new_site_name == "formentera"~ "Formentera",
+  new_site_name == "eivissa"~ "Formentera",
+  new_site_name == "cabrera"~"Cabrera",
+  new_site_name == "dragonera"~ "Cabrera",
+  new_site_name == "cavalleria"~ "Cavalleria",
+  new_site_name == "illa_de_l'aire"~ "Cavalleria",
+  new_site_name == "medes"~ "Medes"
+  
+  ))
+
+spain<-spain %>% drop_na(pair)
+
+
+site_list[[4]]<-spain
+
+spain$site<-spain$pair
+
+spain <- spain %>% group_by(country,site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+spain$pair <- spain$site
+
+pair_list[[4]] <- spain
+
+```
+
+Italy
+
+Need to decide how to treat those 3 sites...
+
+  new_site_name == "carloforte"~"pair_2" , # control
+  new_site_name == "asinara"~ "pair_2", # protected 3 & 2
+  new_site_name == "tavolara"~ "pair_2", # protected 3
+  
+i did two different comparison with carloforta as the control for both MPAs  
+  
+  
+
+```{r}
+itl<-dd_data %>% filter(country == "Italy",data.origin != "Belmaker")
+
+
+itl<-gather(itl,"index","richness",22:24)
+
+itl <- itl %>% mutate(pair = case_when(
+  new_site_name == "portofino"~ "Portofino",
+  new_site_name == "genova"~ "Portofino",
+  new_site_name == "torre_guaceto"~ "Torre guaceto",
+  new_site_name == "otranto"~ "Torre guaceto",
+  new_site_name == "asinara"~ "Asinara", 
+  new_site_name == "carloforte"~"Asinara"
+  ))
+
+itl<-itl %>% drop_na(pair)
+
+itl_2<-dd_data %>% filter(country == "Italy",new_site_name %in% c("tavolara","carloforte"))
+
+itl_2<-gather(itl_2,"index","richness",22:24)
+
+itl_2$pair = "Tavolara"
+
+itl<-rbind(itl,itl_2)
+
+site_list[[5]]<-itl
+itl$site<-itl$pair
+
+itl <- itl %>% group_by(country,site,protection,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+itl$pair <- itl$site
+
+pair_list[[5]] <- itl
+
+
+```
+
+
+```{r}
+pairs<-bind_rows(pair_list)
+
+
+log_ratio<-pairs %>% ungroup() %>%
+  filter(index == "dark") %>% select(country,pair,index,protection,mean_richness) %>% 
+  spread(protection,mean_richness) %>% 
+  mutate("ratio"= `Protected`/`Not protected`) %>% 
+  mutate("log_ratio" = log(ratio)) %>% 
+  mutate(pair = str_to_title(pair))
+
+log_ratio$pair<-as.factor(log_ratio$pair)
+
+log_ratio<-log_ratio%>% mutate(pair = fct_reorder(pair,log_ratio))
+
+ggplot(data = log_ratio,aes(x=log_ratio,y = pair))+geom_point(color = '#7DCDE4',size = 4)+theme_classic()+geom_vline(xintercept = 0,linetype = "dashed",size = 1)+
+  ylab("MPA")+xlab("Log ratio")+
+  theme(axis.text.x = element_text(size=20),
+        plot.title = element_text(size=24),
+        axis.text.y = element_text(size =20),
+        axis.title.x = element_text(size=22),
+        axis.title.y = element_text(size=22),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size=20),
+        legend.position = "none",
+        strip.text.x = element_text(size = 20),
+        strip.background = element_blank())
+
+
+```
+
+
+
+# CalcSpeciesSE log ratios
+
+```{r}
+
+log_data_raw<-bind_rows(site_list)
+
+log_data<-log_data_raw %>% select(pair,protection,index,richness) %>% filter(index != "total")
+
+ratio = batch_calc_ES(dat = log_data, grouping =  c(pair,index), condition = protection, outcome = richness,scale = "count", ES = "LRRi",baseline_phase = "Not protected")
+
+ratio$pair = str_to_title(ratio$pair)
+ratio$pair<-as.factor(ratio$pair)
+
+ratio<-ratio%>% mutate(pair = fct_reorder(pair,ave(index =="dark",Est),max))
+
+levels(d_ratio$pair)
+
+ratio<-ratio%>% mutate(pair = fct_reorder(pair,d_ratio$Est))
+
+ggplot(data = ratio,aes(x=Est,y = pair,color = index))+theme_classic()+geom_vline(xintercept = 0,linetype = "dashed",size = 1)+
+  ylab("MPA")+xlab("Log ratio")+geom_errorbar(aes(xmin= CI_lower, xmax=CI_upper), width=.2)+geom_point(size = 4)+scale_color_manual(values=c('#7DCDE4',"#F2E96C"))+
+  theme(axis.text.x = element_text(size=20),
+        plot.title = element_text(size=24),
+        axis.text.y = element_text(size =20),
+        axis.title.x = element_text(size=22),
+        axis.title.y = element_text(size=22),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size=20),
+        strip.text.x = element_text(size = 20),
+        strip.background = element_blank())
+
+
+
+ggplot(data = ratio,aes(x=Est,y = pair))+theme_classic()+
+  ylab("MPA")+xlab("Log ratio")+geom_errorbar(aes(xmin= Est-SE, xmax=Est+SE), width=.2)+geom_vline(xintercept = 0,linetype = "dashed",size = 1)+geom_point(size = 4)+
+  theme(axis.text.x = element_text(size=20),
+        plot.title = element_text(size=24),
+        axis.text.y = element_text(size =20),
+        axis.title.x = element_text(size=22),
+        axis.title.y = element_text(size=22),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size=20),
+        legend.position = "none",
+        strip.text.x = element_text(size = 20),
+        strip.background = element_blank())
+
+
+#ggsave("ratio_se.png",path = plot_dir,width = 12,height = 7)
+#ggsave("ratio_se.pdf",path = plot_dir,width = 12,height = 7)
+
+```
+
+
+```{r}
+
+log_data_raw<-bind_rows(site_list)
+
+log_data<-log_data_raw %>% select(pair,protection,index,richness) %>% filter(index != "total")
+
+log_data$pair<-as.factor(log_data$pair)
+
+log_data$pair<-str_to_title(log_data$pair)
+
+# dark
+
+d_ratio<-log_data %>% filter(index == "dark")
+
+d_ratio = batch_calc_ES(dat = d_ratio, grouping =  pair, condition = protection, outcome = richness,scale = "count", ES = "LRRi",baseline_phase	 = "Not protected")
+
+d_ratio<-d_ratio%>% mutate(pair = fct_reorder(pair,Est))
+
+d_ratio$Index = "Dark diversity"
+#observed
+
+o_ratio<-log_data %>% filter(index == "observed_richness")
+
+o_ratio = batch_calc_ES(dat = o_ratio, grouping = pair, condition = protection, outcome = richness,scale = "count", ES = "LRRi",baseline_phase = "Not protected")
+
+o_ratio$Index<-"Observed richness"
+
+#plot
+
+ggplot(data = d_ratio,aes(x=Est,y=pair,color = Index))+
+  geom_vline(xintercept = 0,linetype = "dashed",size = 1)+
+  geom_point(size = 4)+
+  geom_point(data = o_ratio,aes(x=Est,y= pair,color=Index),size = 4)+
+  theme_classic()+
+  ylab("MPA")+
+  xlab("Log ratio")+
+  geom_errorbar(data = d_ratio,aes(xmin= Est-SE, xmax=Est+SE), width=.2)+
+  geom_errorbar(data = o_ratio ,aes(xmin= Est-SE, xmax=Est+SE), width=.2)+
+  scale_color_manual(values=c('#7DCDE4',"#F2E96C"))+
+  theme(axis.text.x = element_text(size=20),
+        plot.title = element_text(size=24),
+        axis.text.y = element_text(size =20),
+        axis.title.x = element_text(size=22),
+        axis.title.y = element_text(size=22),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size=20),
+        strip.text.x = element_text(size = 20),
+        strip.background = element_blank())
+
+#ggsave("ratio_se_dark_obs.png",path = plot_dir,width = 12,height = 7)
+#ggsave("ratio_se_dark_obs.pdf",path = plot_dir,width = 12,height = 7)
+
+ggplot(data = d_ratio,aes(x=Est,y=pair,color = Index))+
+  geom_vline(xintercept = 0,linetype = "dashed",size = 1)+
+  geom_point(size = 3)+
+  geom_point(data = o_ratio,aes(x=Est,y= pair,color=Index),size = 3)+
+  theme_classic()+
+  ylab("MPA")+
+  xlab("Log ratio")+
+  geom_errorbar(data = d_ratio,aes(xmin= CI_lower, xmax=CI_upper), width=.2)+
+  geom_errorbar(data = o_ratio ,aes(xmin= CI_lower, xmax=CI_upper), width=.2)+
+  scale_color_manual(values=c('#7DCDE4',"#F2E96C"))+
+  theme(axis.text.x = element_text(size=20),
+        plot.title = element_text(size=24),
+        axis.text.y = element_text(size =20),
+        axis.title.x = element_text(size=22),
+        axis.title.y = element_text(size=22),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size=20),
+        strip.text.x = element_text(size = 20),
+        strip.background = element_blank())
+
+```
+

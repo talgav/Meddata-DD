@@ -1,0 +1,501 @@
+---
+title: "7.3 darkdiv clean"
+author: "TG"
+date: "2023-02-07"
+output: html_document
+---
+
+```{r}
+library(DarkDiv)
+library(tidyverse)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+library(gridExtra)
+library(ggiraphExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+
+select <- dplyr::select
+
+#load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/clean_dd_medata.rdata")
+
+```
+
+```{r}
+
+clean_dd_medata<-medata # keep the original
+
+medata<-medata %>% select(1:23) # keep only metadate and abundances
+
+medata<-medata %>% group_by(across(1:22)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum ind from the same sp in each transect
+
+medata$alt_basin<- ifelse(medata$country == "Israel","Israel",medata$alt_basin) # Sep Israel
+
+medata<-medata %>% filter(country != "Cyprus") # Remove cyprus data
+
+medata$alt_basin<-ifelse(medata$alt_basin == "Levantine Sea","Mediterranean Sea - Eastern Basin",medata$alt_basin)# restore turkey transect to previos basin
+
+medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
+
+```
+
+
+
+```{r}
+index_list<-list()
+data_list<-list()
+
+for (i in unique(medata_wide$alt_basin)) {
+ 
+   basin_data<-medata_wide %>% filter(alt_basin == i)
+   
+   sp_matrix<-basin_data[,22:ncol(basin_data)]
+   
+   sp_matrix<-sp_matrix[, colSums(sp_matrix != 0) > 0] # Remove species with all 0
+  
+   dd<-DarkDiv(sp_matrix,method = "Hypergeometric")
+   
+   index_list[[i]]<-dd
+   
+   dd_dark<-dd[["Dark"]]
+   dd_dark<-as.data.frame(dd_dark)
+   
+   dd_dark[dd_dark<0.9]<-0 # Set threshold
+   dd_dark[dd_dark>0]<-1 # convert to 1 sp adbove the th
+   
+   dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T))
+   dd_dark_sum<- dd_dark %>% select(dark)
+   
+   dd_pool<-dd[["Pool"]]
+   dd_pool<-as.data.frame(dd_pool)
+  
+   dd_pool[dd_pool<0.9]<-0
+   dd_pool[dd_pool>0]<-1
+   
+   dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T))
+   dd_pool_sum<-dd_pool %>% select(total)
+   
+   medata_dd<-basin_data[,1:21]
+   medata_dd<-as.data.frame(medata_dd)
+
+   medata_dd<-bind_cols(medata_dd,dd_pool_sum)
+   medata_dd<-bind_cols(medata_dd,dd_dark_sum)
+
+   medata_dd$observed_richness<-medata_dd$total-medata_dd$dark
+   
+   data_list[[i]]<-medata_dd
+}
+
+dd_data<-bind_rows(data_list)
+```
+
+
+##models at the transect level:
+
+data organizing
+
+
+```{r}
+
+# enforcement as numeric
+
+dd_data$enforcement<-as.character(dd_data$enforcement)
+dd_data$enforcement<-as.numeric(dd_data$enforcement)
+
+dd_data$age.reserve.yr<-as.character(dd_data$age.reserve.yr)
+dd_data$age.reserve.yr<-as.numeric(dd_data$age.reserve.yr)
+
+# convert vars to factors
+
+dd_data$new_site_name<-as.factor(dd_data$new_site_name)
+dd_data$alt_basin<-as.factor(dd_data$alt_basin)
+dd_data$country<-as.factor(dd_data$country)
+
+
+# remove transect with less than 3 species in the observed 
+
+data_for_model<-dd_data %>% filter(observed_richness >3)
+
+# remove 0 enforcement
+
+dd_data_no_0<-data_for_model %>% filter(enforcement != 0)
+
+dd_data_no_0$new_site_name<-droplevels(dd_data_no_0$new_site_name)
+
+
+hist(dd_data_no_0$observed_richness)
+hist(dd_data_no_0$dark)
+```
+
+understand number of sites/basin 
+
+```{r}
+
+t_per_site_enf<-dd_data_no_0 %>% group_by(new_site_name,enforcement) %>% summarise(n = n())
+t_per_site_enf<-spread(t_per_site_enf,enforcement,n)
+
+t_per_alt<-dd_data_no_0 %>% group_by(alt_basin,enforcement) %>% summarise(n = n())
+t_per_alt<-spread(t_per_alt,enforcement,n)
+```
+
+
+
+```{r}
+data_for_model_no_1<-data_for_model %>% filter(enforcement != 1)
+
+data_for_model_no_1$fish<-ifelse(data_for_model_no_1$enforcement>0,"non_fished","fished")
+
+data_for_model_no_1$fish<-as.factor(data_for_model_no_1$fish)
+
+t_model[[1]]<- lmer(dark ~ fish*tmean + (1|new_site_name), data = data_for_model_no_1)
+summary(t_model[[1]])
+
+t_model[[2]]<- lmer(observed_richness ~ fish*tmean + (1|new_site_name), data = data_for_model_no_1)
+summary(t_model[[2]])
+
+plot_model(t_model[[1]], type = "pred", terms = c("tmean","fish"))
+
+
+
+```
+
+
+
+
+
+create model and compare them:
+
+dark models
+
+```{r}
+
+t_model<-list()
+
+t_model[[1]]<- lmer(dark ~ enforcement + tmean + (1|alt_basin), data = dd_data_no_0)
+summary(t_model[[1]])
+
+t_model[[2]] <- lmer(dark ~ enforcement*tmean + (1|alt_basin), data = dd_data_no_0)
+summary(t_model[[2]])
+
+t_model[[3]]<- lmer(dark ~ tmean  + (1|alt_basin), data = dd_data_no_0)
+summary(t_model[[3]])
+
+t_model[[4]]<- lmer(dark ~ tmean  + (1|alt_basin), data = dd_data_no_0)
+summary(t_model[[4]])
+
+t_model[[5]]<- lmer(dark ~ as.factor(enforcement) + tmean + (1|alt_basin), data = dd_data_no_0)
+summary(t_model[[5]])
+
+t_model[[6]]<- lmer(dark ~ enforcement + age.reserve.yr + tmean + (1|alt_basin), data = dd_data_no_0)
+summary(t_model[[6]])
+
+t_model[[7]]<- lmer(dark ~ enforcement + age.reserve.yr +total.mpa.ha +tmean + (1|alt_basin), data = dd_data_no_0)
+summary(t_model[[7]])
+
+t_model[[8]]<- lmer(dark ~ enforcement +total.mpa.ha +tmean + (1|alt_basin), data = dd_data_no_0)
+summary(t_model[[8]])
+
+model.sel(t_model)
+
+t_model[[9]] <- lmer(dark ~ enforcement + tmean + (1|new_site_name), data = dd_data_no_0)
+summary(t_model[[9]])
+
+
+t_model[[10]] <- lmer(dark ~ enforcement*tmean + (1|new_site_name), data = dd_data_no_0)
+summary(t_model[[10]])
+
+
+model.sel(t_model)
+
+
+plot_model(t_model[[9]], type = "pred", terms = c("enforcement"))
+plot_model(t_model[[9]], type = "pred", terms = c("total.mpa.ha"))
+plot_model(t_model[[1]], type = "pred", terms = c("enforcement","tmean"))
+
+
+ggplot(data = dd_data_no_0,aes(x=enforcement,y=dark,color = new_site_name))+geom_point()+ geom_jitter(width = 0.25)
+
+```
+
+
+
+subset data for the transect level - choose 8 transect randomly from each site
+
+
+
+```{r}
+sub <- dd_data_no_0
+
+sub$site_enf<- paste(sub$new_site_name,sub$enforcement,sep = "_")
+
+sub <- sub %>% group_by(site_enf) %>% slice_sample(n=8)
+
+
+
+sub$tmean[sub$new_site_name=="porto_cesareo"]<-19.014
+sub$sal_mean[sub$new_site_name=="porto_cesareo"]<-38.5796
+sub$pp_mean[sub$new_site_name=="porto_cesareo"]<-0.000543
+
+sub_model<-list()
+
+sub_model[[1]]<- lmer(dark ~ enforcement + tmean + (1|alt_basin), data = sub)
+summary(sub_model[[1]])
+
+sub_model[[2]] <- lmer(dark ~ enforcement * tmean + (1|alt_basin), data = sub)
+summary(sub_model[[2]])
+
+sub_model[[3]] <- lmer(dark ~ enforcement + age.reserve.yr + tmean + (1|alt_basin), data = sub)
+summary(sub_model[[3]])
+
+sub_model[[4]] <- lmer(dark ~ enforcement + (1|alt_basin), data = sub)
+summary(sub_model[[4]])
+
+sub_model[[5]] <- lmer(dark ~ tmean + (1|alt_basin), data = sub)
+summary(sub_model[[5]])
+
+model.sel(sub_model)
+
+plot_model(sub_model[[1]], type = "pred", terms = c("tmean","enforcement"))
+
+ggplot(data = sub,aes(x=enforcement,y=dark,color = alt_basin))+geom_point()+ geom_jitter(width = 0.25)
+```
+
+
+global model:
+
+dark
+
+```{r}
+
+global <- lmer(dark ~ enforcement*tmean + (1|alt_basin),data = sub,na.action = "na.fail") 
+
+
+global <- lmer(dark ~ enforcement + age.reserve.yr+
+                 scale(tmean,center = T) +
+                 scale(pp_mean,center = T) +
+                 scale(sal_mean,center = T) +(1|alt_basin),data = sub,na.action = "na.fail") 
+
+dredge_global <- dredge(global.model = global)
+
+```
+
+observed richness
+
+```{r}
+global_obs <- lmer(observed_richness ~ enforcement*tmean + (1|alt_basin),data = sub,na.action = "na.fail") 
+
+dredge_global_obs <- dredge(global.model = global_obs)
+
+chosen_obs <- lmer(dark ~ enforcement+ (1|new_site_name),data = sub) 
+summary(chosen_obs)
+
+chosen_obs_smr=DHARMa::simulateResiduals(chosen_obs)
+chosen_obs_smr_p=DHARMa::plotSimulatedResiduals(chosen_obs_smr)
+sjPlot::plot_model(chosen_obs,type="diag")
+
+sjPlot::plot_model(chosen_obs, type="eff",pred.type = "fe")
+chosen_obs_gg=ggeffects::ggpredict(chosen_obs,terms="enforcement")
+```
+
+with zeros
+
+
+
+```{r}
+sub_0 <- data_for_model
+
+# 8 is the minimal number of transect also here
+
+sub_0$site_enf<- paste(sub_0$new_site_name,sub_0$enforcement,sep = "_")
+
+
+t_per_site_enf_0<-sub_0 %>% group_by(new_site_name,enforcement) %>% summarise(n = n())
+t_per_site_enf_0<-spread(t_per_site_enf_0,enforcement,n)
+
+sub_0 <- sub_0 %>% group_by(site_enf) %>% sample_n(8)
+
+
+sub_0$non_fished <- ifelse(sub_0$enforcement>1,"non_f","fished")
+
+sub_0_no1<-sub_0 %>% filter(enforcement!=1)
+
+sub_0_model<-list()
+
+sub_0_model[[1]]<- lmer(dark ~ as.factor(non_fished) + tmean + (1|new_site_name), data = sub_0_no1)
+summary(sub_0_model[[1]])
+
+
+sub_0_model[[2]] <- lmer(dark ~ enforcement * tmean + (1|alt_basin), data = sub_0)
+summary(sub_0_model[[2]])
+
+sub_0_model[[3]] <- lmer(dark ~ enforcement + age.reserve.yr + size.notake + tmean + (1|alt_basin), data = sub_0)
+summary(sub_0_model[[3]])
+
+sub_0_model[[4]] <- lmer(dark ~ as.factor(enforcement) + age.reserve.yr + size.notake + tmean + pp_mean+(1|alt_basin), data = sub_0)
+summary(sub_0_model[[4]])
+
+
+model.sel(sub_0_model)
+
+plot_model(sub_0_model[[4]], type = "pred", terms = c("enforcement"))
+
+ggplot(data = sub_0,aes(x=enforcement,y=dark,color = alt_basin))+geom_point(position = position_jitter(w = 0.1, h = 0))
+
+```
+
+
+
+
+
+
+## Model grouped by site
+
+```{r}
+site_model_data <- dd_data_no_0 %>%
+  group_by(alt_basin,country,new_site_name,enforcement) %>%
+  summarise("mean_temp" = mean(tmean),
+            "mean_richness"= mean(observed_richness),
+            "mean_dd" = median(dark),
+            "mean_sp_pool"= mean(total),
+            "n" = n()) %>% 
+   mutate(enforcement = as.numeric(enforcement))
+
+
+```
+
+```{r}
+
+site_dark<-list()
+
+
+site_dark[[1]]<- lmer(mean_dd ~ enforcement + mean_temp + (1|alt_basin), data = site_model_data)
+summary(site_dark[[1]])
+
+site_dark[[2]]<- lmer(mean_dd ~ enforcement + mean_temp + (1|country), data = site_model_data)
+summary(site_dark[[2]])
+
+site_dark[[3]]<- lmer(mean_dd ~ enforcement + (1|alt_basin), data = site_model_data)
+summary(site_dark[[3]])
+
+site_dark[[4]]<- lmer(mean_dd ~ mean_temp + (1|alt_basin), data = site_model_data)
+summary(site_dark[[4]])
+
+site_dark[[5]]<- lmer(mean_dd ~ enforcement*mean_temp + (1|alt_basin), data = site_model_data)
+summary(site_dark[[5]])
+
+model.sel(site_dark)
+
+
+ggplot(data = site_model_data,aes(x=enforcement,y=mean_dd,color = alt_basin))+geom_point(position = position_jitter(w = 0.1, h = 0))
+
+
+```
+
+
+models with 0 enforecment
+
+```{r}
+zero_model<-list()
+
+zero_model[[1]]<- lmer(dark ~ enforcement + tmean + (1|alt_basin), data = data_for_model)
+summary(zero_model[[1]])
+
+
+zero_model[[2]]<- lmer(dark ~ enforcement + tmean + (1|new_site_name), data = data_for_model)
+summary(zero_model[[2]])
+
+zero_model[[3]]<- lmer(dark ~ as.factor(enforcement) + tmean + (1|alt_basin), data = data_for_model)
+summary(zero_model[[3]])
+
+zero_model[[4]]<- lmer(dark ~ as.factor(enforcement) + tmean + (1|new_site_name), data = data_for_model)
+summary(zero_model[[4]])
+
+model.sel(zero_model)
+
+plot_model(zero_model[[1]], type = "pred", terms = c("enforcement"))
+
+
+ggplot(data = data_for_model,aes(x=enforcement,y=dark,color = new_site_name))+geom_point()+ geom_jitter(width = 0.25)
+
+ggplot(data = data_for_model,aes(x=enforcement,y=dark,color = alt_basin))+geom_point()+ geom_jitter(width = 0.25)
+```
+
+
+
+
+
+
+
+
+old bit:
+
+
+```{r}
+
+theme_set(theme_sjplot())
+
+
+observed <- lm(mean_richness ~ enforcement + mean_temp,data = model_data)
+summary(observed)
+
+plot_model(observed,type = "pred", terms = c("enforcement","mean_temp"))
+
+dark <- lm(mean_dd ~ as.factor(enforcement) + mean_temp,data = model_data)
+summary(dark)
+
+
+dark <- lmer(mean_dd ~ enforcement + mean_temp+ (1|country),data = model_data)
+summary(dark)
+
+ggplot(data = model_data,aes(x=enforcement,y=mean_dd,color = new_site_name))+geom_point()
+
+
+plot_model(dark, type = "pred", terms = c("enforcement","mean_temp"))
+plot_model(dark, type = "pred", terms = c("enforcement"))
+
+sp_pool <- lm(mean_sp_pool~enforcement+ mean_temp, data=model_data)
+summary(sp_pool)
+plot_model(sp_pool, type = "pred", terms = c("enforcement","mean_temp"))
+
+```
+
+
+```{r}
+
+model_data_2 <- dd_data %>% mutate(enforcement = as.character(enforcement)) %>% 
+  group_by(new_site_name,enforcement,tmean) %>%
+  summarise("mean_temp" = mean(tmean),
+            "mean_richness"= mean(observed_richness),
+            "mean_dd" = mean(dark),
+            "mean_sp_pool"= mean(total),
+            "n" = n()) %>% 
+  filter(enforcement != 0) %>% 
+  mutate(enforcement = as.factor(enforcement))
+
+observed <- lm(mean_richness ~ enforcement + mean_temp,data = model_data_2)
+summary(observed)
+
+plot_model(observed,type = "pred", terms = c("enforcement","mean_temp"))
+
+dark <- lm(mean_dd ~ enforcement + mean_temp,data = model_data_2)
+summary(dark)
+
+plot_model(dark, type = "pred", terms = c("enforcement","mean_temp"))
+plot_model(dark, type = "pred", terms = c("enforcement"))
+
+sp_pool <- lm(mean_sp_pool~enforcement+ mean_temp, data=model_data_2)
+summary(sp_pool)
+plot_model(sp_pool, type = "pred", terms = c("enforcement","mean_temp"))
+
+
+
+
+```
+
+
+
+
+

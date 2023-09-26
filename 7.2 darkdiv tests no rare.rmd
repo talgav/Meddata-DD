@@ -1,22 +1,19 @@
 ---
-title: "7.1 darkdiv test"
+title: "7.2 darkdiv tests no rare"
 author: "TG"
-date: "2023-01-29"
+date: "2023-02-06"
 output:
    prettydoc::html_pretty:
     theme: cayman
     highlight: github
 ---
 
+
 ```{r}
 library(DarkDiv)
 library(tidyverse)
 library(vegan)
 library(plotrix)
-library(sjPlot)
-library(sjmisc)
-library(gridExtra)
-library(ggiraphExtra)
 
 select <- dplyr::select
 
@@ -35,22 +32,18 @@ medata$alt_basin<- ifelse(medata$country == "Israel","Israel",medata$alt_basin)
 
 medata$enforcement<-as.character(medata$enforcement)
 
-medata<-medata %>% filter(country != "Cyprus")
+medata$enforcement<- ifelse(medata$site == "Kavo Gkreko" & medata$enforcement == "3" ,"1",medata$enforcement)
 
-medata$alt_basin<-ifelse(medata$alt_basin == "Levantine Sea","Mediterranean Sea - Eastern Basin",medata$alt_basin)
-
-#medata$enforcement<- ifelse(medata$site == "Kavo Gkreko" & medata$enforcement == "3" ,"1",medata$enforcement)
-
-#medata$enforcement<- ifelse(medata$site == "Akrotiri" & medata$enforcement == "3" ,"1",medata$enforcement)
+medata$enforcement<- ifelse(medata$site == "Akrotiri" & medata$enforcement == "3" ,"1",medata$enforcement)
 
 
-medata <-medata %>% group_by(alt_basin,species) %>% mutate(occupancy = n())  
+#medata<- medata %>% group_by(alt_basin,species) %>% mutate(occupancy = n())  
 
-medata<-medata %>% filter(occupancy >0)
+#medata<- medata %>% filter(occupancy >0)
 
-medata$occupancy<-NULL
+#medata$occupancy<-NULL
 
-medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
+#medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
 
 ```
 
@@ -60,13 +53,21 @@ medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
 index_list<-list()
 data_list<-list()
 
-for (i in unique(medata_wide$alt_basin)) {
+for (i in unique(medata$alt_basin)) {
  
-   basin_data<-medata_wide %>% filter(alt_basin == i)
+   basin_data<-medata %>% filter(alt_basin == i)
    
-   sp_matrix<-basin_data[,21:ncol(basin_data)]
+    rare_sp<- basin_data %>% group_by(species) %>% mutate(occupancy = n())  
+
+    rare_sp<- rare_sp %>% filter(occupancy < 7) %>% select(species,occupancy) %>% distinct(species)
+
+   basin_wide<-spread(basin_data,species,amount,fill = 0)
+   
+   sp_matrix<-basin_wide[,21:ncol(basin_wide)]
    
    sp_matrix<-sp_matrix[, colSums(sp_matrix != 0) > 0] # Remove species with all 0
+   
+   rare_sp<-rare_sp %>% filter(species %in% colnames(sp_matrix))
   
    dd<-DarkDiv(sp_matrix,method = "Hypergeometric")
    
@@ -77,19 +78,25 @@ for (i in unique(medata_wide$alt_basin)) {
    
    dd_dark<-dd[["Dark"]]
    dd_dark<-as.data.frame(dd_dark)
-   dd_dark[dd_dark<0.9]<-0
-   dd_dark[dd_dark>0]<-1
+   dd_dark<-dd_dark %>% select(-rare_sp$species)
+  
+  # dd_dark[dd_dark<0.9]<-0
+  # dd_dark[dd_dark>0]<-1
+  
    dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T))
    dd_dark_sum<- dd_dark %>% select(dark)
    
    dd_pool<-dd[["Pool"]]
    dd_pool<-as.data.frame(dd_pool)
-   dd_pool[dd_pool<0.9]<-0
-   dd_pool[dd_pool>0]<-1
+   dd_pool<-dd_pool %>% select(-rare_sp$species)
+   
+   #dd_pool[dd_pool<0.9]<-0
+  # dd_pool[dd_pool>0]<-1
+   
    dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T))
    dd_pool_sum<-dd_pool %>% select(total)
    
-   medata_dd<-basin_data[,1:20]
+   medata_dd<-basin_wide[,1:20]
    medata_dd<-as.data.frame(medata_dd)
 
    medata_dd<-bind_cols(medata_dd,dd_pool_sum)
@@ -101,49 +108,6 @@ for (i in unique(medata_wide$alt_basin)) {
 }
 
 dd_data<-bind_rows(data_list)
-```
-
-
-
-```{r}
-
-temp <- dd_data %>%
-  group_by(enforcement,site,tmean) %>%
-  summarise("mean_richness"= mean(observed_richness),
-            "mean_dd" = mean(dark),
-            "mean_sp_pool"= mean(total)) %>% 
-  filter(enforcement != 0)
-
-temp$enforcement<-as.numeric(temp$enforcement)
-
-x=lm(mean_richness~enforcement*tmean, data=temp)
-x_1=lm(mean_richness~enforcement+tmean, data=temp)
-
-y=lm(mean_dd~enforcement*tmean, data=temp)
-y_1=lm(mean_dd~enforcement+tmean, data=temp)
-
-z=lm(mean_sp_pool~enforcement*tmean, data=temp)
-z_1= lm(mean_sp_pool~enforcement+tmean, data=temp)
-theme_set(theme_sjplot())
-
-plot_model(x, type = "pred", terms = c("tmean","enforcement"))
-plot_model(y, type = "pred", terms = c("tmean","enforcement"))
-plot_model(z, type = "pred", terms = c("tmean","enforcement"))
-
-summary(x)
-summary(y)
-summary(z)
-summary(y_1)
-summary(z_1)
-summary(x_1)
-
-plot_model(x_1,type = "pred",terms = c("enforcement","tmean"))
-plot_model(y_1,type = "pred",terms = c("enforcement","tmean"))
-
-ggiraphExtra::ggPredict(y_1,se=TRUE,interactive=TRUE)
-ggiraphExtra::ggPredict(y_1,se=TRUE,interactive=F)
-ggiraphExtra::ggPredict(x_1,se=TRUE,interactive=T)
-
 ```
 
 
@@ -224,16 +188,15 @@ ggplot()+
        aes(x=enforcement,y = total_mean, fill = type )+
   geom_bar(stat="identity",position=position_dodge(.9),fill = "#1B2D48")+
   theme_classic()+
-   geom_text(aes(label = sites_enf, y = max(total_mean)+1))+
-  geom_errorbar(aes(ymin=total_mean-se, ymax=total_mean+se), width=.2,
-                 position=position_dodge(.9))
+   geom_text(aes(label = sites_enf, y = max(total_mean)+1))
+
 
 by_site_all %>% filter(type != "total") %>% 
 ggplot()+
        aes(x=enforcement,y = total_mean,fill = type )+
   geom_bar(stat="identity")+ylab("Mean richness per transect")+
   scale_fill_manual(values = c("#1B2D48","#F7D54A"))+theme_classic()+ 
-  geom_text(aes(label = sites_enf, y =16))
+  geom_text(aes(label = sites_enf, y =30))
 
 
 ```

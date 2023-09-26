@@ -1,0 +1,121 @@
+---
+title: "4.2 sites and pairs"
+author: "TG"
+date: "2023-02-09"
+output: html_document
+---
+
+
+```{r}
+library(lubridate)
+library(ggplot2)
+library(stringr)
+#library(Hmisc)
+library(plotrix)
+library(sjmisc)
+library(sf)
+library(ggspatial)
+library(rgeos)
+library(maptools)
+library(dplyr)
+#library(leaflet)
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/clean_dd_medata.rdata")
+
+```
+
+
+```{r}
+
+meta <- medata %>% select(1:20) %>% distinct(unique_trans_id,.keep_all = T)
+
+
+
+```
+
+get mean coordiante per site
+
+
+```{r}
+meta_site<- meta %>% group_by(alt_basin,site) %>% summarise(lat = mean(lat),lon = mean(lon))
+ 
+
+leaflet(meta_site) %>% 
+  addTiles() %>% 
+  addCircles(lng=~lon,lat=~lat) %>% 
+  addMarkers(data = meta_site,label = meta_site$site)
+  
+```
+
+change all the assecret sites:
+
+
+```{r}
+
+new_name<-data.frame(site=c("assecret2010193","assecret2010192","assecret2010191","assecret1210192","assecret1210191"),
+                     new_site_name = rep("Crete_Monoafitis"))
+
+
+new_name_2<- data.frame(site=c("assecret1810193","assecret1810192","assecret1810191"),
+                     new_site_name = rep("Crete_Paximadia"))
+
+new_name_3<- data.frame(site=c("assecret1410193","assecret1610191","assecret1410192","assecret1410191",
+                               "assecret1610192","assecret1610193"),
+                     new_site_name = rep("Crete_Plakias"))
+
+
+new_name_4<- data.frame(site=c("assecret2210191","assecret2210192"),
+                     new_site_name = rep("Crete_Krios"))
+
+
+new_name_5<- data.frame(site=c("assecret1910191","assecret1910193","assecret1910192","assecret1310192",
+                               "assecret1310191","assecret1310193"),
+                     new_site_name = rep("Crete_Kalydon"))
+
+
+new_name_6<-data.frame(site = unique(medata$site[medata$country=="France"]),
+                       new_site_name = "Banyuls")
+
+new_name_7<-data.frame(site = c("asinara_add","Nisia","montgri"),
+                       new_site_name = c("asinara","Kavo Gkreko","medes"))
+
+new_name <- rbind(new_name,new_name_2,new_name_3,new_name_4,new_name_5,new_name_6,new_name_7)
+
+
+
+meta_site<-left_join(meta_site,new_name)
+
+meta_site<-meta_site %>% mutate(new_site_name = case_when(is.na(new_site_name) ~ site,
+                                   TRUE ~ new_site_name)) %>% 
+  
+select(site,new_site_name)
+
+
+medata<-left_join(medata,meta_site)
+
+medata<-medata %>% 
+  relocate(new_site_name,.after = site) 
+
+medata$new_site_name<-as.factor(medata$new_site_name)
+
+
+meta_new <- medata %>% select(1:20) %>% distinct(unique_trans_id,.keep_all = T)
+
+
+meta_site_new<- meta_new %>% group_by(new_site_name,alt_basin) %>% summarise(lat = mean(lat),lon = mean(lon))
+ 
+
+leaflet(meta_site_new) %>% 
+  addTiles() %>% 
+  addCircles(lng=~lon,lat=~lat) %>% 
+  addMarkers(data = meta_site_new,label=paste(meta_site_new$new_site_name,meta_site_new$alt_basin,sep="_"))
+
+```
+
+remove all but medata
+
+```{r}
+rm(list = setdiff(ls(), "medata"))
+```
+
+

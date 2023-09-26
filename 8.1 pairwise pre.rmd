@@ -1,0 +1,140 @@
+---
+title: "8.1 pairwise pre"
+author: "TG"
+date: "2023-05-02"
+output: html_document
+---
+
+```{r}
+library(DarkDiv)
+library(tidyverse)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+library(gridExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(glmmTMB)
+library(DHARMa)
+library(ggeffects)
+
+select <- dplyr::select
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/clean_dd_medata.rdata")
+```
+## Final data prepartion
+
+```{r}
+
+clean_dd_medata<-medata # keep the original
+
+medata<-medata %>% select(1:23) # keep only metadate and abundances
+
+medata<-medata %>% group_by(across(1:22)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum ind from the same sp in each transect
+
+medata$alt_basin<- ifelse(medata$country == "Israel","Israel",medata$alt_basin) # Sep Israel
+
+medata<-medata %>% filter(country != "Cyprus") # Remove cyprus data
+
+medata$alt_basin<-ifelse(medata$alt_basin == "Levantine Sea","Mediterranean Sea - Eastern Basin",medata$alt_basin)# restore turkey transect to previos basin
+
+medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
+
+
+medata_wide$alt_basin[medata_wide$new_site_name=="cabrera"]<-"Balearic (Iberian Sea)" # one basin for the site
+
+medata_wide<-medata_wide %>% filter(new_site_name !="Crete_Kalydon")
+
+```
+
+
+
+```{r}
+index_list<-list()
+data_list<-list()
+
+for (i in unique(medata_wide$alt_basin)) {
+ 
+   basin_data<-medata_wide %>% filter(alt_basin == i)
+   
+   sp_matrix<-basin_data[,22:ncol(basin_data)]
+   
+   sp_matrix<-sp_matrix[, colSums(sp_matrix != 0) > 0] # Remove species with all 0
+  
+   dd<-DarkDiv(sp_matrix,method = "Hypergeometric")
+   
+   index_list[[i]]<-dd
+   
+   dd_dark<-dd[["Dark"]]
+   dd_dark<-as.data.frame(dd_dark)
+   
+   dd_dark[dd_dark<0.9]<-0 # Set threshold
+   dd_dark[dd_dark>0]<-1 # convert to 1 sp adbove the th
+   
+   dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T))
+   dd_dark_sum<- dd_dark %>% select(dark)
+   
+   dd_pool<-dd[["Pool"]]
+   dd_pool<-as.data.frame(dd_pool)
+  
+   dd_pool[dd_pool<0.9]<-0
+   dd_pool[dd_pool>0]<-1
+   
+   dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T))
+   dd_pool_sum<-dd_pool %>% select(total)
+   
+   medata_dd<-basin_data[,1:21]
+   medata_dd<-as.data.frame(medata_dd)
+
+   medata_dd<-bind_cols(medata_dd,dd_pool_sum)
+   medata_dd<-bind_cols(medata_dd,dd_dark_sum)
+
+   medata_dd$observed_richness<-medata_dd$total-medata_dd$dark
+   
+   data_list[[i]]<-medata_dd
+}
+
+dd_data<-bind_rows(data_list)
+```
+
+clean 
+
+```{r}
+rm(list=setdiff(ls(), "dd_data"))
+```
+
+# israel pairs
+
+
+```{r}
+isr<-dd_data %>% filter(country == "Israel")
+
+isr_g<-acz %>% group_by(site,protection,enforcemen) %>%
+  summarise("mean_dark" = mean(dark),                                                  "mean_obs"=mean(observed_richness),                                                  "mean_total" = mean(total))
+```
+
+# Croatia pairs
+
+only brijuni relevant
+
+```{r}
+cro <- dd_data %>% filter(country == "Croatia")
+
+cro_g <- cro %>% group_by(site,protection,enforcement) %>% summarise("mean_dark" = mean(dark),
+                                                  "mean_obs"=mean(observed_richness),
+                                                  "mean_total" = mean(total))
+```
+
+
+# Sicily
+
+```{r}
+Sic <- dd_data %>% filter(country == "Italy",data.origin == "Belmaker")
+
+Sic_g <- Sic %>% group_by(site,protection,enforcement) %>% summarise("mean_dark" = mean(dark),
+                                                  "mean_obs"=mean(observed_richness),
+                                                  "mean_total" = mean(total))
+```
+

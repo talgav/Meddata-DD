@@ -1,0 +1,260 @@
+---
+title: "8.2 pairwise"
+author: "TG"
+date: "2023-05-16"
+output: html_document
+---
+
+```{r}
+library(DarkDiv)
+library(tidyverse)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+library(gridExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(glmmTMB)
+library(DHARMa)
+library(ggeffects)
+
+select <- dplyr::select
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/clean_dd_medata.rdata")
+
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\Pairwise"
+```
+## Final data prepartion
+
+```{r}
+
+clean_dd_medata<-medata # keep the original
+
+medata<-medata %>% select(1:23) # keep only metadate and abundances
+
+medata<-medata %>% group_by(across(1:22)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum ind from the same sp in each transect
+
+medata$alt_basin<- ifelse(medata$country == "Israel","Israel",medata$alt_basin) # Sep Israel
+
+medata<-medata %>% filter(country != "Cyprus") # Remove cyprus data
+
+medata$alt_basin<-ifelse(medata$alt_basin == "Levantine Sea","Mediterranean Sea - Eastern Basin",medata$alt_basin)# restore turkey transect to previos basin
+
+medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
+
+medata_wide<-medata_wide %>% filter(new_site_name !="Crete_Kalydon")
+
+```
+
+
+
+```{r}
+index_list<-list()
+data_list<-list()
+
+for (i in unique(medata_wide$alt_basin)) {
+ 
+   basin_data<-medata_wide %>% filter(alt_basin == i)
+   
+   sp_matrix<-basin_data[,22:ncol(basin_data)]
+   
+   sp_matrix<-sp_matrix[, colSums(sp_matrix != 0) > 0] # Remove species with all 0
+  
+   dd<-DarkDiv(sp_matrix,method = "Hypergeometric")
+   
+   index_list[[i]]<-dd
+   
+   dd_dark<-dd[["Dark"]]
+   dd_dark<-as.data.frame(dd_dark)
+   
+   dd_dark[dd_dark<0.9]<-0 # Set threshold
+   dd_dark[dd_dark>0]<-1 # convert to 1 sp adbove the th
+   
+   dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T))
+   dd_dark_sum<- dd_dark %>% select(dark)
+   
+   dd_pool<-dd[["Pool"]]
+   dd_pool<-as.data.frame(dd_pool)
+  
+   dd_pool[dd_pool<0.9]<-0
+   dd_pool[dd_pool>0]<-1
+   
+   dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T))
+   dd_pool_sum<-dd_pool %>% select(total)
+   
+   medata_dd<-basin_data[,1:21]
+   medata_dd<-as.data.frame(medata_dd)
+
+   medata_dd<-bind_cols(medata_dd,dd_pool_sum)
+   medata_dd<-bind_cols(medata_dd,dd_dark_sum)
+
+   medata_dd$observed_richness<-medata_dd$total-medata_dd$dark
+   
+   data_list[[i]]<-medata_dd
+}
+
+dd_data<-bind_rows(data_list)
+```
+
+clean 
+
+```{r}
+rm(list=setdiff(ls(), "dd_data"))
+plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\Pairwise"
+
+labl<-c(dark = "Dark diversity",
+        observed_richness = "Observed richness",
+        total="Total species pool")
+```
+
+
+# Brijoni
+
+```{r}
+Brijoni <- dd_data %>% filter(site == "brijuni")
+
+
+t.test(dark ~ protection, data = Brijoni)
+t.test(observed_richness ~ protection, data = Brijoni)
+t.test(total ~ protection, data = Brijoni)
+
+Brijoni<-gather(Brijoni,"index","richness",22:24)
+
+Brijoni <- Brijoni %>% group_by(site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+(Bri_log_ratio<-Brijoni %>% ungroup() %>%
+  filter(index == "dark") %>% select(site,index,protection,mean_richness) %>% 
+  spread(protection,mean_richness) %>% 
+  mutate("ratio"= `Protected`/`Not protected`) %>% 
+  mutate("log_ratio" = log(ratio)))
+
+print(Bri_log_ratio$log_ratio)
+
+
+ggplot(data = Brijoni, aes(x = protection,
+                           y = mean_richness, fill = index)) +
+  geom_bar(position = "dodge", stat = "identity")+
+   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9)) +
+  facet_grid( ~ index,labeller = as_labeller(labl))+
+  theme_classic()+
+  scale_fill_manual(values=c('#7DCDE4','#F2E96C',"#ACD672"))+
+  ggtitle("Study case 3 - Brijoni")+
+  ylab("Richness")+xlab("Protection")+
+  theme(axis.text.x = element_text(size=20),
+        plot.title = element_text(size=24),
+        axis.text.y = element_text(size =20),
+        axis.title.x = element_text(size=22),
+        axis.title.y = element_text(size=22),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size=20),
+        legend.position = "none",
+        strip.text.x = element_text(size = 20),
+        strip.background = element_blank())
+
+#ggsave("Brijoni.png",path = plot_dir,width = 12,height = 7)
+#ggsave("Brijoni.pdf",path = plot_dir,width = 12,height = 7)
+
+```
+
+# Banyuls
+
+```{r}
+B_locations <- dd_data %>% filter(new_site_name=="Banyuls") %>% group_by(site,protection) %>% summarise(n_transect = n())
+```
+
+
+```{r}
+Banyuls <- dd_data %>% filter(new_site_name == "Banyuls")
+
+t.test(dark ~ protection, data = Banyuls)
+t.test(observed_richness ~ protection, data = Banyuls)
+t.test(total ~ protection, data = Banyuls)
+
+Banyuls<-gather(Banyuls,"index","richness",22:24)
+
+Banyuls <- Banyuls %>% group_by(new_site_name,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+Ban_log_ratio<-Banyuls %>% ungroup() %>%
+  filter(index == "dark") %>% select(new_site_name,index,protection,mean_richness) %>% 
+  spread(protection,mean_richness) %>% 
+  mutate("ratio"= `Protected`/`Not protected`) %>% 
+  mutate("log_ratio" = log(ratio))
+
+print(Ban_log_ratio$log_ratio)
+
+
+ggplot(data = Banyuls, aes(x = protection,
+                           y = mean_richness, fill = index)) +
+  geom_bar(position = "dodge", stat = "identity")+
+   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9)) +
+  facet_grid( ~ index,labeller = as_labeller(labl))+
+  theme_classic()+
+  scale_fill_manual(values=c('#7DCDE4','#F2E96C',"#ACD672"))+
+  ggtitle("Study case 1 - Banyuls")+
+  ylab("Richness")+xlab("Protection")+
+  theme(axis.text.x = element_text(size=20),
+        plot.title = element_text(size=24),
+        axis.text.y = element_text(size =20),
+        axis.title.x = element_text(size=22),
+        axis.title.y = element_text(size=22),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size=20),
+        legend.position = "none",
+        strip.text.x = element_text(size = 20),
+        strip.background = element_blank())
+
+#ggsave("Banyuls.png",path = plot_dir,width = 12,height = 7)
+#ggsave("Banyuls.pdf",path = plot_dir,width = 12,height = 7)
+
+```
+
+# Medes
+
+```{r}
+Medes <- dd_data %>% filter(new_site_name == "medes")
+
+t.test(dark ~ protection, data = Medes)
+t.test(observed_richness ~ protection, data = Medes)
+t.test(total ~ protection, data = Medes)
+
+Medes<-gather(Medes,"index","richness",22:24)
+
+Medes <- Medes %>% group_by(new_site_name,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+(M_log_ratio<-Medes %>% ungroup() %>%
+  filter(index == "dark") %>% select(new_site_name,index,protection,mean_richness) %>% 
+  spread(protection,mean_richness) %>% 
+  mutate("ratio"= `Protected`/`Not protected`) %>% 
+  mutate("log_ratio" = log(ratio)))
+
+print(M_log_ratio$log_ratio)
+
+ggplot(data = Medes, aes(x = protection,
+                           y = mean_richness, fill = index)) +
+  geom_bar(position = "dodge", stat = "identity")+
+   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9)) +
+  facet_grid( ~ index,labeller = as_labeller(labl))+
+  theme_classic()+
+  scale_fill_manual(values=c('#7DCDE4','#F2E96C',"#ACD672"))+
+  ggtitle("Study case 2 - Medes")+
+  ylab("Richness")+xlab("Protection")+
+  theme(axis.text.x = element_text(size=20),
+        plot.title = element_text(size=24),
+        axis.text.y = element_text(size =20),
+        axis.title.x = element_text(size=22),
+        axis.title.y = element_text(size=22),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size=20),
+        legend.position = "none",
+        strip.text.x = element_text(size = 20),
+        strip.background = element_blank())
+
+#ggsave("Medes.png",path = plot_dir,width = 12,height = 7)
+#ggsave("Medes.pdf",path = plot_dir,width = 12,height = 7)
+
+```
