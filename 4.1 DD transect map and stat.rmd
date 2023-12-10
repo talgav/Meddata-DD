@@ -28,6 +28,7 @@ library(rgeos)
 library(maptools)
 library(dplyr)
 library(tidyr)
+library(leaflet)
 
 plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\4.1 plots"
 ```
@@ -122,6 +123,27 @@ medata<-medata %>% drop_na(protection)
 
 
 ```
+
+## add banyuls coordinates
+
+```{r}
+Banyuls_location <- read_csv("Banyuls location.csv")
+Banyuls_location <- Banyuls_location %>%  select(site,Latitude,Longitude)
+
+medata<-left_join(medata,Banyuls_location)
+
+medata$lat<-ifelse(medata$country=="France",medata$Latitude,medata$lat)
+medata$lon<-ifelse(medata$country=="France",medata$Longitude,medata$lon)
+
+
+medata$Latitude<-NULL
+medata$Longitude<- NULL
+
+
+rm(Banyuls_location)
+```
+
+
 
 ## load map
 
@@ -246,129 +268,6 @@ medata$alt_basin<-ifelse(medata$country == "Turkey" & medata$lon > 29.472579,"Le
 
 ```
 
-change `TRUE` & `FALSE` variables
-
-```{r}
-
-medata$protection<-ifelse(medata$protection==TRUE,"Protected","Not protected")
-
-medata$exotic<-ifelse(medata$exotic==TRUE,"Invasive","Native")
-
-```
-
-# save medata
-
-```{r}
-
-#save(medata,file = "clean_dd_medata.Rdata")
-
-```
-
-
-## some data statistics
-
-count transects per location
-
-```{r}
-
-transect_per_site<-medata %>%
-    group_by(country,site,protection,enforcement) %>%
-  summarise("number_of_trans"= n_distinct(unique_trans_id)) 
-
-```
-
-Get Transect per:
-
-1. country
-2. country & protection
-3. protecion (Yes/no)
-4. Enforcment level
-5. basin
-6. alternative basin
-7. alternative basin + protection
-
-```{r}
-
-#1
-transect_per_country<-medata %>% group_by(country) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
-
-#2
-transect_per_country_pro<-medata %>% group_by(country,protection) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
-
-#3
-
-transect_per_protection<-medata %>% group_by(protection) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
-#4
-
-transect_per_enforcment<-medata %>% group_by(enforcement) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
-
-#5
-
-transect_per_basin <- medata %>% group_by(Basin) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
-
-#6
-
-transect_per_altbasin <- medata %>% group_by(alt_basin) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
-
-#7
-
-transect_per_altbasin_protection <- medata %>% group_by(alt_basin,protection) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
-
-```
-
-## Study site map
-
-get only distinct point with different lat and lon:
-
-```{r}
-unique_coords<-medata %>% distinct(lat,lon,enforcement,protection,.keep_all = T) %>% dplyr::select(country,site,lat,lon,protection,enforcement)
-
-```
-
-#,position=position_jitter(h=0.12, w=0.12)
-```{r}
-
-
-ggplot(unique_coords) +
-  geom_sf(data = med_seas$geometry, mapping = aes(),fill= "azure",color = NA) + ##D4ECFF
-  geom_point(data =unique_coords,aes(x = lon, y = lat, color = enforcement), 
-             size = 2.5,alpha = 0.9,position=position_jitter(h=0.06, w=0.06)) + 
-  xlab("Longitude") + 
-  ylab("Latitude") +
-   annotation_scale(location = "bl", width_hint = 0.4) +
-    annotation_north_arrow(location = "bl", which_north = "true", 
-        pad_x = unit(0.0, "in"), pad_y = unit(0.2, "in"))+
-  theme(panel.background = element_rect(fill = "grey90"),##FFFAF7
-        text=element_text(size=24, family = "serif"),
-        panel.grid.major = element_line(colour = "transparent"))+
-    geom_sf_text(data =med_seas, aes(label = med_seas$NAME),
-                 family = "serif")+
-  scale_color_manual("Enforcment level",values=c("#C42E1C","#D4B04A","#70A34E","#446441"),
-                     labels = c("No protection","Low protection","Medium protection","Full protection"))
-  
-
-#ggsave(filename = "med_map_v1.pdf", width=15, height=10)
-
-```
-
-
-`#C42E1C` - red
-`#D4B04A`- yellow
-`#70A34E`- light green
-`#446441` - dark green
-
-Ill take it to QGIS!
-
-```{r}
-color_pal<- colorFactor(palette = c("#C42E1C","#D4B04A","#70A34E","#446441"), domain = unique_coords$enforcement,alpha = 0.8)
-
-
-leaflet(unique_coords) %>% 
-  addTiles() %>% 
-  addCircles(lng=~lon,lat=~lat,radius = 50,color = ~color_pal(unique_coords$enforcement),
-    stroke = T)
-```
-
 
 ### unite close sites (script 4.2)
 ```{r}
@@ -388,6 +287,7 @@ meta_site<- meta %>% group_by(alt_basin,site) %>% summarise(lat = mean(lat),lon 
 
   
 ```
+
 
 change all the assecret sites:
 
@@ -446,10 +346,145 @@ meta_new <- medata %>% select(1:20) %>% distinct(unique_trans_id,.keep_all = T)
 
 meta_site_new<- meta_new %>% group_by(new_site_name,alt_basin) %>% summarise(lat = mean(lat),lon = mean(lon))
  
+```
 
 
+fix some point in spain that needed to be added to the Balearic
+
+```{r}
+medata$alt_basin[medata$new_site_name=="cabrera"]<-"Balearic (Iberian Sea)" # one basin for the site
+
+medata$alt_basin[medata$new_site_name=="illa_de_l'aire"]<-"Balearic (Iberian Sea)" # one basin for the site
 
 ```
+
+
+change `TRUE` & `FALSE` variables
+
+```{r}
+
+medata$protection<-ifelse(medata$protection==TRUE,"Protected","Not protected")
+
+medata$exotic<-ifelse(medata$exotic==TRUE,"Invasive","Native")
+
+```
+
+# save medata
+
+```{r}
+
+#save(medata,file = "clean_dd_medata.Rdata")
+
+```
+
+
+## some data statistics
+
+count transects per location
+
+```{r}
+
+transect_per_site<-medata %>%
+    group_by(country,new_site_name,protection,enforcement) %>%
+  summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+```
+
+Get Transect per:
+
+1. country
+2. country & protection
+3. protecion (Yes/no)
+4. Enforcment level
+5. basin
+6. alternative basin
+7. alternative basin + protection
+
+```{r}
+
+#1
+transect_per_country<-medata %>% group_by(country) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#2
+transect_per_country_pro<-medata %>% group_by(country,protection) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#3
+
+transect_per_protection<-medata %>% group_by(protection) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+#4
+
+transect_per_enforcment<-medata %>% group_by(enforcement) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#5
+
+transect_per_basin <- medata %>% group_by(Basin) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#6
+
+transect_per_altbasin <- medata %>% group_by(alt_basin) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#7
+
+transect_per_altbasin_protection <- medata %>% group_by(alt_basin,protection) %>% summarise("number_of_trans"= n_distinct(unique_trans_id)) 
+
+#8
+
+transect_per_altbasin_site <- medata %>% group_by(alt_basin) %>% summarise("number_of_trans"= n_distinct(unique_trans_id),"site_number"=n_distinct(new_site_name)) 
+```
+
+## Study site map
+
+get only distinct point with different lat and lon:
+
+```{r}
+unique_coords<-medata %>% distinct(lat,lon,enforcement,protection,.keep_all = T) %>% dplyr::select(country,site,lat,lon,protection,enforcement)
+
+```
+
+#,position=position_jitter(h=0.12, w=0.12)
+```{r}
+
+
+ggplot(unique_coords) +
+  geom_sf(data = med_seas$geometry, mapping = aes(),fill= "azure",color = NA) + ##D4ECFF
+  geom_point(data =unique_coords,aes(x = lon, y = lat, color = enforcement), 
+             size = 2.5,alpha = 0.9,position=position_jitter(h=0.06, w=0.06)) + 
+  xlab("Longitude") + 
+  ylab("Latitude") +
+   annotation_scale(location = "bl", width_hint = 0.4) +
+    annotation_north_arrow(location = "bl", which_north = "true", 
+        pad_x = unit(0.0, "in"), pad_y = unit(0.2, "in"))+
+  theme(panel.background = element_rect(fill = "grey90"),##FFFAF7
+        text=element_text(size=24, family = "serif"),
+        panel.grid.major = element_line(colour = "transparent"))+
+    geom_sf_text(data =med_seas, aes(label = med_seas$NAME),
+                 family = "serif")+
+  scale_color_manual("Protection level",values=c("#C42E1C","#D4B04A","#70A34E","#446441"),
+                     labels = c("Not protected","Minimally protected","Partly protection","Fully protected"))
+  
+
+ggsave(filename = "med_map_v1.pdf", width=15, height=10)
+ggsave(filename = "med_map_v1.png", width=15, height=10)
+```
+
+
+`#C42E1C` - red
+`#D4B04A`- yellow
+`#70A34E`- light green
+`#446441` - dark green
+
+Ill take it to QGIS!
+
+```{r}
+color_pal<- colorFactor(palette = c("#C42E1C","#D4B04A","#70A34E","#446441"), domain = unique_coords$enforcement,alpha = 0.8)
+
+
+leaflet(unique_coords) %>% 
+  addTiles() %>% 
+  addCircles(lng=~lon,lat=~lat,radius = 50,color = ~color_pal(unique_coords$enforcement),
+    stroke = T,label = ~as.character(site))
+```
+
 
 
 # save medata

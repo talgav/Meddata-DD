@@ -104,6 +104,41 @@ rm(list = setdiff(ls(), c("comp_dd","comp","data_for_model","plot_dir")))
 
 ## Vertical relif
 
+
+```{r}
+completness<-data_for_model %>% filter(dark != 0) %>% 
+  mutate(completness = log(observed_richness/dark))
+
+hist(completness$completness)
+
+completness_model<-glmmTMB(completness ~  VerRelief + protection+ (1|site), data=completness,family = gaussian())
+
+summary(completness_model)
+
+plot(simulateResiduals(completness_model))
+
+plot_model(completness_model, type = "pred", terms = c("VerRelief","protection"),allow.new.levels=TRUE)
+
+gg_comp=ggpredict(completness_model,terms = c('VerRelief[-2:4 by=0.5]'))
+
+ggplot()+
+  theme_classic()+
+  geom_line(data = gg_comp,aes(x= x,y = predicted),size=1.5,color= "red")+
+  geom_ribbon(data = gg_comp,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.2,fill="red")+
+  xlab("Vertical relief") +
+  ylab("Completeness")+
+  theme(axis.text.x = element_text(size=30),
+        plot.title = element_text(size=34),
+        axis.text.y = element_text(size =30),
+        axis.title.x = element_text(size=32),
+        axis.title.y = element_text(size=32),
+        legend.title = element_text(size=32),
+        legend.text = element_text(size=30),
+        legend.position = "none",
+        strip.text.x = element_text(size = 30))
+
+```
+
 ### Dark
 
 ```{r}
@@ -119,13 +154,22 @@ gg_dark_vr=ggpredict(vr_dark,terms = c('VerRelief[-2:4 by=0.5]'))
 
 ggplot()+
   theme_classic()+
-  geom_line(data = gg_dark_vr,aes(x= x,y = predicted),size=1.5,color= "darkblue")+
-  geom_ribbon(data = gg_dark_vr,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="darkblue")+
-  xlab("Vertical relif") +
-  ylab("Dark diversity")
+  geom_line(data = gg_dark_vr,aes(x= x,y = predicted),size=1.5,color= "#7DCDE4")+
+  geom_ribbon(data = gg_dark_vr,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.2,fill="#7DCDE4")+
+  xlab("Vertical relief") +
+  ylab("Dark diversity")+
+  theme(axis.text.x = element_text(size=30),
+        plot.title = element_text(size=34),
+        axis.text.y = element_text(size =30),
+        axis.title.x = element_text(size=32),
+        axis.title.y = element_text(size=32),
+        legend.title = element_text(size=32),
+        legend.text = element_text(size=30),
+        legend.position = "none",
+        strip.text.x = element_text(size = 30))
 
 ggsave("vr_dark.png",path = plot_dir,width = 12,height = 7)
-
+ggsave("vr_dark.pdf",path = plot_dir,width = 12,height = 7)
 ```
 
 ### Observed
@@ -144,13 +188,22 @@ gg_obs_vr=ggpredict(vr_observed,terms = c('VerRelief[-2:4 by=0.5]'))
 
 ggplot()+
   theme_classic()+
-  geom_line(data = gg_obs_vr,aes(x= x,y = predicted),size=1.5,color= "gold")+
-  geom_ribbon(data = gg_obs_vr,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="gold")+
-  xlab("Vertical relif") +
-  ylab("Observed richness")
+  geom_line(data = gg_obs_vr,aes(x= x,y = predicted),size=1.5,color= "#F2E96C")+
+  geom_ribbon(data = gg_obs_vr,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.2,fill="#F2E96C")+
+  xlab("Vertical relief") +
+  ylab("Observed richness")+
+  theme(axis.text.x = element_text(size=30),
+        plot.title = element_text(size=34),
+        axis.text.y = element_text(size =30),
+        axis.title.x = element_text(size=32),
+        axis.title.y = element_text(size=32),
+        legend.title = element_text(size=32),
+        legend.text = element_text(size=30),
+        legend.position = "none",
+        strip.text.x = element_text(size = 30))
 
 ggsave("vr_observed.png",path = plot_dir,width = 12,height = 7)
-
+ggsave("vr_observed.pdf",path = plot_dir,width = 12,height = 7)
 ```
 
 ### Total
@@ -168,12 +221,22 @@ gg_total_vr=ggpredict(vr_total,terms = c('VerRelief[-2:4 by=0.5]'))
 
 ggplot()+
   theme_classic()+
-  geom_line(data = gg_total_vr,aes(x= x,y = predicted),size=1.5,color= "darkgreen")+
-  geom_ribbon(data = gg_total_vr,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="darkgreen")+
-  xlab("Vertical relif") +
-  ylab("Species pool")
+  geom_line(data = gg_total_vr,aes(x= x,y = predicted),size=1.5,color= "#ACD672")+
+  geom_ribbon(data = gg_total_vr,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.2,fill="#ACD672")+
+  xlab("Vertical relief") +
+  ylab("Total species pool")+
+  theme(axis.text.x = element_text(size=30),
+        plot.title = element_text(size=34),
+        axis.text.y = element_text(size =30),
+        axis.title.x = element_text(size=32),
+        axis.title.y = element_text(size=32),
+        legend.title = element_text(size=32),
+        legend.text = element_text(size=30),
+        legend.position = "none",
+        strip.text.x = element_text(size = 30))
 
 ggsave("vr_total.png",path = plot_dir,width = 12,height = 7)
+ggsave("vr_total.pdf",path = plot_dir,width = 12,height = 7)
 
 ```
 
@@ -185,6 +248,37 @@ tab_model(vr_total,vr_observed,vr_dark, dv.labels = c("Total", "Observed","Dark"
 
 
 ## Curvature
+
+```{r}
+
+
+completness_curve<-glmmTMB(completness ~  Curvature + protection+ (1|site), data=completness,family = gaussian())
+
+summary(completness_curve)
+
+plot(simulateResiduals(completness_curve))
+
+plot_model(completness_curve, type = "pred", terms = c("Curvature","protection"),allow.new.levels=TRUE)
+
+gg_comp_curve=ggpredict(completness_curve,terms = c('Curvature[-2:4 by=0.5]'))
+
+ggplot()+
+  theme_classic()+
+  geom_line(data = gg_comp_curve,aes(x= x,y = predicted),size=1.5,color= "red")+
+  geom_ribbon(data = gg_comp_curve,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.2,fill="red")+
+  xlab("Curvature") +
+  ylab("Completeness")+
+  theme(axis.text.x = element_text(size=30),
+        plot.title = element_text(size=34),
+        axis.text.y = element_text(size =30),
+        axis.title.x = element_text(size=32),
+        axis.title.y = element_text(size=32),
+        legend.title = element_text(size=32),
+        legend.text = element_text(size=30),
+        legend.position = "none",
+        strip.text.x = element_text(size = 30))
+```
+
 
 ### Dark
 
@@ -201,12 +295,22 @@ gg_dark_curv=ggpredict(curv_dark,terms = c('Curvature[-2:4 by=0.5]'))
 
 ggplot()+
   theme_classic()+
-  geom_line(data = gg_dark_curv,aes(x= x,y = predicted),size=1.5,color= "darkblue")+
-  geom_ribbon(data = gg_dark_curv,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="darkblue")+
-  xlab("Curvature") +
-  ylab("Dark diversity")
+  geom_line(data = gg_dark_curv,aes(x= x,y = predicted),size=1.5,color= "#7DCDE4")+
+  geom_ribbon(data = gg_dark_curv,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.2,fill="#7DCDE4")+  xlab("Curvature") +
+  ylab("Dark diversity")+
+  theme(axis.text.x = element_text(size=30),
+        plot.title = element_text(size=34),
+        axis.text.y = element_text(size =30),
+        axis.title.x = element_text(size=32),
+        axis.title.y = element_text(size=32),
+        legend.title = element_text(size=32),
+        legend.text = element_text(size=30),
+        legend.position = "none",
+        strip.text.x = element_text(size = 30))
 
 ggsave("Curvature_dark.png",path = plot_dir,width = 12,height = 7)
+ggsave("Curvature_dark.pdf",path = plot_dir,width = 12,height = 7)
+
 ```
 
 
@@ -226,12 +330,22 @@ gg_obs_curv=ggpredict(curv_observed,terms = c('Curvature[-2:4 by=0.5]'))
 
 ggplot()+
   theme_classic()+
-  geom_line(data = gg_obs_curv,aes(x= x,y = predicted),size=1.5,color= "gold")+
-  geom_ribbon(data = gg_obs_curv,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="gold")+
+  geom_line(data = gg_obs_curv,aes(x= x,y = predicted),size=1.5,color= "#F2E96C")+
+  geom_ribbon(data = gg_obs_curv,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.2,fill="#F2E96C")+
   xlab("Curvature") +
-  ylab("Observed richness")
+  ylab("Observed richness")+
+  theme(axis.text.x = element_text(size=30),
+        plot.title = element_text(size=34),
+        axis.text.y = element_text(size =30),
+        axis.title.x = element_text(size=32),
+        axis.title.y = element_text(size=32),
+        legend.title = element_text(size=32),
+        legend.text = element_text(size=30),
+        legend.position = "none",
+        strip.text.x = element_text(size = 30))
 
 ggsave("Curvature_obs.png",path = plot_dir,width = 12,height = 7)
+ggsave("Curvature_obs.pdf",path = plot_dir,width = 12,height = 7)
 ```
 
 
@@ -251,12 +365,22 @@ gg_total_curv=ggpredict(curv_total,terms = c('Curvature[-2:4 by=0.5]'))
 
 ggplot()+
   theme_classic()+
-  geom_line(data = gg_total_curv,aes(x= x,y = predicted),size=1.5,color= "darkgreen")+
-  geom_ribbon(data = gg_total_curv,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.1,fill="darkgreen")+
+  geom_line(data = gg_total_curv,aes(x= x,y = predicted),size=1.5,color= "#ACD672")+
+  geom_ribbon(data = gg_total_curv,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.2,fill="#ACD672")+
   xlab("Curvature") +
-  ylab("Observed richness")
+  ylab("Total species pool")+
+  theme(axis.text.x = element_text(size=30),
+        plot.title = element_text(size=34),
+        axis.text.y = element_text(size =30),
+        axis.title.x = element_text(size=32),
+        axis.title.y = element_text(size=32),
+        legend.title = element_text(size=32),
+        legend.text = element_text(size=30),
+        legend.position = "none",
+        strip.text.x = element_text(size = 30))
 
 ggsave("Curvature_total.png",path = plot_dir,width = 12,height = 7)
+ggsave("Curvature_total.pdf",path = plot_dir,width = 12,height = 7)
 ```
 
 models summary table

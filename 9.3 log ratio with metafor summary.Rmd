@@ -110,6 +110,31 @@ for (i in unique(medata_wide$alt_basin)) {
 dd_data<-bind_rows(data_list)
 ```
 
+
+make a table for the ms
+
+
+```{r}
+
+table_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\tables"
+
+
+trans_table<-dd_data %>% group_by(country,new_site_name,protection) %>% summarise("n"= n(), "Mean observed richness"= round(mean(observed_richness),1),"Mean dark diversity" = round(mean(dark),1))
+
+trans_table<- trans_table %>% arrange(country,new_site_name,protection)
+
+colnames(trans_table)<- c("Country","Site","Protection","Number of transects","Mean observed richness","Mean dark diversity")
+
+trans_table$Site <- sub("_", " ", trans_table$Site)
+trans_table$Site<-str_to_title(trans_table$Site)
+
+#write.csv(trans_table,paste0(table_dir,"\\transect_per_site.csv"))
+```
+
+
+
+
+
 clean 
 
 ```{r}
@@ -345,6 +370,11 @@ ggplot(data = d_ratio,aes(x=Est,y=pair,color = Index))+
 
 ```
 
+```{r}
+protection<-log_data_raw %>% select(pair,enforcement) %>% distinct(,.keep_all = T) %>% filter(as.numeric(as.character(enforcement))>2)
+
+
+```
 
 
 add meta-analyses summery from metafor
@@ -396,6 +426,18 @@ random_effect_model_results <- rma(yi, # this is the effect size from each row i
 
 random_effect_model_results
 
+
+very_protected_dark <-RR_effect_sizes_dark %>% filter(pair %in% protection$pair) 
+
+
+pro_random_effect_model_results <- rma(yi, 
+                                   vi, 
+                                   method = "REML", 
+                                   slab = pair, 
+                                   data = very_protected_dark)
+
+
+pro_random_effect_model_results
 
 forest(
   RR_effect_sizes_dark$yi, # These are effect sizes from each row in database
@@ -477,6 +519,17 @@ obs_random_effect_model_results <- rma(yi, # this is the effect size from each r
 
 obs_random_effect_model_results
 
+very_protected_obs <-RR_effect_sizes_obs %>% filter(pair %in% protection$pair) 
+
+
+pro_obs_random_effect_model_results <- rma(yi, 
+                                   vi, 
+                                   method = "REML", 
+                                   slab = pair, 
+                                   data = very_protected_obs)
+
+pro_obs_random_effect_model_results
+
 
 
 o_summary<-o_ratio[1,]
@@ -537,7 +590,16 @@ total_random_effect_model_results <- rma(yi, # this is the effect size from each
 
 total_random_effect_model_results
 
+very_protected_total <-RR_effect_sizes_total %>% filter(pair %in% protection$pair) 
 
+
+pro_total_random_effect_model_results <- rma(yi, 
+                                   vi, 
+                                   method = "REML", 
+                                   slab = pair, 
+                                   data = very_protected_total)
+
+pro_total_random_effect_model_results
 
 t_summary<-t_ratio[1,]
 
@@ -581,13 +643,17 @@ ggplot(data = d_ratio,aes(x=Est,y=pair,color = Index,shape = shape))+
   scale_shape_manual(values=c(16, 15))
   
 
-#ggsave("ratio_se_dark_obs.png",path = plot_dir,width = 12,height = 8)
-#ggsave("ratio_se_dark_obs.pdf",path = plot_dir,width = 12,height = 8)
+#ggsave("ratio_se_dark_obs_total.png",path = plot_dir,width = 12,height = 8)
+#ggsave("ratio_se_dark_obs_total.pdf",path = plot_dir,width = 12,height = 8)
 
 ```
 
 
 # completeness index
+
+```{r}
+completness_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\completness"
+```
 
 
 ```{r}
@@ -600,6 +666,7 @@ completeness<-completeness %>% mutate("completness" = log(observed_richness/dark
 
 
 completeness_ratio<- completeness %>% select(pair,protection,completness) 
+
 completeness_ratio<- spread(completeness_ratio,protection,completness)
 
  completeness_ratio<-completeness_ratio%>% 
@@ -618,6 +685,39 @@ ggplot(completeness_ratio,aes(x=gap,y=fct_reorder(pair,gap)))+geom_point(size =5
         legend.position = 'none',
         strip.text.x = element_text(size = 22),
         strip.background = element_blank())
+
+#ggsave("completness gap.png",path = completness_dir,width = 12,height = 8)
+#ggsave("completness gap.pdf",path = completness_dir,width = 12,height = 8)
+
 ```
 
+```{r}
+
+completeness<-log_data %>% group_by(pair,protection,index) %>% summarise("mean_richness"= mean(richness),n=n())
+
+
+completeness<-spread(completeness,index,mean_richness)
+
+completeness<-completeness %>% mutate("com" = log(observed_richness/dark))
+
+
+completeness_met<- completeness %>% select(pair,protection,com,n) 
+
+completeness_met<- completeness_met %>% pivot_wider(names_from=protection, 
+              values_from=c(com, 
+                            n)) 
+
+
+com_effect <- escalc( # Function for calculating effect sizes.
+    "MD",             # Specify the effect size we want to calculate.
+    m1i = com_Protected,              # MPA mean richness  
+    n1i = n_Protected,                 # MPA sample size
+    m2i = `com_Not protected`,          # control mean richness
+    n2i = `n_Not protected`,             # control sample size
+    data = completeness_met #  data for our meta-analysis
+  )
+
+
+
+```
 
