@@ -1,0 +1,61 @@
+"","country","Site","protection","Transect number","Mean observed richness","Mean dark diversity"
+"1","Croatia","Brijuni","Not protected",29,7.5,6.1
+"2","Croatia","Brijuni","Protected",46,5.4,7
+"3","Croatia","Kornati","Protected",56,8.2,7.1
+"4","Croatia","Miljet","Protected",51,10.2,5.7
+"5","Cyprus","Akamas","Not protected",10,8.4,5.3
+"6","Cyprus","Akrotiri","Not protected",9,7.6,8.6
+"7","Cyprus","Kavo Gkreko","Not protected",111,6.7,7.6
+"8","Cyprus","Kavo Gkreko","Protected",67,5.6,9
+"9","Cyprus","Moulia","Not protected",4,6.5,9
+"10","France","Banyuls","Not protected",16,10.9,5.3
+"11","France","Banyuls","Protected",26,12.8,3.7
+"12","Greece","Alonissos","Protected",18,11.2,1.1
+"13","Greece","Crete Krios","Not protected",9,9.4,6.3
+"14","Greece","Crete Monoafitis","Not protected",38,11,1.1
+"15","Greece","Crete Paximadia","Not protected",27,10.3,7.1
+"16","Greece","Crete Plakias","Not protected",41,10.4,6.8
+"17","Greece","Gyaros","Not protected",18,7.6,0.3
+"18","Greece","Karpathos","Not protected",18,9.6,0.6
+"19","Greece","Kimolos","Not protected",18,10.9,0.1
+"20","Greece","Piperi","Protected",18,10.4,0.3
+"21","Israel","Achziv","Not protected",68,6.3,8
+"22","Israel","Achziv","Protected",83,6.4,7.7
+"23","Israel","Gdor","Not protected",48,5.7,8.2
+"24","Israel","Gdor","Protected",88,6.2,8.3
+"25","Israel","Habonim","Not protected",57,5,8.6
+"26","Israel","Habonim","Protected",59,5.9,8.4
+"27","Israel","Shikmona","Not protected",60,4.1,8.9
+"28","Israel","Shikmona","Protected",76,4.8,8.9
+"29","Italy","Asinara","Protected",210,11.3,1.8
+"30","Italy","Capo Caccia","Protected",12,12.1,1.8
+"31","Italy","Carloforte","Not protected",18,14.7,2.1
+"32","Italy","Genova","Not protected",18,13.1,1.8
+"33","Italy","Lampedusa","Protected",96,9.5,12.4
+"34","Italy","Linosa","Protected",96,7.8,12.5
+"35","Italy","Maratea","Not protected",18,10.3,1.2
+"36","Italy","Marettimo","Protected",37,10.5,0.4
+"37","Italy","Otranto","Not protected",18,13.4,6.3
+"38","Italy","Porto Cesareo","Protected",18,13.3,4.8
+"39","Italy","Portofino","Protected",12,13.8,1.1
+"40","Italy","San Vito","Not protected",38,12.3,0.7
+"41","Italy","Tavolara","Protected",15,16,0.9
+"42","Italy","Torre Guaceto","Protected",18,13.9,5.1
+"43","Italy","Tremiti","Protected",9,6.8,10.3
+"44","Italy","Ustica","Protected",45,11.3,0.4
+"45","Malta","Malta","Not protected",96,10.6,12.2
+"46","Spain","Cabrera","Protected",18,11.4,0.2
+"47","Spain","Cap De Creus","Protected",18,10.3,4.9
+"48","Spain","Cavalleria","Protected",18,9.6,0.1
+"49","Spain","Dragonera","Not protected",18,9.3,0.1
+"50","Spain","Eivissa","Not protected",18,11.8,0.3
+"51","Spain","Formentera","Protected",18,12.6,0.2
+"52","Spain","Formentor","Not protected",15,9.1,0
+"53","Spain","Illa De L'aire","Not protected",18,8.1,0.2
+"54","Spain","Medes","Not protected",18,9.6,5.3
+"55","Spain","Medes","Protected",18,12.2,4.2
+"56","Turkey","Adrasan","Not protected",18,6.4,9.2
+"57","Turkey","Ayvalik","Not protected",18,10.3,0.8
+"58","Turkey","Fethiye","Not protected",18,5.4,9.3
+"59","Turkey","Gokova","Not protected",18,7.6,0.6
+"60","Turkey","Kas","Not protected",18,6.4,8.2
