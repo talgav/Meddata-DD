@@ -1,0 +1,788 @@
+---
+title: "Clean 1 - data wrangling"
+author: "TG"
+date: "2023-11-21"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+library(lubridate)
+library(ggplot2)
+library(stringr)
+library(rfishbase)
+library(vegan)
+library(mobr)
+library(viridis)
+library(plotrix)
+library(sjmisc)
+library(sf)
+library(ggspatial)
+library(dplyr)
+library(tidyr)
+library(leaflet)
+library(readr)
+
+#library(Hmisc)
+#library(rgeos)
+#library(maptools)
+```
+
+
+# In this script:
+
+1. Input of 2 raw data set (2 data frames, Medata and complexity data from the `raw input data` folder)
+
+2. Clean and organize, set the basin, verify MPA Classification, remove sites that should be ommited ect.
+
+3. Set the pairs of MPA and control sites 
+
+4. Output - 4 processed dataframes saved to the `clean output data` folder
+
+* `Clean_Medata.Rdata` - the clean MeData after all the alternations
+
+* `unique_coords.Rdata` -  dataframe with distinct survey locations
+
+* `pairs.Rdata` -  dataframe all the MPA and control sites
+
+* `Clean_complexity_data.Rdata` -  the clean complexity data
+
+# MeData dataframe
+
+load the original data as download from github at 15.1.2023
+
+```{r}
+
+medata_raw <- readRDS("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\raw input data\\medata_from_git_after_cyp.Rds") 
+
+medata <-medata_raw # the verstion ill play with
+
+
+```
+
+## Data cleaning
+
+Remove transects that have only 0 and seems like mistakes (could happened when using Acess to upload the data, you cannot delete false observation just to change to 0)
+
+```{r}
+
+transect_to_remove<-c("kornati217015286494381202NA",
+                      "kornati216815286494381202NA",
+                      "kornati216915286494381202NA",
+                      "gdor164534866923241672NA")
+
+medata<-medata %>% filter(!unique_trans_id %in% transect_to_remove)
+
+
+rm(transect_to_remove)
+```
+
+Examine the species list:
+
+```{r}
+
+species<- medata %>% distinct(species)
+
+```
+
+Remove `.spp` species:
+
+```{r}
+
+Species_to_remove <-species$species[which(str_detect(species$species,".spp")==T)]
+
+Species_to_remove
+
+medata <-medata %>% filter(!species %in% Species_to_remove)
+
+rm(Species_to_remove)
+```
+
+Remove cryptic species:
+
+Gobiidae, Blenniidae & Tripterygiidae
+
+
+```{r}
+
+Families_to_remove<- c("Gobiidae","Blenniidae","Tripterygiidae")
+
+medata <-medata %>% filter(!family %in% Families_to_remove)
+
+species<- medata %>% distinct(species,family) # Make sure manually that all species and family are correct
+
+rm(Families_to_remove)
+
+```
+
+
+## fix cyprus coords
+
+The lat and lon of Cyprus are swapped 
+(lon is under lat and vice-versa, fixed on git on latter additions)
+
+```{r}
+
+medata$lat_n<-ifelse(medata$country=="Cyprus",
+                               medata$lon,
+                               medata$lat)
+
+medata$lon_n<-ifelse(medata$country=="Cyprus",
+                              medata$lat,
+                              medata$lon)
+
+medata<-medata %>% dplyr::select(-lat,-lon) %>% 
+  rename("lat" = "lat_n","lon" = "lon_n") %>%
+  relocate(lat, .after = season) %>% 
+  relocate(lon,.before = site)
+
+medata<-medata %>% drop_na(protection)
+
+```
+
+## Add banyuls coordinates 
+
+```{r}
+Banyuls_location <- read.csv("raw input data\\Banyuls location.csv")
+Banyuls_location <- Banyuls_location %>%  select(site,Latitude,Longitude)
+
+medata<-left_join(medata,Banyuls_location)
+
+medata$lat<-ifelse(medata$country=="France",medata$Latitude,medata$lat)
+medata$lon<-ifelse(medata$country=="France",medata$Longitude,medata$lon)
+
+
+medata$Latitude<-NULL
+medata$Longitude<- NULL
+
+rm(Banyuls_location)
+```
+
+## basin classifications
+
+load  general Mediterranean map to determine which points belongs to each basin polygon
+
+```{r}
+med_seas <- st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp")
+
+```
+
+
+To determine which transect belongs to which basin we apply this loop that also provide small buffer around the basins so no transect will fall on land.
+
+
+```{r message=FALSE, warning=FALSE}
+# Assuming 'med_seas' is your sf object
+
+med_seas_sf <- st_as_sf(med_seas)
+
+# Initialize an empty sf object to store the results with the same structure as med_seas
+
+for (i in 1:nrow(med_seas_sf)) {
+  
+  region <- med_seas_sf[i,]  # Select each region
+  region_bf <- st_buffer(region, dist = 0.01)  # Make a buffer around the region, unit is degree because the crs is wgs84
+  other_regs <- med_seas_sf[-i,]  # Select all other regions
+  union_other_regs <- st_union(other_regs) 
+  
+  union_other_regs <- st_combine(union_other_regs) 
+ 
+  region_bf_land <- st_difference(region_bf, union_other_regs)  # Delete overlapping parts with other regions
+  #region_bf_land <- region_bf_land # Keep only the one without overlaps 
+  
+ if(i == 1){
+    med_seas_bf <- region_bf_land # for the first loop
+  }else{
+    med_seas_bf <- bind_rows(med_seas_bf, region_bf_land) # for the other loop itr
+  }
+  print(i)
+}
+
+
+# Make sure all the geometry is valid
+
+med_seas_bf_valid <- st_make_valid(med_seas_bf)
+
+# convert medata to spatial object
+
+medata_sf <- st_as_sf(medata, coords = c("lon", "lat"))
+
+# Make sure both datasets have the same coordinate reference system (CRS)
+
+medata_sf <- st_set_crs(medata_sf, st_crs(med_seas_bf_valid))
+
+# Perform spatial join
+
+medata_sf <- st_join(medata_sf, med_seas_bf_valid)
+
+# Now 'medata_sf' contains the attributes from 'med_seas_bf' matched to each point
+
+# If you want to create a new column 'Basin' in 'medata_sf' with basin information
+medata_sf$Basin <- medata_sf$NAME
+
+
+medata_sf<-medata_sf %>% select(-c(27:36))
+
+# If you want to create a new column 'colour' as an integer factor
+
+medata_sf$colour <- as.integer(as.factor(medata_sf$Basin))
+
+# Check for missing values in the 'Basin' column
+
+unique(is.na(medata_sf$Basin))
+
+# plot to see that all the point are correct
+
+plot(st_geometry(med_seas), col = 'azure', border = NA, bg = 'grey90')
+plot(medata_sf$geometry, add = T, pch = 19, cex = 0.5, col = medata_sf$colour)
+text(med_seas_bf_valid$Longitude, y = med_seas_bf_valid$Latitude,med_seas_bf_valid$NAME) 
+
+
+```
+
+
+Add the basin to the non-spatial MeData 
+
+```{r}
+basin <-medata_sf
+
+basin<-as.data.frame(basin)
+
+basin <- basin %>%  dplyr::select(Basin,unique_trans_id) %>% distinct(unique_trans_id,.keep_all = T)
+
+medata<-left_join(medata,basin)
+
+medata<-medata %>% relocate(Basin,.after = country)
+
+```
+
+Clean enviorinment
+
+```{r}
+rm(list = setdiff(ls(), c("medata","medata_raw","med_seas")))
+
+```
+
+Create alternative basin division which:
+
+* Add the `Ionian Sea` to the `Adriatic Sea`
+* Add the `Ligurian Sea` to the `Mediterranean Sea - Western Basin`
+* Separate Israel to the `Levantine Sea`
+
+
+
+```{r}
+medata<-medata %>% mutate(alt_basin = Basin) %>% relocate(alt_basin,.after = Basin)
+
+medata$alt_basin<-ifelse(medata$Basin == "Ionian Sea",
+                         "Adriatic Sea",
+                         medata$alt_basin)
+
+medata$alt_basin<-ifelse(medata$Basin == "Ligurian Sea",
+                         "Mediterranean Sea - Western Basin",
+                         medata$alt_basin)
+
+medata$alt_basin<-ifelse(medata$country %in% c("Israel"),
+                         "Levantine Sea",
+                         medata$alt_basin)
+
+```
+
+
+## unite close sites 
+
+
+```{r}
+
+meta <- medata %>% select(1:20) %>% distinct(unique_trans_id,.keep_all = T)
+
+```
+
+get mean coordinate per site
+
+
+```{r}
+meta_site<- meta %>% group_by(alt_basin,site) %>% summarise(lat = mean(lat),lon = mean(lon))
+
+```
+
+
+* change all the 'assecret' sites to informative site names
+
+* unite the names of close transects to have one site name
+
+
+```{r message=FALSE, warning=FALSE}
+
+new_name<-data.frame(site=c("assecret2010193","assecret2010192","assecret2010191","assecret1210192","assecret1210191"),
+                     new_site_name = rep("Crete_Monoafitis"))
+
+
+new_name_2<- data.frame(site=c("assecret1810193","assecret1810192","assecret1810191"),
+                     new_site_name = rep("Crete_Paximadia"))
+
+new_name_3<- data.frame(site=c("assecret1410193","assecret1610191","assecret1410192","assecret1410191",
+                               "assecret1610192","assecret1610193"),
+                     new_site_name = rep("Crete_Plakias"))
+
+
+new_name_4<- data.frame(site=c("assecret2210191","assecret2210192"),
+                     new_site_name = rep("Crete_Krios"))
+
+
+new_name_5<- data.frame(site=c("assecret1910191","assecret1910193","assecret1910192","assecret1310192",
+                               "assecret1310191","assecret1310193"),
+                     new_site_name = rep("Crete_Kalydon"))
+
+
+new_name_6<-data.frame(site = unique(medata$site[medata$country=="France"]),
+                       new_site_name = "Banyuls")
+
+new_name_7<-data.frame(site = c("asinara_add","Nisia","montgri"),
+                       new_site_name = c("asinara","Kavo Gkreko","medes"))
+
+new_name <- rbind(new_name,new_name_2,new_name_3,new_name_4,new_name_5,new_name_6,new_name_7)
+
+
+
+meta_site<-left_join(meta_site,new_name)
+
+meta_site<-meta_site %>% mutate(new_site_name = case_when(is.na(new_site_name) ~ site,
+                                   TRUE ~ new_site_name)) %>% 
+  
+select(site,new_site_name)
+
+
+medata<-left_join(medata,meta_site)
+
+medata<-medata %>% 
+  relocate(new_site_name,.after = site) 
+
+medata$new_site_name<-as.factor(medata$new_site_name)
+
+```
+
+Remove `Crete_Kalydon` site where there is active feeding of groupers
+
+```{r}
+
+medata<-medata %>% filter(new_site_name !="Crete_Kalydon")
+
+```
+
+
+fix some point in Spain that needed to be added to the Balearic so all the transect in one site will belong to the same basin 
+
+```{r}
+medata$alt_basin[medata$new_site_name=="cabrera"]<-"Balearic (Iberian Sea)" 
+
+medata$alt_basin[medata$new_site_name=="illa_de_l'aire"]<-"Balearic (Iberian Sea)" 
+
+
+```
+
+
+change `TRUE` & `FALSE` variables
+
+```{r}
+
+medata$protection<-ifelse(medata$protection==TRUE,"Protected","Not protected")
+
+medata$exotic<-ifelse(medata$exotic==TRUE,"Invasive","Native")
+
+```
+
+
+```{r}
+rm(list = setdiff(ls(), c("medata","medata_raw","med_seas")))
+
+```
+
+
+## fix enforcment levels
+
+Adjust the enforcement levels of the Cyprus transects to fit the ms classification
+
+reassessment was made by Dr.Periklis Kleitou experts team
+
+
+```{r}
+
+Cypurs_class<- read_csv("raw input data/Cypurs classification_MER.csv")
+
+Cypurs_class <- Cypurs_class %>% select(lat_lon,classification,verified_classification)
+
+medata<-medata %>% mutate("lat_lon" = paste(lat,lon,sep=","))
+
+medata<-left_join(medata,Cypurs_class)
+
+medata$enforcement<-as.character(medata$enforcement)
+
+medata$enforcement<-ifelse(medata$country=="Cyprus",
+                           medata$verified_classification,
+                           medata$enforcement)
+
+medata$enforcement<-as.numeric(medata$enforcement)
+
+medata<-medata %>% select(1:30) # remove the additional columns
+
+# fix cases when enforcement  = 0 but specify as Protected (due to score change in Cyprus)
+
+medata$protection<-ifelse(medata$enforcement == 0,"Not protected",medata$protection)
+
+
+rm(Cypurs_class)
+
+```
+
+## Study site map
+
+get only distinct point with different lat and lon:
+
+```{r}
+unique_coords<-medata %>% distinct(lat,lon,enforcement,protection,.keep_all = T) %>% dplyr::select(country,new_site_name,lat,lon,protection,enforcement)
+
+```
+
+
+```{r message=FALSE, warning=FALSE}
+
+unique_coords$enforcement<-as.character(unique_coords$enforcement)
+
+ggplot(unique_coords) +
+  geom_sf(data = med_seas$geometry, mapping = aes(),fill= "azure",color = NA) + ##D4ECFF
+  geom_point(data =unique_coords,aes(x = lon, y = lat, color = enforcement), 
+             size = 2.5,alpha = 0.9,position=position_jitter(h=0.06, w=0.06)) + 
+  xlab("Longitude") + 
+  ylab("Latitude") +
+  theme(panel.background = element_rect(fill = "grey90"),
+        text=element_text(size=24, family = "serif"),
+        panel.grid.major = element_line(colour = "transparent"))+
+  scale_color_manual("Protection level",values=c("#C42E1C","#D4B04A","#70A34E","#446441"),
+                     labels = c("Not protected",
+                                "Minimally protected",
+                                "Partly protection",
+                                "Fully protected"))
+  
+```
+
+## Interactive map:
+
+```{r}
+color_pal<- colorFactor(palette = c("#C42E1C","#D4B04A","#70A34E","#446441"), domain = unique_coords$enforcement,alpha = 0.5)
+
+
+leaflet(unique_coords) %>% 
+  addTiles() %>% 
+  addCircles(lng=~lon,lat=~lat,radius = 50,color = ~color_pal(unique_coords$enforcement),
+    stroke = T,label = ~as.character(new_site_name))
+```
+
+
+
+some coloumn name changes
+
+
+```{r}
+
+medata<-medata %>% rename(Old_basin = Basin,
+                          Old_site = site )
+
+medata<-medata %>% rename(Basin = alt_basin,
+                          Site = new_site_name)
+
+```
+
+
+### save medata
+
+```{r}
+
+# save(medata, file = "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_Medata.Rdata")
+
+# write.csv(medata,"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_Medata.csv")
+```
+
+### save coordinate data
+
+save the unique coordinates data
+
+
+```{r}
+#save(unique_coords,file = "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\unique_coords.Rdata")
+
+#write.csv(unique_coords,"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\unique_coords.csv")
+
+```
+
+
+#  Match pairs of MPA and control
+
+In this section I'll create data set that contained all the pairs of MPAs and control sites
+
+MPA must be Fully (3) or Partly protected (2), control must be unprotected (0)
+
+```{r}
+pair_raw<-medata %>% select(1:23) # keep only metadate and abundances
+
+pair_raw<-pair_raw %>% group_by(across(1:22)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum the individuals from the same species in each transect
+
+pair_raw<-spread(pair_raw,species,amount,fill = 0) # convert to wide format
+
+pair_raw<-pair_raw %>% select(data.origin,country,Site,enforcement) %>% distinct(,.keep_all = T)
+```
+
+```{r}
+site_list<-list()
+```
+
+#### Brijoni
+
+In Croatia only Brijoni have pair of fully/partly MPA and control site
+
+```{r}
+Brijoni <- pair_raw %>% filter(Site == "brijuni")
+
+Brijoni$pair<-"Brijoni"
+
+site_list[[1]]<-Brijoni
+
+rm(Brijoni)
+
+```
+
+#### Israel
+
+In Israel all MPAs beside `Habonim` have control sites
+
+```{r}
+isr<-pair_raw %>% filter(country == "Israel",Site != "habonim")
+
+isr$pair<-isr$Site
+
+site_list[[2]]<-isr
+
+rm(isr)
+
+```
+
+#### France
+
+only one MPA and control sites
+
+```{r}
+Banyuls <- pair_raw %>% filter(Site == "Banyuls")
+
+Banyuls$pair <-"Banyuls"
+
+site_list[[3]]<-Banyuls
+
+rm(Banyuls)
+```
+
+#### Spain
+
+Multiple pairs of MPAs and control sites. 
+
+**Note** - there are two possible control sites for `Cabrera` MPA, I used `Dragonera` because it a bit closer and also an island  and omit `formentor` *but* we might change it later or use 2 pairs (or aggregate the two control sites...)
+
+**Note 2** - same goes for `cap_de_creus` - no pair so I ommited but we should talk to the team and see what they think.
+
+```{r}
+spain<-pair_raw %>% filter(country == "Spain")
+
+spain <- spain %>% mutate(pair = case_when(
+  Site == "formentera"~ "Formentera",
+  Site == "eivissa"~ "Formentera",
+  Site == "cabrera"~"Cabrera",
+  Site == "dragonera"~ "Cabrera",
+  Site == "cavalleria"~ "Cavalleria",
+  Site == "illa_de_l'aire"~ "Cavalleria",
+  Site == "medes"~ "Medes"
+  
+  ))
+
+spain<-spain %>% drop_na(pair)
+
+site_list[[4]]<-spain
+
+rm(spain)
+```
+
+#### Italy
+
+Need to decide how to treat those 3 sites...
+
+* I did two different comparison with `carloforta` as the control for both `tavolara` and `Asinara` MPAs.
+  
+* In `Asinara` some transect are full protected and some partly protected.
+ 
+* I did not find control for `porto_cesareo` maybe i can use `otranto`- needs to check
+
+```{r}
+itl<-pair_raw %>% filter(country == "Italy",data.origin != "Belmaker")
+
+itl <- itl %>% mutate(pair = case_when(
+  Site == "portofino" ~ "Portofino",
+  Site == "genova" ~ "Portofino",
+  Site == "torre_guaceto" ~ "Torre guaceto",
+  Site == "otranto" ~ "Torre guaceto",
+  Site == "asinara" ~ "Asinara", 
+  Site == "carloforte" ~ "Asinara"))
+
+itl<-itl %>% drop_na(pair)
+
+itl_2<-pair_raw %>% filter(country == "Italy",Site %in% c("tavolara","carloforte"))
+
+itl_2$pair = "Tavolara"
+
+itl<-rbind(itl,itl_2)
+
+site_list[[5]]<-itl
+
+```
+
+
+Note - Combining the data later on using `left_join` will multiply the rows of `carloforte` so one time it paired with `tavolara` and  one time with `Asinara`.
+
+
+if the test works the last raw should yield `TRUE`
+
+
+```{r}
+test<- medata %>% filter(country == "Italy",data.origin != "Belmaker")
+
+
+carloforte<-test %>% filter(Site == "carloforte")
+
+
+itl_unite<-left_join(test,itl)
+
+nrow(test)+nrow(carloforte) == nrow(itl_unite) # should be TRUE
+
+rm("test","carloforte","itl_unite")
+rm(itl,itl_2)
+```
+
+
+#### Cyprus
+
+```{r}
+cyprus <-pair_raw %>% filter(country == "Cyprus",
+                             Site == "Kavo Gkreko",
+                             enforcement !=1) 
+
+cyprus$pair<-"Kavo Gkreko"
+
+site_list[[6]]<-cyprus
+
+rm(cyprus)
+```
+
+
+```{r}
+pairs <- bind_rows(site_list)
+
+rm(site_list,pair_raw)
+
+```
+
+
+```{r}
+#save(pairs,file = "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\pairs.Rdata")
+
+#write.csv(pairs,"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\pairs.csv")
+```
+
+
+# complexity data
+
+```{r}
+
+comp_data_raw <-read.csv("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\raw input data\\Mediterranean_data_COMPLEX.csv")
+
+lab_fish_data_raw <- read.csv("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\raw input data\\Med_analyses_data.csv")
+
+comp_data_raw$X<-NULL
+lab_fish_data_raw$X<-NULL
+```
+
+unite data frames
+
+```{r}
+
+colnames(comp_data_raw)
+colnames(lab_fish_data_raw)
+
+
+all_data<-left_join(lab_fish_data_raw,comp_data_raw)
+
+```
+
+keep one observer only (randomly) in cases where two observer recorded data for the same transect
+
+```{r}
+one_observer<-list()
+loop<-1
+set.seed(1)
+
+for (i in unique(all_data$id)) {
+  
+  data <- all_data %>% filter(id == i)
+  
+  obs_amount <- length(unique(data$Observer))
+  obs_name <- unique(data$observer)
+  chosen_obs <- sample(obs_name,1)  
+ 
+  filter_data<-data %>% filter(observer == chosen_obs)
+  one_observer[[loop]]<-filter_data
+  loop<-loop+1
+  
+  
+}
+
+one_observer<- bind_rows(one_observer)
+rm(data,filter_data)
+```
+
+remove unneccery columns
+
+```{r message=FALSE, warning=FALSE}
+
+one_observer <-one_observer %>% select(-right_observer,-left_observer,-ID,-new_a,-new_b, -new_id,-observer_num,-distance,-direction,-campaign) %>% relocate(species,.after = earth_movers) %>%
+  relocate(abundance,.after = species) %>% 
+  relocate(length,.before = abundance)
+
+
+one_observer<-one_observer %>%  select(-visibility,-time,-max_richness,-max_abundance,-max_biomass,-shannon,-site_n,-season,-year)
+
+
+one_observer<- one_observer %>% group_by(across(1:30)) %>% summarise("total_abundance"= sum(abundance)) %>% ungroup()
+
+```
+
+change columns names and values to fit the MeData
+
+```{r}
+
+complexity_clean_data <-one_observer %>% rename("protection" = "reserve", 
+                                                "site" = "location",
+                                                "unique_trans_id" = "id",
+                                                "sp.n" = "total_abundance",
+                                                "sp.length" = "length")
+complexity_clean_data$protection<-ifelse(complexity_clean_data$protection=="In","Protected","Not protected")
+
+```
+
+## save complexity data:
+
+```{r}
+# save(complexity_clean_data,file = "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_complexity_data.Rdata")
+
+# write.csv(complexity_clean_data,"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_complexity_data.csv")
+```
+
+

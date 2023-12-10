@@ -1,0 +1,75 @@
+---
+title: "cyprus data table"
+author: "TG"
+date: "2023-05-07"
+output: html_document
+---
+```{r}
+library(DarkDiv)
+library(tidyverse)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+library(gridExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(glmmTMB)
+library(DHARMa)
+library(ggeffects)
+
+select <- dplyr::select
+
+load("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/clean_dd_medata.rdata")
+```
+
+
+```{r}
+
+Cyprus_1<- medata %>% filter(country =="Cyprus") %>% mutate("lat_lon" = paste(lat,lon,sep=","))%>% distinct(lat_lon,.keep_all = T) 
+
+
+Cyprus<-Cyprus_1 %>% select("lat","lon","lat_lon","site","protection","enforcement") %>% arrange(site,enforcement) %>% mutate(verified_enforcement = rep(NA))
+  
+write.csv(Cyprus,"Cypurs_enforcement.csv")  
+```
+
+```{r}
+
+azz_asi<-medata %>% filter(data.origin %in% c("azz_asi","azz_malt")) %>% mutate("lat_lon" = paste(lat,lon,sep=","))%>%  distinct(lat_lon,.keep_all = T) 
+
+Azzuro <-azz_asi %>% select("lat","lon","lat_lon","site","new_site_name","enforcement") %>% arrange(site,enforcement) %>% mutate(verified_enforcement = rep(NA),enforcement = as.numeric(as.character(enforcement)))%>%
+  filter(enforcement >0)
+
+
+Azzuro<-Azzuro %>% mutate(enforcement = case_when(
+  enforcement == 1 ~ "Minimally protected",
+  enforcement == 2 ~ "Partly protected",
+  enforcement == 3 ~ "Fully protected"
+))
+
+
+Sala<-medata %>%
+  filter(data.origin == "Sala - PEW") %>%
+  mutate("lat_lon" = paste(lat,lon,sep=","))%>%
+  distinct(lat_lon,.keep_all = T) %>%
+  select("lat","lon","lat_lon","site","new_site_name","enforcement") %>%
+  arrange(site,enforcement) %>%
+  mutate(verified_enforcement = rep(NA),
+         enforcement = as.numeric(as.character(enforcement)))%>%
+  filter(enforcement >0)
+
+Sala <- Sala %>% mutate(enforcement = case_when(
+  enforcement == 1 ~ "Minimally protected",
+  enforcement == 2 ~ "Partly protected",
+  enforcement == 3 ~ "Fully protected"
+))
+
+
+write.csv(Azzuro,"Azzurro lab locations.csv")  
+write.csv(Sala,"Sala lab locations.csv")  
+
+```
+
+

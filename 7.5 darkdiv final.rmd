@@ -2,7 +2,10 @@
 title: "7.5 darkdiv final"
 author: "TG"
 date: "2023-03-01"
-output: html_document
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
 ---
 
 ```{r}
@@ -201,7 +204,7 @@ ggsave("medata_dark.pdf",path = plot_dir,width = 12,height = 7)
 
 
 # Observed
-#F2E96C
+
 ```{r}
 Observed <- glmmTMB(log(observed_richness) ~ enforcement + (1|alt_basin:new_site_name),
                   data = dd_data_no_0,family = gaussian())
@@ -232,7 +235,7 @@ ggsave("medata_observed.pdf",path = plot_dir,width = 12,height = 7)
 
 ## Total species pool
 
-#ACD672
+
 
 ```{r}
 Total <- glmmTMB(log(total) ~ enforcement + (1|alt_basin:new_site_name),
@@ -277,6 +280,10 @@ models summry tables:
 # completness
 
 ```{r}
+
+completness_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\completness"
+
+
 completness<-dd_data_no_0 %>%
   mutate(completness = dark/observed_richness)
 
@@ -304,13 +311,20 @@ ggplot()+
   geom_ribbon(data = gg_comp,aes(x=x,ymin=conf.low,ymax=conf.high),alpha=0.2,fill="red")+
   xlab("Protection") + scale_x_continuous(limits=c(1,3),breaks = c(1,2,3)) +
   ggtitle("Completness")+
-  ylab("Richness")+
+  ylab("Completness")+
   theme(axis.text.x = element_text(size=30),
         plot.title = element_text(size=32),
         axis.text.y = element_text(size =28),
         axis.title.x = element_text(size=30),
         axis.title.y = element_text(size=30))
 
+
+
+#ggsave("completness_protection.png",path = completness_dir,width = 12,height = 7)
+#ggsave("completness_protection.pdf",path = completness_dir,width = 12,height = 7)
+
+
+#tab_model(completness_model,file = "completness_protection.xls")
 
 ```
 

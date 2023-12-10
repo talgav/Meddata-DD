@@ -1,0 +1,260 @@
+---
+title: "Clean 2 - dark diversity calculations"
+author: "TG"
+date: "2023-11-22"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r message=FALSE, warning=FALSE}
+library(DarkDiv)
+library(tidyverse)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+library(gridExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(glmmTMB)
+library(DHARMa)
+library(ggeffects)
+
+select <- dplyr::select
+
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_Medata.Rdata")
+
+```
+
+# In this script:
+
+1. Calculate dark diversity for the Medata dataset  
+
+2. Calculate dark diversity for the surveys containing complexity data (183 transects from Israel)
+
+3. Input files:
+
+* `Clean_Medata.Rdata` - the clean MeData after all the alternations
+
+* `Clean_complexity_data.Rdata` -  the clean complexity data
+
+4. Output files:
+
+* `Clean_medata_dd.Rdata` - dark diversity calculation for MeData 
+
+* `Clean_complexity_dd.Rdata` - dark diversity calculation for the Israel complexity data 
+
+
+## Final data prepartion
+
+```{r}
+
+medata<-medata %>% select(1:23) # keep only metadate and abundances
+
+medata<-medata %>% group_by(across(1:22)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # sum the individuals from the same species in each transect
+
+medata_wide<-spread(medata,species,amount,fill = 0) # convert to wide format
+
+```
+
+
+## calculate the dark diversity
+
+Estimate the dark diversity per transect
+ 
+```{r}
+
+index_list<-list() # to save the raw indication table and probabilities of each basin
+
+data_list<-list() # to save the dark diversity data
+
+threshold <-0.9 # the probability to belong to the dark diversity
+
+
+for (i in unique(medata_wide$Basin)) {
+ 
+   basin_data<-medata_wide %>% filter(Basin == i) # keep one basin 
+   
+   sp_matrix<-basin_data[,22:ncol(basin_data)] # create species matrix
+   
+   sp_matrix<-sp_matrix[,colSums(sp_matrix != 0) > 0] # Remove species with that have no ocurrance in the basin
+  
+   dd<-DarkDiv(sp_matrix,method = "Hypergeometric") # apply the dark diversity algorithm 
+   
+   index_list[[i]]<-dd # save raw dark diversity data
+   
+   dd_dark<-dd[["Dark"]] # get the DD probabilities, NA = species was present in the transect
+   dd_dark<-as.data.frame(dd_dark) # convert from matrix to dataframe
+   
+   dd_dark[dd_dark < threshold]<-0 # Set threshold of 90% to belong to dark diversity so smaller prob = 0
+   dd_dark[dd_dark>0]<-1 # convert to 1 species which probability is > threshold
+   
+   dd_dark<-dd_dark %>% mutate("dark"=rowSums(dd_dark,na.rm = T)) # count how many species are in the dark diversity
+   
+   dd_dark_sum<- dd_dark %>% select(dark) # keep only the summary column
+   
+   dd_pool<-dd[["Pool"]] # get the DD probabilities
+   
+   # 1 = species was present in the transect, the other values are the probabilities to belong to the dark diversity
+   
+   dd_pool<-as.data.frame(dd_pool) # convert from matrix to dataframe
+  
+   dd_pool[dd_pool< threshold]<-0 #  Set threshold of 90% to belong to dark diversity so smaller prob = 0
+   dd_pool[dd_pool>0]<-1 # convert to 1 species which probability is > threshold
+   
+   # now 1 is species that either present or belong to dark diversity
+   
+   dd_pool<-dd_pool %>% mutate("total"=rowSums(dd_pool,na.rm = T)) # count the number of observed and dark species 
+   dd_pool_sum<-dd_pool %>% select(total)# keep only the summary column
+   
+   medata_dd<-basin_data[,1:21] # get the basin meta data
+   medata_dd<-as.data.frame(medata_dd) # convert back to data frame 
+
+   medata_dd<-bind_cols(medata_dd,dd_pool_sum) # unite with sum of dd 
+   medata_dd<-bind_cols(medata_dd,dd_dark_sum) # unite with sum of species pool 
+
+   medata_dd$observed_richness<-medata_dd$total-medata_dd$dark # calculate the observed richness
+   
+   data_list[[i]]<-medata_dd # save to list
+}
+
+dd_data<-bind_rows(data_list) # unite all basins to 1 data frame
+```
+
+
+clean environment
+
+```{r}
+
+rm(list=setdiff(ls(),c("dd_data","medata","medata_wide","index_list","data_list","threshold")))
+
+```
+
+## Final dark diversity data prepartion
+
+```{r}
+
+# convert enforcement from factor to numeric
+
+dd_data$enforcement<-as.character(dd_data$enforcement)
+dd_data$enforcement<-as.numeric(dd_data$enforcement)
+
+dd_data$age.reserve.yr<-as.character(dd_data$age.reserve.yr)
+dd_data$age.reserve.yr<-as.numeric(dd_data$age.reserve.yr)
+
+# convert characters variables to factors
+
+dd_data$Site<-as.factor(dd_data$Site)
+dd_data$Basin<-as.factor(dd_data$Basin)
+dd_data$country<-as.factor(dd_data$country)
+
+
+```
+
+*Note* - for the models additional actions were taken (before modeling, next script):
+
+1. Removal of transect with less than two observed species 
+2. Removal of zero enforcement transects as they extremely variable and have large differences in  the actual fishing pressure
+
+### Save dark diversity MeData 
+
+```{r}
+# save(dd_data, file = "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd.Rdata")
+
+# write.csv(dd_data,"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd.csv")
+```
+
+# Complexity dark diversity
+
+```{r}
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_complexity_data.Rdata")
+```
+
+
+###  final data orgenaizing
+
+```{r}
+comp<-complexity_clean_data
+
+comp$sp.length<-NULL #remove this species length column 
+
+comp<-comp %>%  group_by(across(1:29)) %>% summarise(amount = sum(sp.n)) %>% ungroup() # unite species counts in the same transects
+
+comp_wide<-spread(comp,species,amount,fill = 0) # convert to wide format
+
+```
+
+### Dark diversity estimation for complexity data
+
+similar process as for `MeData` but here no loop is needed
+
+
+```{r}
+comp_sp_matrix<-comp_wide[,29:ncol(comp_wide)]  #keep only species matrix
+   
+c_dd<-DarkDiv(comp_sp_matrix,method = "Hypergeometric") # apply dark diversity algorithm
+
+c_dd_dark<-c_dd[["Dark"]] # get the DD probabilities, NA = species was present in the transect
+c_dd_dark<-as.data.frame(c_dd_dark) # convert to dataframe
+   
+c_dd_dark[c_dd_dark<threshold]<-0 # Set threshold to belong to dark diversity so smaller prob = 0
+c_dd_dark[c_dd_dark>0]<-1 # convert to 1 species which probability is > threshold
+
+c_dd_dark<-c_dd_dark %>% mutate("dark"=rowSums(c_dd_dark,na.rm = T)) # count the dark diversity species
+
+c_dd_dark_sum<- c_dd_dark %>% select(dark) # keep only the summary
+
+c_dd_pool<-c_dd[["Pool"]] # get the DD probabilities
+
+# 1 = species was present in the transect, the other values are the probabilities to belong to the dark diversity
+
+c_dd_pool<-as.data.frame(c_dd_pool) # convert to dataframe 
+  
+c_dd_pool[c_dd_pool<threshold]<-0 #Set threshold to belong to dark diversity so smaller prob=0
+c_dd_pool[c_dd_pool>0]<-1 # convert to 1 species which probability is > threshold
+   
+c_dd_pool<-c_dd_pool %>% mutate("total"=rowSums(c_dd_pool,na.rm = T))# count the species in the species pool
+c_dd_pool_sum<-c_dd_pool %>% select(total) # keep only the summary column
+
+
+comp_dd<-comp_wide[,1:28] # get the meta data
+comp_dd<-as.data.frame(comp_dd) # convert to dataframe 
+
+comp_dd<-bind_cols(comp_dd,c_dd_pool_sum) # unite with dd sum
+comp_dd<-bind_cols(comp_dd,c_dd_dark_sum) # unite with species pool sum
+
+comp_dd$observed_richness<-comp_dd$total-comp_dd$dark  # calculate the observed richness
+
+```
+
+# data prepartion for model
+
+```{r}
+
+# convert enforcement to numeric variable
+
+comp_dd$enforcement<-as.character(comp_dd$enforcement)
+comp_dd$enforcement<-as.numeric(comp_dd$enforcement)
+
+# convert protection to factor
+
+comp_dd$protection<-as.factor(comp_dd$protection)
+
+```
+
+
+Note - before modeling there is removal of transect with less than two observed species 
+
+#### save data
+
+```{r}
+# save(comp_dd, file = "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_complexity_dd.Rdata")
+
+# write.csv(comp_dd,"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_complexity_dd.csv")
+
+```
+
+

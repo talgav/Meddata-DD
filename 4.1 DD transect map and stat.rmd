@@ -38,7 +38,7 @@ plot_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\figures\\4.1 plots"
 
 ```{r}
 
-medata_raw <- readRDS("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/cyprus fix/medata_from_git_after_cyp.Rds") # the original data (not really the row-row one)
+medata_raw <- readRDS("G:/My Drive/PHD/chapter 3 MPA dd/Meddata-DD/cyprus fix/medata_from_git_after_cyp.Rds") # the original data 
 
 
 medata<-medata_raw # the verstion ill play with
@@ -102,7 +102,7 @@ species<- medata %>% distinct(species,family)
 
 ## fix cyprus coords
 
-the lat and lon of cyprus
+the lat and lon of Cyprus are swapped
 
 ```{r}
 
@@ -120,7 +120,6 @@ medata<-medata %>% dplyr::select(-lat,-lon) %>%
   relocate(lon,.before = site)
 
 medata<-medata %>% drop_na(protection)
-
 
 ```
 
@@ -258,7 +257,7 @@ medata$alt_basin<-ifelse(medata$country %in% c("Israel","Cyprus"),
 
 ```
 
-fix some point in turkey that needed to be added to the levent
+fix some point in turkey that needed to be added to the Levent
 
 smaller that lat 29.472579
 
@@ -270,6 +269,8 @@ medata$alt_basin<-ifelse(medata$country == "Turkey" & medata$lon > 29.472579,"Le
 
 
 ### unite close sites (script 4.2)
+
+
 ```{r}
 
 meta <- medata %>% select(1:20) %>% distinct(unique_trans_id,.keep_all = T)
@@ -278,14 +279,12 @@ meta <- medata %>% select(1:20) %>% distinct(unique_trans_id,.keep_all = T)
 
 ```
 
-get mean coordiante per site
+get mean coordinate per site
 
 
 ```{r}
 meta_site<- meta %>% group_by(alt_basin,site) %>% summarise(lat = mean(lat),lon = mean(lon))
- 
 
-  
 ```
 
 

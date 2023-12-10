@@ -97,6 +97,7 @@ clean environment
 
 ```{r}
 rm(list = setdiff(ls(), c("comp_dd","comp","data_for_model","plot_dir")))
+completness_dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\plots\\completness"
 
 ```
 
@@ -137,6 +138,9 @@ ggplot()+
         legend.position = "none",
         strip.text.x = element_text(size = 30))
 
+#ggsave("vr_completness.png",path = completness_dir,width = 12,height = 7)
+#ggsave("vr_completness.pdf",path = completness_dir,width = 12,height = 7)
+
 ```
 
 ### Dark
@@ -168,8 +172,8 @@ ggplot()+
         legend.position = "none",
         strip.text.x = element_text(size = 30))
 
-ggsave("vr_dark.png",path = plot_dir,width = 12,height = 7)
-ggsave("vr_dark.pdf",path = plot_dir,width = 12,height = 7)
+#ggsave("vr_dark.png",path = plot_dir,width = 12,height = 7)
+#ggsave("vr_dark.pdf",path = plot_dir,width = 12,height = 7)
 ```
 
 ### Observed
@@ -202,8 +206,8 @@ ggplot()+
         legend.position = "none",
         strip.text.x = element_text(size = 30))
 
-ggsave("vr_observed.png",path = plot_dir,width = 12,height = 7)
-ggsave("vr_observed.pdf",path = plot_dir,width = 12,height = 7)
+#ggsave("vr_observed.png",path = plot_dir,width = 12,height = 7)
+#ggsave("vr_observed.pdf",path = plot_dir,width = 12,height = 7)
 ```
 
 ### Total
@@ -235,14 +239,14 @@ ggplot()+
         legend.position = "none",
         strip.text.x = element_text(size = 30))
 
-ggsave("vr_total.png",path = plot_dir,width = 12,height = 7)
-ggsave("vr_total.pdf",path = plot_dir,width = 12,height = 7)
+#ggsave("vr_total.png",path = plot_dir,width = 12,height = 7)
+#ggsave("vr_total.pdf",path = plot_dir,width = 12,height = 7)
 
 ```
 
 
 ```{r}
-tab_model(vr_total,vr_observed,vr_dark, dv.labels = c("Total", "Observed","Dark"),file = "vr_results.xls")
+#tab_model(vr_total,vr_observed,vr_dark,completness_model, dv.labels = c("Total", "Observed","Dark","Completness"),file = "vr_results.xls")
 ```
 
 
@@ -277,6 +281,9 @@ ggplot()+
         legend.text = element_text(size=30),
         legend.position = "none",
         strip.text.x = element_text(size = 30))
+
+#ggsave("Curvature_comp.png",path = completness_dir,width = 12,height = 7)
+#ggsave("Curvature_comp.pdf",path = completness_dir,width = 12,height = 7)
 ```
 
 
@@ -308,8 +315,8 @@ ggplot()+
         legend.position = "none",
         strip.text.x = element_text(size = 30))
 
-ggsave("Curvature_dark.png",path = plot_dir,width = 12,height = 7)
-ggsave("Curvature_dark.pdf",path = plot_dir,width = 12,height = 7)
+#ggsave("Curvature_dark.png",path = plot_dir,width = 12,height = 7)
+#ggsave("Curvature_dark.pdf",path = plot_dir,width = 12,height = 7)
 
 ```
 
@@ -344,8 +351,8 @@ ggplot()+
         legend.position = "none",
         strip.text.x = element_text(size = 30))
 
-ggsave("Curvature_obs.png",path = plot_dir,width = 12,height = 7)
-ggsave("Curvature_obs.pdf",path = plot_dir,width = 12,height = 7)
+#ggsave("Curvature_obs.png",path = plot_dir,width = 12,height = 7)
+#ggsave("Curvature_obs.pdf",path = plot_dir,width = 12,height = 7)
 ```
 
 
@@ -379,14 +386,14 @@ ggplot()+
         legend.position = "none",
         strip.text.x = element_text(size = 30))
 
-ggsave("Curvature_total.png",path = plot_dir,width = 12,height = 7)
-ggsave("Curvature_total.pdf",path = plot_dir,width = 12,height = 7)
+#ggsave("Curvature_total.png",path = plot_dir,width = 12,height = 7)
+#ggsave("Curvature_total.pdf",path = plot_dir,width = 12,height = 7)
 ```
 
 models summary table
 
 ```{r}
-tab_model(curv_total,curv_observed,curv_dark, dv.labels = c("Total", "Observed","Dark"),file = "curve_results.xls")
+#tab_model(curv_total,curv_observed,curv_dark,completness_curve, dv.labels = c("Total", "Observed","Dark","Completness"),file = "curve_results.xls")
 
 ```
 

@@ -1,0 +1,905 @@
+---
+title: "Clean 4 - log ratios and pairwise comparisons"
+author: "TG"
+date: "2023-11-29"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+load packages 
+
+```{r message=FALSE, warning=FALSE}
+library(DarkDiv)
+library(tidyverse)
+library(vegan)
+library(plotrix)
+library(sjPlot)
+library(sjmisc)
+library(gridExtra)
+library(lme4)
+library(lmerTest)
+library(MuMIn)
+library(glmmTMB)
+library(DHARMa)
+library(ggeffects)
+library(SingleCaseES)
+library(metafor)
+library(patchwork)
+library(knitr)
+
+
+select <- dplyr::select
+
+dir<-"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\final plots and models\\log ratios and pairwise"
+
+```
+
+load data bases
+
+```{r}
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd.Rdata")
+
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\pairs.Rdata")
+```
+
+# In this script:
+
+1. log-ratio analyses for pairs of MPAs and control sites
+
+2. pair-wise analyses of the 3 case sudies
+
+3. completeness log ratio
+
+# Input files:
+
+loaded from the `clean output data` folder
+
+* `Clean_medata_dd.Rdata` - dark diversity calculation for MeData 
+
+* `pairs.Rdata` - list of pairs of MPA and control site
+
+
+# Outputs files:
+
+all plots saved in `log ratios and pairwise` folder
+
+* `fig_4_left` - plot of log ratio + metafor models (Fig 4)
+
+* `fig_4_right` - plot of pairwise comparison of the 3 study cases (Fig 4)
+
+* `Completeness_effect_size` - plot of log ratio + metafor models for completeness (Appendix 6) 
+
+
+
+# Log ratio models
+
+
+## Data prepartions
+
+```{r}
+
+# unite the dark diversity data with the pairs classification
+
+log_data<-left_join(dd_data,pairs) 
+
+# remove the data that dont belong to a MPA-control pair
+
+log_data<-log_data %>% drop_na(pair)
+
+# fix capital latter in pairs 
+
+log_data$pair<-str_to_title(log_data$pair)
+
+# convert pair to factor
+
+log_data$pair<-as.factor(log_data$pair)
+
+# remove unnecessary columns
+
+log_data<-log_data %>% select(pair,protection,enforcement,dark,observed_richness,total) 
+
+
+# calculate completeness
+
+
+log_data<-log_data %>% mutate("completeness" = log(observed_richness/dark))
+
+# convert to long format
+
+log_data<-gather(log_data,"index","richness",4:7)
+
+# create list of all fully protected MPAs
+
+fully_protected_pairs<- log_data %>% filter(enforcement>2) %>% distinct(pair)
+
+# Change protected/no protected to MPA vs Control
+
+
+log_data$protection<-ifelse(log_data$protection=="Protected","MPA","Control")
+```
+
+use the `batch_calc_ES` function to calculate the log-ratio for the diversity component: dark diversity, observed richness and site species pool
+
+## Log-ratio - dark diversity 
+
+```{r}
+
+# keep the dark diversity index only
+
+d_ratio<-log_data %>% filter(index == "dark")
+
+# apply the `batch_calc_ES` to recive log-ratios
+
+d_ratio = batch_calc_ES(dat = d_ratio, grouping =  pair, condition = protection, outcome = richness,scale = "count", ES = "LRRi",baseline_phase	 = "Control")
+
+# arrange the order of pairs by the effect size
+
+d_ratio<-d_ratio%>% mutate(pair = fct_reorder(pair,Est))
+
+d_ratio$Index = "Dark diversity"
+
+```
+
+## Log-ratio - observed richness 
+
+```{r}
+
+# keep only observed richness
+
+o_ratio<-log_data %>% filter(index == "observed_richness")
+
+# apply the `batch_calc_ES` to get log-ratios
+
+o_ratio = batch_calc_ES(dat = o_ratio, grouping = pair, condition = protection, outcome = richness,scale = "count", ES = "LRRi",baseline_phase = "Control")
+
+o_ratio$Index<-"Observed richness"
+
+```
+
+## Log-ratio - site species pool 
+
+```{r}
+
+# keep only species pool (total)
+
+t_ratio<-log_data %>% filter(index == "total")
+
+# apply the `batch_calc_ES` to get log-ratios
+
+t_ratio = batch_calc_ES(dat = t_ratio, grouping = pair, condition = protection, outcome = richness,scale = "count", ES = "LRRi",baseline_phase = "Control")
+
+t_ratio$Index<-"Species pool"
+
+```
+
+### Log-ratio plot 
+
+
+```{r}
+
+plot_log_ratio<- ggplot(data = d_ratio,aes(x=Est,y=pair,color = Index))+
+  geom_vline(xintercept = 0,linetype = "dashed",size = 1)+
+  geom_point(size = 5)+
+  geom_point(data = o_ratio,aes(x=Est,y= pair,color=Index),size = 5)+
+  geom_point(data = t_ratio,aes(x=Est,y= pair,color=Index),size =5)+
+  theme_classic()+
+  ylab("MPA")+
+  xlab("Log ratio")+
+  geom_errorbar(data = d_ratio,aes(xmin= Est-SE, xmax=Est+SE), width=.2)+
+  geom_errorbar(data = o_ratio ,aes(xmin= Est-SE, xmax=Est+SE), width=.2)+
+  geom_errorbar(data = t_ratio ,aes(xmin= Est-SE, xmax=Est+SE), width=.2)+
+  scale_color_manual(values=c('#7DCDE4',"#F2E96C","#ACD672"))+
+  theme_classic()+
+  theme(legend.position = 'none')
+
+plot_log_ratio
+  
+```
+# Metafor summary
+
+Add meta-analyses summery using `metafor` package
+
+First set the data for the metafor analyses for each diversity component
+
+```{r}
+
+# dark diversity
+
+metafor_dark<-log_data %>%
+  filter(index =="dark") %>%
+  group_by(pair,protection) %>% 
+  summarise("mean"= mean(richness),
+            "sd"=sd(richness),
+            "n" = n()) %>% 
+  pivot_wider(names_from=protection, 
+              values_from=c(mean, 
+                            sd,
+                            n)) 
+
+# Observed richness
+
+metafor_obs<-log_data %>%
+  filter(index =="observed_richness") %>%
+  group_by(pair,protection) %>% 
+  summarise("mean"= mean(richness),
+            "sd"=sd(richness),
+            "n" = n()) %>% 
+  pivot_wider(names_from=protection, 
+              values_from=c(mean, 
+                            sd,
+                            n)) 
+
+# Species pool
+
+metafor_total<-log_data %>%
+  filter(index =="total") %>%
+  group_by(pair,protection) %>% 
+  summarise("mean"= mean(richness),
+            "sd"=sd(richness),
+            "n" = n()) %>% 
+  pivot_wider(names_from=protection, 
+              values_from=c(mean, 
+                            sd,
+                            n)) 
+
+```
+## Metafor - dark diversity
+
+Calculate the effect sizes using the `escalc` function 
+
+```{r}
+effect_sizes_dark <- escalc(     # Function for calculating effect sizes
+    "ROM",                       # Specify the effect size we want to calculate 
+    m1i = mean_MPA,              # MPA mean richness  
+    n1i = n_MPA,                 # MPA sample size
+    sd1i = sd_MPA,               # MPA SD
+    m2i = mean_Control,          # control mean richness
+    n2i = n_Control,             # control sample size
+    sd2i = sd_Control,           # control site SD
+    data = metafor_dark)         # data for  meta-analysis
+  
+# calculate the SE from the variance
+
+effect_sizes_dark$se = sqrt(effect_sizes_dark$vi)
+
+# calculate the overall effect
+
+dark_model <- rma(yi,                       # effect size from each row in database
+                  vi,                       # measure of variance from each row in database
+                  method = "REML",          # Specifies fixed effects model
+                  slab = pair,              # prepares  labels for the forest plot 
+                  data = effect_sizes_dark) # dataframe used for model 
+
+dark_model
+
+
+```
+
+calculate the overall effect only for fully protected MPAs
+
+
+```{r}
+# 
+
+protected_dark <-effect_sizes_dark %>% filter(pair %in% fully_protected_pairs$pair) 
+
+
+pro_dark_model <- rma(yi,
+                      vi, 
+                      method = "REML", 
+                      slab = pair, 
+                      data = protected_dark)
+
+
+pro_dark_model
+```
+
+Insert to data frame
+
+
+```{r}
+
+# summary of all MPAs 
+
+d_summary<-d_ratio[1,c(1,7)] # create template with 1 row
+
+d_summary$pair <- "All MPAs" # change "pair" name
+
+d_summary$SE<-dark_model$se # get SE from the model
+
+d_summary$Est<-dark_model$b[[1]] # get the estimate from the model
+
+d_summary$p_val<-dark_model[["pval"]] # get the p-value from the model
+
+
+# summary of fully protected MPAs 
+
+d_summary_pro<-d_ratio[1,c(1,7)]
+
+d_summary_pro$pair <- "Fully protected MPAs"
+
+d_summary_pro$SE<-pro_dark_model$se
+
+d_summary_pro$Est<-pro_dark_model$b[[1]]
+
+d_summary_pro$p_val<-pro_dark_model[["pval"]]
+
+# join 
+
+d_summary<-rbind(d_summary,d_summary_pro)
+
+rm(d_summary_pro)
+```
+
+## Metafor - Observed richness
+
+```{r}
+# calculate effect size
+
+effect_sizes_obs <- escalc( 
+    "ROM",
+    m1i = mean_MPA,                
+    n1i = n_MPA,                 
+    sd1i = sd_MPA,               
+    m2i = mean_Control,          
+    n2i = n_Control,           
+    sd2i = sd_Control,           
+    data = metafor_obs)
+
+#calculate overall effect
+
+obs_model<- rma(yi, 
+                vi, 
+                method = "REML", 
+                slab = pair,
+                data = effect_sizes_obs) 
+
+obs_model
+
+# overall effect only for fully protected MPAs
+
+protected_obs <- effect_sizes_obs %>% filter(pair %in% fully_protected_pairs$pair) 
+
+
+pro_obs_model <- rma(yi, 
+                     vi, 
+                     method = "REML", 
+                     slab = pair, 
+                     data = protected_obs)
+
+pro_obs_model
+
+```
+
+Inset information to dataframe
+
+
+```{r}
+
+# all MPAS 
+
+o_summary<-o_ratio[1,c(1,7)] # create template with 1 row
+
+o_summary$pair <- "All MPAs" # change "pair" name
+ 
+o_summary$SE<-obs_model$se # get SE from the model
+
+o_summary$Est<-obs_model$b[[1]] # get the estimate from the model
+
+o_summary$p_val<-obs_model[["pval"]] # get the p-value from the model
+
+
+# Fully protected MPAs
+
+o_summary_pro<-o_ratio[1,c(1,7)]
+
+o_summary_pro$pair <- "Fully protected MPAs"
+
+o_summary_pro$SE<-pro_obs_model$se
+
+o_summary_pro$Est<-pro_obs_model$b[[1]]
+
+o_summary_pro$p_val<-pro_obs_model[["pval"]]
+
+# join
+
+o_summary<-rbind(o_summary,o_summary_pro)
+
+rm(o_summary_pro)
+
+
+```
+
+## Metafor - species pool
+
+calculate effect size
+
+```{r}
+effect_sizes_total <- escalc( 
+    "ROM",
+    m1i = mean_MPA,               
+    n1i = n_MPA,                 
+    sd1i = sd_MPA,               
+    m2i = mean_Control,         
+    n2i = n_Control,             
+    sd2i = sd_Control,          
+    data = metafor_total)
+
+
+
+total_model<- rma(yi, 
+                  vi, 
+                  method = "REML",
+                  slab = pair, 
+                  data = effect_sizes_total) 
+
+total_model
+
+protected_total <-effect_sizes_total %>% filter(pair %in% fully_protected_pairs$pair) 
+
+
+pro_total_model <- rma(yi, 
+                       vi, 
+                       method = "REML", 
+                       slab = pair, 
+                       data = protected_total)
+
+pro_total_model
+
+
+```
+
+Insrt to dataframe
+
+```{r}
+
+# all MPA
+
+t_summary<-t_ratio[1,c(1,7)]# create template with 1 row
+
+t_summary$pair <- "All MPAs"# change "pair" name
+
+t_summary$SE<-total_model$se # get SE from the model
+
+t_summary$Est<-total_model$b[[1]]# get the estimate from the model
+
+t_summary$p_val<-total_model[["pval"]] # get the p-value from the model
+
+# only fully protected MPAs
+
+
+t_summary_pro<-t_ratio[1,c(1,7)]
+
+t_summary_pro$pair <- "Fully protected MPAs"
+
+t_summary_pro$SE<-pro_total_model$se
+
+t_summary_pro$Est<-pro_total_model$b[[1]]
+
+t_summary_pro$p_val<-pro_total_model[["pval"]]
+
+t_summary<-rbind(t_summary,t_summary_pro)
+
+rm(t_summary_pro)
+```
+
+### Metafor summraries plot 
+
+```{r}
+plot_metafor_summary <-ggplot(data = d_summary,aes(x=Est,y=fct_reorder(pair,Est),color = Index))+
+  geom_vline(xintercept = 0,linetype = "dashed",size = 1)+
+  geom_point(size = 6)+
+  geom_point(data = o_summary,aes(x=Est,y= pair,color=Index),size = 6)+
+  geom_point(data = t_summary,aes(x=Est,y= pair,color=Index),size = 6)+
+  theme_classic()+
+  ylab("MPA")+
+  xlab("Log ratio")+xlim(-0.25,0.25)+
+  geom_errorbar(data = d_summary,aes(xmin= Est-SE, xmax=Est+SE), width=.2)+
+  geom_errorbar(data = o_summary ,aes(xmin= Est-SE, xmax=Est+SE), width=.2)+
+  geom_errorbar(data = t_summary ,aes(xmin= Est-SE, xmax=Est+SE), width=.2)+
+  scale_color_manual(values=c('#7DCDE4',"#F2E96C","#ACD672"))+
+  theme(legend.position = 'none')
+
+plot_metafor_summary
+
+```
+
+
+### Save p-values tables
+
+have one table with all p-values of the metafor models
+
+```{r}
+all_model_summary<-rbind(d_summary,o_summary,t_summary)
+
+kable(all_model_summary)
+```
+
+
+
+# Pair-wise analyses 
+
+analyses for the 3 case studies
+
+```{r}
+
+labl<-c(dark = "Dark diversity",
+        observed_richness = "Observed richness",
+        total="Species pool")
+
+dd_data$protection<-ifelse(dd_data$protection=="Protected","MPA","Control")
+
+```
+
+
+## Banyuls
+
+
+```{r}
+# filter Banyuls site
+
+Banyuls <- dd_data %>% filter(Site == "Banyuls")
+
+# conduct t.tests for the each diversity component
+
+d<-t.test(dark ~ protection, data = Banyuls) # dark diversity
+o<-t.test(observed_richness ~ protection, data = Banyuls) #observed richness
+t<-t.test(total ~ protection, data = Banyuls) # species pool
+
+# get p-values 
+
+pval<-data.frame(index = c("dark","observed_richness","total"),
+                 p_val = c(d[["p.value"]],o[["p.value"]],t[["p.value"]]))
+
+# add significant signs
+
+pval<- pval %>% mutate(sign = case_when(p_val > 0.1 ~ "",
+                                        p_val > 0.05 & p_val <= 0.1 ~ "",
+                                        p_val > 0.01 & p_val <= 0.05 ~ "*",
+                                        p_val > 0.005 & p_val <= 0.01 ~ "**",
+                                        p_val <= 0.005 ~ "***"))
+
+# calculate means and se
+  
+Banyuls<-gather(Banyuls,"index","richness",22:24)
+
+Banyuls <- Banyuls %>% group_by(Site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+# unite with significant sings
+
+Banyuls<-left_join(Banyuls,pval)
+
+# plot
+
+Plot_banyuls <-ggplot(data = Banyuls, aes(x = protection,
+                           y = mean_richness,
+                           fill = index)) +
+  geom_bar(position = "dodge", stat = "identity")+
+   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9)) + 
+ geom_text(data = Banyuls,
+            aes(x = protection,y = mean_richness + 0.5, label = sign),
+            size = 5)+
+  facet_grid( ~ index,labeller = as_labeller(labl))+
+  theme_classic()+
+  scale_fill_manual(values=c('#7DCDE4','#F2E96C',"#ACD672"))+
+  ggtitle("Study case 1 - Banyuls")+
+  ylab("Richness")+xlab("Protection")+
+  theme(legend.position = "none",
+        strip.background = element_blank())
+
+Plot_banyuls
+
+rm(d,o,t,pval)
+```
+
+## Medes
+
+```{r}
+# filter Banyuls site
+
+Medes <- dd_data %>% filter(Site == "medes")
+
+# conduct t.tests for the each diversity component
+
+d<-t.test(dark ~ protection, data = Medes) # dark diversity
+o<-t.test(observed_richness ~ protection, data = Medes) #observed richness
+t<-t.test(total ~ protection, data = Medes) # species pool
+
+# get p-values 
+
+pval<-data.frame(index = c("dark","observed_richness","total"),
+                 p_val = c(d[["p.value"]],o[["p.value"]],t[["p.value"]]))
+
+# add significant signs
+
+pval<- pval %>% mutate(sign = case_when(p_val > 0.1 ~ "",
+                                        p_val > 0.05 & p_val <= 0.1 ~ "",
+                                        p_val > 0.01 & p_val <= 0.05 ~ "*",
+                                        p_val > 0.005 & p_val <= 0.01 ~ "**",
+                                        p_val <= 0.005 ~ "***"))
+
+# calculate means and se
+  
+Medes<-gather(Medes,"index","richness",22:24)
+
+Medes <- Medes %>% group_by(Site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+# unite with significant sings
+
+Medes<-left_join(Medes,pval)
+
+# plot
+
+Plot_medes <-ggplot(data = Medes, aes(x = protection,
+                           y = mean_richness,
+                           fill = index)) +
+  geom_bar(position = "dodge", stat = "identity")+
+   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9)) + 
+ geom_text(data = Medes,
+            aes(x = protection,y = mean_richness + 0.5, label = sign),
+            size = 5)+
+  facet_grid( ~ index,labeller = as_labeller(labl))+
+  theme_classic()+
+  scale_fill_manual(values=c('#7DCDE4','#F2E96C',"#ACD672"))+
+  ggtitle("Study case 2 - Medes")+
+  ylab("Richness")+xlab("Protection")+
+  theme(legend.position = "none",
+        strip.background = element_blank())
+
+Plot_medes
+
+rm(d,o,t,pval)
+
+```
+
+## Brijoni
+```{r}
+
+Brijoni <- dd_data %>% filter(Site == "brijuni")
+
+# conduct t.tests for the each diversity component
+
+d<-t.test(dark ~ protection, data = Brijoni) # dark diversity
+o<-t.test(observed_richness ~ protection, data = Brijoni) #observed richness
+t<-t.test(total ~ protection, data = Brijoni) # species pool
+
+# get p-values 
+
+pval<-data.frame(index = c("dark","observed_richness","total"),
+                 p_val = c(d[["p.value"]],o[["p.value"]],t[["p.value"]]))
+
+# add significant signs
+
+pval<- pval %>% mutate(sign = case_when(p_val > 0.1 ~ "",
+                                        p_val > 0.05 & p_val <= 0.1 ~ "",
+                                        p_val > 0.01 & p_val <= 0.05 ~ "*",
+                                        p_val > 0.005 & p_val <= 0.01 ~ "**",
+                                        p_val <= 0.005 ~ "***"))
+
+# calculate means and se
+  
+Brijoni<-gather(Brijoni,"index","richness",22:24)
+
+Brijoni <- Brijoni %>% group_by(Site,protection,enforcement,index) %>% summarise("mean_richness" = mean(richness),"se" = std.error(richness), "sd" = sd(richness))
+
+# unite with significant sings
+
+Brijoni<-left_join(Brijoni,pval)
+
+# plot
+
+Plot_brijoni <-ggplot(data = Brijoni, aes(x = protection,
+                           y = mean_richness,
+                           fill = index)) +
+  geom_bar(position = "dodge", stat = "identity")+
+   geom_errorbar(aes(ymin=mean_richness-se, ymax=mean_richness+se), width=.2,
+                 position=position_dodge(.9)) + 
+ geom_text(data = Brijoni,
+            aes(x = protection,y = mean_richness + 0.5, label = sign),
+            size = 5)+
+  facet_grid( ~ index,labeller = as_labeller(labl))+
+  theme_classic()+
+  scale_fill_manual(values=c('#7DCDE4','#F2E96C',"#ACD672"))+
+  ggtitle("Study case 3 - Brijoni")+
+  ylab("Richness")+xlab("Protection")+
+  theme(legend.position = "none",
+        strip.background = element_blank())
+
+Plot_brijoni
+
+rm(d,o,t,pval)
+```
+
+# Plot figure 4
+
+later I will unite to one plot
+
+```{r}
+fig_4_left <- plot_log_ratio / plot_metafor_summary +
+  plot_layout( heights  = c(15,3))
+
+fig_4_left
+
+ggsave("fig_4_left.pdf",fig_4_left,path = dir, width = 5, height = 10)
+
+fig_4_right <- Plot_banyuls/Plot_medes/Plot_brijoni 
+fig_4_right
+
+ggsave("fig_4_right.pdf",fig_4_right,path = dir, width = 5, height = 10)
+
+
+```
+
+# Completness
+
+Organize the data and calculate the mean completeness.
+
+Remove transect where dark diversity = 0 and thus completeness = Infinity
+
+```{r}
+
+completness <-log_data %>%
+  filter(index == "completeness") %>%
+  filter(richness != Inf) %>% 
+  group_by(pair,protection) %>%
+  summarise(mean = mean(richness),
+            sd = sd(richness),
+            n = n())
+
+completness<-completness%>% pivot_wider(names_from=protection, 
+              values_from=c(mean, 
+                            sd,
+                            n)) 
+
+completness<-completness %>% mutate(diffrance = mean_MPA - mean_Control)
+
+```
+
+
+Calculate the effect size based on the `Mean Difference` index
+
+
+```{r}
+effect_sizes_comp <- escalc( 
+    "MD",
+    m1i = mean_MPA,               
+    n1i = n_MPA,                 
+    sd1i = sd_MPA,               
+    m2i = mean_Control,         
+    n2i = n_Control,             
+    sd2i = sd_Control,
+    var.names=c("yi","vi"),
+    data = completness)
+
+
+# Plot the forest plot (just to make sure everything is ok) 
+
+forest(
+  effect_sizes_comp$yi, # These are effect sizes from each row in database
+  effect_sizes_comp$vi, # These are variances from each row in database
+  annotate = T,            # Setting this to false prevents R from including CIs for each effect sizes 
+  order="obs",             # set the order of the sites 
+  slab = effect_sizes_comp$pair, # A individual effect size labeled 
+  xlab = "Diferance", # Label for x-axis
+  cex = .8,                    # Text side for study labels
+  pch = 15,                    # shape of bars in forest plot
+  cex.lab = 1                  # Size of x-axis label
+)
+
+```
+
+### Plot log-ratio - completness
+
+```{r}
+plot_log_ratio_comp<-ggplot(
+  effect_sizes_comp,aes(x=yi,y=fct_reorder(pair,yi)))+
+  geom_point(size =5,color = "darkred")+
+  geom_vline(xintercept = 0,linetype = "dashed",size = 1)+
+  ylab("MPA")+
+  xlab("Completeness difference")+ xlim(c(-1,1))+
+  theme_classic()+theme(legend.position = 'none')
+
+plot_log_ratio_comp
+
+```
+## Metafor - completeness
+
+run metafor model
+
+```{r}
+
+# All MPAs
+
+comp_model<- rma(yi, 
+                  vi, 
+                  method = "REML",
+                  slab = pair, 
+                  data = effect_sizes_comp)
+
+comp_model
+
+#Fully protected MPAs
+
+protected_comp <-effect_sizes_comp %>% filter(pair %in% fully_protected_pairs$pair) 
+
+
+pro_comp_model <- rma(yi, 
+                       vi, 
+                       method = "REML", 
+                       slab = pair, 
+                       data = protected_comp)
+
+pro_comp_model
+
+```
+
+insert model info into table for plotting
+
+```{r}
+c_summary<-data.frame(a=1)
+
+c_summary$pair <- "All MPAs"
+
+c_summary$ci_l<-comp_model$ci.lb
+c_summary$ci_u<-comp_model$ci.ub
+c_summary$Est<-comp_model$b[[1]]
+c_summary$p_val<-comp_model[["pval"]]
+c_summary$a<-NULL
+
+
+c_summary_pro<-data.frame(a=1)
+
+c_summary_pro$pair <- "Fully protected MPAs"
+
+c_summary_pro$ci_l<-pro_comp_model$ci.lb
+c_summary_pro$ci_u<-pro_comp_model$ci.ub
+c_summary_pro$Est<-pro_comp_model$b[[1]]
+c_summary_pro$p_val<-pro_comp_model[["pval"]]
+c_summary_pro$a<-NULL
+
+c_summary<-rbind(c_summary,c_summary_pro)
+
+rm(c_summary_pro)
+
+c_summary$pair<-as.factor(c_summary$pair)
+
+```
+
+
+## Metafor completeness plots 
+
+
+```{r}
+plot_metafor_comp <- ggplot(data = c_summary, aes(x = Est, y = factor(pair, levels = rev(levels(pair))))) +
+  geom_vline(xintercept = 0, linetype = "dashed", size = 1) +
+  geom_point(size = 6, color = "darkred") +
+  theme_classic() +
+  ylab("MPA") +
+  xlab("Completeness difference") + xlim(-1, 1) +
+  geom_errorbar(data = c_summary, aes(xmin = ci_l, xmax = ci_u), width = 0.2, color = "darkred") +
+  theme(legend.position = 'none')
+
+plot_metafor_comp
+```
+# PLot completeness appendix 
+
+combine log-ratio with metafor model results
+
+```{r}
+
+
+Completeness_effect_size <- plot_log_ratio_comp / plot_metafor_comp +
+  plot_layout( heights  = c(15,3))
+
+Completeness_effect_size
+
+#ggsave("Completeness_effect_size.pdf",path = dir,width = 5,height = 10)
+
+
+```
+
+

@@ -1,0 +1,12 @@
+site,protection,n_transect,lat,lon,Latitude,Longitude
+1_km_south_of_the_marina,Protected,8," 42°28'46.21"" N","  3° 8'51.20"" E",42.479503,3.147556
+1000m_s_of_harbor,Protected,4," 42°28'50.15"" N","  3° 8'46.27"" E",42.480597,3.146186
+500m_s_of_harbor,Protected,3," 42°28'52.03"" N","  3° 8'28.06"" E",42.481119,3.141128
+banyuls,Protected,4," 42°28'52.28"" N","  3° 8'22.11"" E",42.481189,3.139475
+banyuls_port,Protected,2," 42°28'58.20"" N","  3° 8'13.88"" E",42.482833,3.137189
+beach_at_next_bay_over_from_banyuls,Not protected,4," 42°29'15.86"" N","  3° 7'41.65"" E",42.487739,3.128236
+behind_the_marina,Protected,1," 42°28'52.46"" N","  3° 8'16.01"" E",42.481239,3.137781
+north_of_the_arches_public_beach,Not protected,4," 42°29'4.80"" N","  3° 7'57.97"" E",42.484667,3.132769
+outside_reseve,Not protected,4," 42°30'20.37"" N","  3° 7'26.40"" E",42.505658,3.124
+south_edge_of_no-take_zone,Protected,4," 42°28'27.93"" N","  3° 9'18.89"" E",42.474425,3.155247
+south_of_cape_bear,Not protected,4," 42°30'49.62"" N","  3° 8'6.80"" E",42.513783,3.135222

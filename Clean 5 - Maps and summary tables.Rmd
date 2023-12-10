@@ -1,0 +1,293 @@
+---
+title: "Clean 5 - Maps and summary tables"
+author: "TG"
+date: "2023-12-10"
+output:
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r message=FALSE, warning=FALSE}
+library(lubridate)
+library(ggplot2)
+library(stringr)
+library(rfishbase)
+library(Hmisc)
+library(vegan)
+library(mobr)
+library(viridis)
+library(plotrix)
+library(sjmisc)
+library(sf)
+library(ggspatial)
+library(dplyr)
+library(tidyr)
+library(leaflet)
+library(rmapshaper)
+library(patchwork)
+
+
+dir <- "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\final plots and models\\maps"
+
+```
+
+# In this script:
+
+1. Mediterranean Sea map
+
+2. Map for the 3 case sudies
+
+3.
+
+
+# Input files:
+
+loaded from the `clean output data` folder
+
+* `Clean_medata_dd.Rdata` - dark diversity calculation for MeData 
+
+* `unique_coords` - dataframe with distinct survey locations
+
+
+# Outputs files:
+
+Maps are saved in the `maps` folder
+
+* `combined_map` - plot of all maps
+
+Tables are saved at directory folder
+
+*`Transects table`- the number of transects conducted on each site  (Appendix 7)
+
+*`Basin table` - the number of transects and sites in each Mediterranean Sea basin (Appendix 8)
+
+
+```{r}
+select <- dplyr::select
+
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\unique_coords.Rdata")
+
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd.Rdata")
+```
+
+# Part 1 - Maps
+
+## load study site map
+
+```{r}
+med_seas <- st_read("Med_World_Seas_IHO_v3_MarineRegions/Medit_seas_IHO.shp")
+
+```
+
+### Banyuls
+
+crop only the area of Banyuls MPA
+
+```{r}
+
+banyus_cropped <- st_crop(med_seas, xmin = 3.1, xmax = 3.18,
+                                    ymin = 42.46, ymax = 42.53)
+
+banyus<-unique_coords %>% filter(country=="France")
+
+```
+
+### Medes
+
+crop only the area of Medes MPA
+
+
+```{r}
+
+Medes<-unique_coords %>% filter(new_site_name=="medes")
+
+Medes_cropped <- st_crop(med_seas, xmin = 3.169, xmax = 3.26,
+                                    ymin = 42.03, ymax = 42.11)
+```
+
+### Brijoni
+
+crop only the area of Brijoni MPA
+
+```{r}
+
+brijuni<-unique_coords %>% filter(new_site_name=="brijuni")
+
+brijuni_cropped <- st_crop(med_seas, xmin = 13.7, xmax = 13.85,
+                                    ymin = 44.83, ymax = 44.95)
+
+```
+
+## Plot Mediterranean Sea map
+
+```{r}
+Med_map <- ggplot(unique_coords) +
+  geom_sf(data = med_seas$geometry, mapping = aes(),fill= "azure",color = NA) + 
+  geom_point(data =unique_coords,aes(x = lon, y = lat, color = enforcement,size = 1),position=position_jitter(h=0.06, w=0.06)) + 
+  annotation_scale(location = "bl", width_hint = 0.4) +
+  annotation_north_arrow(location = "tl", which_north = "true", 
+        pad_x = unit(0.0, "in"), pad_y = unit(0.2, "in"))+
+  theme(legend.position = "none",
+        panel.grid.major = element_line(colour = "transparent"))+
+        scale_color_manual("Protection level",values=c("#C42E1C","#D4B04A","#70A34E","#446441"))
+
+Med_map
+
+```
+
+## Plots of case studies
+
+find the center lat and lon for plotting porpuse
+
+```{r}
+b_bounds<-st_bbox(banyus_cropped$geometry)
+c_bounds<-st_bbox(Medes_cropped$geometry)
+d_bounds<-st_bbox(brijuni_cropped$geometry)
+
+b_central_lat <- (b_bounds[[4]] + b_bounds[[2]]) / 2
+b_central_lon <- (b_bounds[[3]] + b_bounds[[1]]) / 2
+
+c_central_lat <- (c_bounds[[4]] + c_bounds[[2]]) / 2
+c_central_lon <- (c_bounds[[3]] + c_bounds[[1]]) / 2
+
+d_central_lat <- (d_bounds[[4]] + d_bounds[[2]]) / 2
+d_central_lon <- (d_bounds[[3]] + d_bounds[[1]]) / 2
+
+```
+
+plot the case-sutdy sites
+
+```{r}
+
+banyus<-ggplot() +
+  geom_sf(data = banyus_cropped,fill= "azure",color = NA)+ 
+  geom_point(data =banyus,aes(x = lon, y = lat, color = enforcement),size = 3)+
+  theme_bw()+
+  theme(panel.background = element_rect(fill = "grey90",color = "black"),
+       legend.position = "none",axis.title =  element_blank(),
+        panel.grid.major = element_line(colour = "transparent"))+
+        scale_color_manual("Protection level",values=c("#C42E1C","#446441"))+
+  annotation_scale(location = "bl", width_hint = 0.4)+
+    scale_x_continuous(expand = c(0, 0), breaks = round(b_central_lon,2)) +
+  scale_y_continuous(expand = c(0, 0), breaks = round(b_central_lat,2))
+    
+banyus
+
+
+Medes <-ggplot() +
+  geom_sf(data = Medes_cropped,fill= "azure",color = NA)+ 
+  geom_point(data =Medes,aes(x = lon, y = lat, color = enforcement),size = 3)+
+  theme_bw()+
+  theme(panel.background = element_rect(fill = "grey90",color = "black"),
+        legend.position = "none",axis.title =  element_blank(),
+        panel.grid.major = element_line(colour = "transparent"))+
+        scale_color_manual("Protection level",values=c("#C42E1C","#446441"))+
+  annotation_scale(location = "bl", width_hint = 0.4)+
+      scale_x_continuous(expand = c(0, 0), breaks = round(c_central_lon,2)) +
+  scale_y_continuous(expand = c(0, 0), breaks = round(c_central_lat,2))
+
+Medes
+
+
+brijuni<-ggplot() +
+  geom_sf(data = brijuni_cropped,fill= "azure",color = NA)+ 
+  geom_point(data =brijuni,aes(x = lon, y = lat, color = enforcement),size =3)+
+  theme_bw()+
+  theme(panel.background = element_rect(fill = "grey90",color = "black"),
+       legend.position = "none",
+       axis.title =  element_blank(),
+        panel.grid.major = element_line(colour = "transparent"))+
+        scale_color_manual("Protection level",values=c("#C42E1C","#446441"))+
+  annotation_scale(location = "bl", width_hint = 0.4)+
+      scale_x_continuous(expand = c(0, 0), breaks = round(d_central_lon,2)) +
+  scale_y_continuous(expand = c(0, 0), breaks = round(d_central_lat,2))
+
+brijuni
+
+```
+
+## Plot all Maps and save
+
+```{r}
+combined_map <- Med_map / (banyus + Medes + brijuni) +
+  plot_layout(ncol = 1,nrow = 3,widths = c(14,7,7,7))
+   
+# Print the combined plot
+
+combined_map
+
+#ggsave(combined_map,filename = "combined_map.pdf",path = dir , width=10, height=10)
+```
+
+# Part 2 - tables and summary statistics
+
+
+```{r}
+rm(list=setdiff(ls(), "dd_data"))
+
+dir<- "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\final plots and models\\transect tables"
+
+```
+
+
+# Transect table
+
+
+```{r}
+dd_data$Site <- sub("_", " ", dd_data$Site)
+dd_data$Site<-str_to_title(dd_data$Site)
+```
+
+```{r}
+Transects_table <- dd_data %>%
+  group_by(country,Site, protection) %>%
+  summarise("Transect number" = n(),
+            "Mean observed richness" = round(mean(observed_richness),1),
+            "Mean dark diversity" = round(mean(dark),1)) 
+
+Transects_table$country<-as.character(Transects_table$country)  
+
+Transects_table<-Transects_table %>% arrange(country,Site,protection)
+
+# write.csv(Transects_table,paste0(dir,"\\Transects_table.csv"))
+```
+
+
+
+## Basin table
+
+
+```{r}
+Basin_table <- dd_data %>% 
+  group_by(Basin) %>%
+  summarise("Number of sites"= n_distinct(Site,protection),
+            "Number of transects" = n_distinct(unique_trans_id)) %>%
+  arrange(Basin)
+
+
+#write.csv(Basin_table,paste0(dir,"\\Basin_table.csv"))
+
+```
+
+
+## Descriptive stats used in the manuscript
+
+```{r echo=FALSE, results='asis'}
+
+cat("* Overall transects conducted - ", nrow(dd_data), "\n")
+
+cat("* Overall transects in fully protected area - ", nrow(filter(dd_data,enforcement == 3)), "\n")
+
+cat("* Overall transects in partly protected area - ", nrow(filter(dd_data,enforcement == 2)), "\n")
+
+cat("* Overall transects in minimally protected area - ", nrow(filter(dd_data,enforcement == 1)), "\n")
+
+cat("* Overall transects in not protected area - ", nrow(filter(dd_data,enforcement == 0)), "\n")
+
+cat("* max sampling effort per site - ", max(Transects_table$`Transect number`), "\n")
+
+cat("* min sampling effort per site - ", min(Transects_table$`Transect number`), "\n")
+
+```
+  
