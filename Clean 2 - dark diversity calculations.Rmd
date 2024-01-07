@@ -25,7 +25,9 @@ library(ggeffects)
 
 select <- dplyr::select
 
-load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_Medata.Rdata")
+#load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_Medata.Rdata")
+
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_Medata_lis.Rdata")
 
 ```
 
@@ -37,13 +39,17 @@ load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_
 
 3. Input files:
 
-* `Clean_Medata.Rdata` - the clean MeData after all the alternations
+* `Clean_Medata.Rdata` - the clean MeData after all the alternations *or*
+
+* `Clean_Medata_lis.Rdata` - the clean MeData after all the alternations with Lisandro data
 
 * `Clean_complexity_data.Rdata` -  the clean complexity data
 
 4. Output files:
 
 * `Clean_medata_dd.Rdata` - dark diversity calculation for MeData 
+
+* `Clean_medata_dd_lis.Rdata` - dark diversity calculation for MeData with Lisandro data
 
 * `Clean_complexity_dd.Rdata` - dark diversity calculation for the Israel complexity data 
 
@@ -162,9 +168,9 @@ dd_data$country<-as.factor(dd_data$country)
 ### Save dark diversity MeData 
 
 ```{r}
-# save(dd_data, file = "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd.Rdata")
+# save(dd_data, file = "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd_lis.Rdata")
 
-# write.csv(dd_data,"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd.csv")
+# write.csv(dd_data,"G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd_lis.csv")
 ```
 
 # Complexity dark diversity
