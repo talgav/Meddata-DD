@@ -36,9 +36,9 @@ dir <- "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\final plots and models\
 
 1. Mediterranean Sea map
 
-2. Map for the 3 case sudies
+2. Map for the 3 case studies
 
-3.
+3. Summary statistics that appear in the manuscript
 
 
 # Input files:
@@ -288,6 +288,10 @@ cat("* Overall transects in not protected area - ", nrow(filter(dd_data,enforcem
 cat("* max sampling effort per site - ", max(Transects_table$`Transect number`), "\n")
 
 cat("* min sampling effort per site - ", min(Transects_table$`Transect number`), "\n")
+
+cat("* number of protected sites - ", nrow(Transects_table %>% filter(protection == "Protected") %>% distinct(Site)), "\n")
+
+cat("* number of unprotected sites - ", nrow(Transects_table %>% filter(protection == "Not protected") %>% distinct(Site)), "\n")
 
 ```
   

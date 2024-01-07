@@ -724,12 +724,12 @@ fig_4_left <- plot_log_ratio / plot_metafor_summary +
 
 fig_4_left
 
-ggsave("fig_4_left.pdf",fig_4_left,path = dir, width = 5, height = 10)
+#ggsave("fig_4_left.pdf",fig_4_left,path = dir, width = 5, height = 10)
 
 fig_4_right <- Plot_banyuls/Plot_medes/Plot_brijoni 
 fig_4_right
 
-ggsave("fig_4_right.pdf",fig_4_right,path = dir, width = 5, height = 10)
+#ggsave("fig_4_right.pdf",fig_4_right,path = dir, width = 5, height = 10)
 
 
 ```
@@ -738,7 +738,17 @@ ggsave("fig_4_right.pdf",fig_4_right,path = dir, width = 5, height = 10)
 
 Organize the data and calculate the mean completeness.
 
+count how many transects with `INF` there is in the data
+
+```{r}
+nrow(log_data %>%
+  filter(index == "completeness") %>%
+  filter(richness == Inf))
+```
+
+
 Remove transect where dark diversity = 0 and thus completeness = Infinity
+
 
 ```{r}
 
