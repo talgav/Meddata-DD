@@ -1,0 +1,146 @@
+---
+title: "Lisandro data"
+author: "TG"
+date: "2023-12-26"
+output: html_document
+---
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+library(lubridate)
+library(ggplot2)
+library(stringr)
+library(rfishbase)
+library(vegan)
+library(mobr)
+library(viridis)
+library(plotrix)
+library(sjmisc)
+library(sf)
+library(ggspatial)
+library(dplyr)
+library(tidyr)
+library(leaflet)
+library(readr)
+library(tidyverse)
+library(readxl)
+
+```
+
+
+```{r}
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_Medata.Rdata")
+
+medata_raw <- readRDS("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\raw input data\\medata_from_git_after_cyp.Rds") 
+
+Lisandro_data <- read_excel("raw input data/Lisandro data.xlsx")
+```
+
+map the data
+
+```{r}
+coords<-Lisandro_data %>% distinct(protection,shore.name,lat,long)
+
+color_pal<- colorFactor(palette = c("#70A34E","#446441"), domain = Lisandro_data$protection,alpha = 0.5)
+
+
+leaflet(Lisandro_data) %>% 
+  addTiles() %>% 
+  addCircles(lng=~long,lat=~lat,radius = 50,color = ~color_pal(Lisandro_data$protection),
+    stroke = T,label = ~as.character(shore.name))
+```
+
+```{r}
+colnames(medata_raw)
+
+Lisandro_data$data.origin<-rep("Lisandro")
+Lisandro_data$country <- rep("Italy")
+Lisandro_data$season<-rep("spring")
+Lisandro_data$site<-rep("Giannutri")
+
+Lisandro_data<-Lisandro_data %>% rename("lon"="long")
+Lisandro_data<-Lisandro_data %>% rename("enforcement"="protection")
+Lisandro_data<-Lisandro_data %>% rename("trans"="transect")
+Lisandro_data<-Lisandro_data %>% rename("depth"="Depth")
+Lisandro_data<-Lisandro_data %>% rename("species"="Species")
+Lisandro_data<-Lisandro_data %>% rename("sp.n"="Abundance")
+
+Lisandro_data$protection<-rep(TRUE)
+Lisandro_data$unique_trans_id<-paste(Lisandro_data$shore.name,Lisandro_data$trans,Lisandro_data$enforcement,sep = "_")
+
+
+Lisandro_data$total.mpa.ha<-rep(NA)
+Lisandro_data$size.notake<-rep(NA)
+Lisandro_data$yr.creation<-rep(NA)
+Lisandro_data$age.reserve.yr<-rep(NA)
+Lisandro_data$tmean<-rep(NA)
+Lisandro_data$pp_mean<-rep(NA)
+Lisandro_data$sal_mean<-rep(NA)
+Lisandro_data$sp.length<-rep(NA)
+Lisandro_data$exotic<-rep(NA)
+Lisandro_data$FoodTroph<-rep(NA)
+Lisandro_data$FoodSeTroph<-rep(NA)
+Lisandro_data$a<-rep(NA)
+Lisandro_data$b<-rep(NA)
+Lisandro_data$family<-rep(NA)
+ 
+
+Lisandro_data<-Lisandro_data %>% select(colnames(medata_raw))
+
+Lisandro_data$species<-gsub(" ", ".", Lisandro_data$species)
+
+
+lis_sp<-Lisandro_data %>% distinct(species)
+med_sp<- medata_raw %>% distinct(species,family)
+
+lis_sp$species[which(!lis_sp$species %in% med_sp$species)]
+
+lis_sp$species[lis_sp$species=="Oblada.melanurus"]<-"Oblada.melanura"
+
+lis_sp<-left_join(lis_sp,med_sp)
+
+lis_sp$family[lis_sp$species=="Centrolabrus.melanocercus"] <- "Labridae"
+lis_sp$family[lis_sp$species=="Symphodus.melops"] <- "Labridae"
+lis_sp$family[lis_sp$species=="Trachurus.trachurus"] <- "Carangidae"
+
+Lisandro_data$species[Lisandro_data$species=="Oblada.melanurus"]<-"Oblada.melanura"
+
+Lisandro_data$family= NULL
+
+Lisandro_data<-left_join(Lisandro_data,lis_sp)
+
+
+
+```
+
+
+
+
+
+Those are the fishing limitation in the Tuscan Archipelago:
+
+*Although limited and occasional poaching cannot be completely excluded, current regulations are effective to exclude fishing in the fully protected areas of the Tuscan Archipelago and the compliance with fishing limitations in the partly protected areas. In the partly protected areas, bottom long line (max 250 hooks) and trammel net (max three nets, each max 300 m long) are the only significant fishing mean used by authorized commercial fishermen. Recreational fishing by authorized people (permanent residents or long-term visitors), involves traps, jig, rod, troll fishing and the use of long-lines with max 70 hooks.*
+
+Therefore, according to our definition the partly protected areas = minimally protedtd
+
+```{r}
+Lisandro_data$enforcement<-ifelse(Lisandro_data$enforcement=="Total",3,1)
+
+```
+
+unite data sets
+
+```{r}
+
+medata_raw$enforcement<-as.numeric(as.character(medata_raw$enforcement))
+
+medata_raw_lis<-bind_rows(medata_raw,Lisandro_data)
+
+save(medata_raw_lis,file = "G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\medata_raw_lis.Rdata")
+
+```
+
+
+
