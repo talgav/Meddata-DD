@@ -12,7 +12,7 @@
 
 <meta name="author" content="TG" />
 
-<meta name="date" content="2023-11-22" />
+<meta name="date" content="2024-01-11" />
 
 <title>Clean 2 - dark diversity calculations</title>
 
@@ -151,29 +151,31 @@ code span.ot { color: #007020; }
 <h1 class="title toc-ignore project-name">Clean 2 - dark diversity
 calculations</h1>
 <h4 class="author project-author">TG</h4>
-<h4 class="date project-date">2023-11-22</h4>
+<h4 class="date project-date">2024-01-11</h4>
 </section>
 
 
 
 <section class="main-content">
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(DarkDiv)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(vegan)</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(plotrix)</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(sjPlot)</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">library</span>(sjmisc)</span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">library</span>(gridExtra)</span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="fu">library</span>(lme4)</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="fu">library</span>(lmerTest)</span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="fu">library</span>(MuMIn)</span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">library</span>(glmmTMB)</span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="fu">library</span>(DHARMa)</span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="fu">library</span>(ggeffects)</span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a></span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>select <span class="ot">&lt;-</span> dplyr<span class="sc">::</span>select</span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;G:</span><span class="sc">\\</span><span class="st">My Drive</span><span class="sc">\\</span><span class="st">PHD</span><span class="sc">\\</span><span class="st">chapter 3 MPA dd</span><span class="sc">\\</span><span class="st">Meddata-DD</span><span class="sc">\\</span><span class="st">clean output data</span><span class="sc">\\</span><span class="st">Clean_Medata.Rdata&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DarkDiv)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vegan)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(plotrix)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sjPlot)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sjmisc)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gridExtra)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lme4)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lmerTest)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MuMIn)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(glmmTMB)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DHARMa)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggeffects)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>select <span class="ot">&lt;-</span> dplyr<span class="sc">::</span>select</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">#load(&quot;G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_Medata.Rdata&quot;)</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;G:</span><span class="sc">\\</span><span class="st">My Drive</span><span class="sc">\\</span><span class="st">PHD</span><span class="sc">\\</span><span class="st">chapter 3 MPA dd</span><span class="sc">\\</span><span class="st">Meddata-DD</span><span class="sc">\\</span><span class="st">clean output data</span><span class="sc">\\</span><span class="st">Clean_Medata_lis.Rdata&quot;</span>)</span></code></pre></div>
 <div id="in-this-script" class="section level1">
 <h1>In this script:</h1>
 <ol style="list-style-type: decimal">
@@ -184,7 +186,9 @@ data (183 transects from Israel)</p></li>
 </ol>
 <ul>
 <li><p><code>Clean_Medata.Rdata</code> - the clean MeData after all the
-alternations</p></li>
+alternations <em>or</em></p></li>
+<li><p><code>Clean_Medata_lis.Rdata</code> - the clean MeData after all
+the alternations with Lisandro data</p></li>
 <li><p><code>Clean_complexity_data.Rdata</code> - the clean complexity
 data</p></li>
 </ul>
@@ -194,97 +198,99 @@ data</p></li>
 <ul>
 <li><p><code>Clean_medata_dd.Rdata</code> - dark diversity calculation
 for MeData</p></li>
+<li><p><code>Clean_medata_dd_lis.Rdata</code> - dark diversity
+calculation for MeData with Lisandro data</p></li>
 <li><p><code>Clean_complexity_dd.Rdata</code> - dark diversity
 calculation for the Israel complexity data</p></li>
 </ul>
 <div id="final-data-prepartion" class="section level2">
 <h2>Final data prepartion</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>medata<span class="ot">&lt;-</span>medata <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">23</span>) <span class="co"># keep only metadate and abundances</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>medata<span class="ot">&lt;-</span>medata <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">22</span>)) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">amount =</span> <span class="fu">sum</span>(sp.n)) <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>() <span class="co"># sum the individuals from the same species in each transect</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>medata<span class="ot">&lt;-</span>medata <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">23</span>) <span class="co"># keep only metadate and abundances</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>medata<span class="ot">&lt;-</span>medata <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">22</span>)) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">amount =</span> <span class="fu">sum</span>(sp.n)) <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>() <span class="co"># sum the individuals from the same species in each transect</span></span></code></pre></div>
 <pre><code>## `summarise()` has grouped output by &#39;data.origin&#39;, &#39;country&#39;, &#39;Old_basin&#39;,
 ## &#39;Basin&#39;, &#39;season&#39;, &#39;lat&#39;, &#39;lon&#39;, &#39;Old_site&#39;, &#39;Site&#39;, &#39;trans&#39;,
 ## &#39;unique_trans_id&#39;, &#39;protection&#39;, &#39;enforcement&#39;, &#39;total.mpa.ha&#39;, &#39;size.notake&#39;,
 ## &#39;yr.creation&#39;, &#39;age.reserve.yr&#39;, &#39;depth&#39;, &#39;tmean&#39;, &#39;sal_mean&#39;, &#39;pp_mean&#39;. You
 ## can override using the `.groups` argument.</code></pre>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>medata_wide<span class="ot">&lt;-</span><span class="fu">spread</span>(medata,species,amount,<span class="at">fill =</span> <span class="dv">0</span>) <span class="co"># convert to wide format</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>medata_wide<span class="ot">&lt;-</span><span class="fu">spread</span>(medata,species,amount,<span class="at">fill =</span> <span class="dv">0</span>) <span class="co"># convert to wide format</span></span></code></pre></div>
 </div>
 <div id="calculate-the-dark-diversity" class="section level2">
 <h2>calculate the dark diversity</h2>
 <p>Estimate the dark diversity per transect</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>index_list<span class="ot">&lt;-</span><span class="fu">list</span>() <span class="co"># to save the raw indication table and probabilities of each basin</span></span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>data_list<span class="ot">&lt;-</span><span class="fu">list</span>() <span class="co"># to save the dark diversity data</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>threshold <span class="ot">&lt;-</span><span class="fl">0.9</span> <span class="co"># the probability to belong to the dark diversity</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">unique</span>(medata_wide<span class="sc">$</span>Basin)) {</span>
-<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a> </span>
-<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>   basin_data<span class="ot">&lt;-</span>medata_wide <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Basin <span class="sc">==</span> i) <span class="co"># keep one basin </span></span>
-<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>   </span>
-<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>   sp_matrix<span class="ot">&lt;-</span>basin_data[,<span class="dv">22</span><span class="sc">:</span><span class="fu">ncol</span>(basin_data)] <span class="co"># create species matrix</span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>   </span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>   sp_matrix<span class="ot">&lt;-</span>sp_matrix[,<span class="fu">colSums</span>(sp_matrix <span class="sc">!=</span> <span class="dv">0</span>) <span class="sc">&gt;</span> <span class="dv">0</span>] <span class="co"># Remove species with that have no ocurrance in the basin</span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>  </span>
-<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>   dd<span class="ot">&lt;-</span><span class="fu">DarkDiv</span>(sp_matrix,<span class="at">method =</span> <span class="st">&quot;Hypergeometric&quot;</span>) <span class="co"># apply the dark diversity algorithm </span></span>
-<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>   </span>
-<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>   index_list[[i]]<span class="ot">&lt;-</span>dd <span class="co"># save raw dark diversity data</span></span>
-<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>   </span>
-<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>   dd_dark<span class="ot">&lt;-</span>dd[[<span class="st">&quot;Dark&quot;</span>]] <span class="co"># get the DD probabilities, NA = species was present in the transect</span></span>
-<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a>   dd_dark<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(dd_dark) <span class="co"># convert from matrix to dataframe</span></span>
-<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a>   </span>
-<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>   dd_dark[dd_dark <span class="sc">&lt;</span> threshold]<span class="ot">&lt;-</span><span class="dv">0</span> <span class="co"># Set threshold of 90% to belong to dark diversity so smaller prob = 0</span></span>
-<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a>   dd_dark[dd_dark<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span> <span class="co"># convert to 1 species which probability is &gt; threshold</span></span>
-<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a>   </span>
-<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a>   dd_dark<span class="ot">&lt;-</span>dd_dark <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="st">&quot;dark&quot;</span><span class="ot">=</span><span class="fu">rowSums</span>(dd_dark,<span class="at">na.rm =</span> T)) <span class="co"># count how many species are in the dark diversity</span></span>
-<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a>   </span>
-<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a>   dd_dark_sum<span class="ot">&lt;-</span> dd_dark <span class="sc">%&gt;%</span> <span class="fu">select</span>(dark) <span class="co"># keep only the summary column</span></span>
-<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a>   </span>
-<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a>   dd_pool<span class="ot">&lt;-</span>dd[[<span class="st">&quot;Pool&quot;</span>]] <span class="co"># get the DD probabilities</span></span>
-<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a>   </span>
-<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a>   <span class="co"># 1 = species was present in the transect, the other values are the probabilities to belong to the dark diversity</span></span>
-<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a>   </span>
-<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a>   dd_pool<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(dd_pool) <span class="co"># convert from matrix to dataframe</span></span>
-<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a>  </span>
-<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a>   dd_pool[dd_pool<span class="sc">&lt;</span> threshold]<span class="ot">&lt;-</span><span class="dv">0</span> <span class="co">#  Set threshold of 90% to belong to dark diversity so smaller prob = 0</span></span>
-<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a>   dd_pool[dd_pool<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span> <span class="co"># convert to 1 species which probability is &gt; threshold</span></span>
-<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a>   </span>
-<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a>   <span class="co"># now 1 is species that either present or belong to dark diversity</span></span>
-<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a>   </span>
-<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a>   dd_pool<span class="ot">&lt;-</span>dd_pool <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="st">&quot;total&quot;</span><span class="ot">=</span><span class="fu">rowSums</span>(dd_pool,<span class="at">na.rm =</span> T)) <span class="co"># count the number of observed and dark species </span></span>
-<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a>   dd_pool_sum<span class="ot">&lt;-</span>dd_pool <span class="sc">%&gt;%</span> <span class="fu">select</span>(total)<span class="co"># keep only the summary column</span></span>
-<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a>   </span>
-<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a>   medata_dd<span class="ot">&lt;-</span>basin_data[,<span class="dv">1</span><span class="sc">:</span><span class="dv">21</span>] <span class="co"># get the basin meta data</span></span>
-<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a>   medata_dd<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(medata_dd) <span class="co"># convert back to data frame </span></span>
-<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a></span>
-<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a>   medata_dd<span class="ot">&lt;-</span><span class="fu">bind_cols</span>(medata_dd,dd_pool_sum) <span class="co"># unite with sum of dd </span></span>
-<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a>   medata_dd<span class="ot">&lt;-</span><span class="fu">bind_cols</span>(medata_dd,dd_dark_sum) <span class="co"># unite with sum of species pool </span></span>
-<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a></span>
-<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a>   medata_dd<span class="sc">$</span>observed_richness<span class="ot">&lt;-</span>medata_dd<span class="sc">$</span>total<span class="sc">-</span>medata_dd<span class="sc">$</span>dark <span class="co"># calculate the observed richness</span></span>
-<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a>   </span>
-<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a>   data_list[[i]]<span class="ot">&lt;-</span>medata_dd <span class="co"># save to list</span></span>
-<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a>}</span>
-<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a></span>
-<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a>dd_data<span class="ot">&lt;-</span><span class="fu">bind_rows</span>(data_list) <span class="co"># unite all basins to 1 data frame</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>index_list<span class="ot">&lt;-</span><span class="fu">list</span>() <span class="co"># to save the raw indication table and probabilities of each basin</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>data_list<span class="ot">&lt;-</span><span class="fu">list</span>() <span class="co"># to save the dark diversity data</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>threshold <span class="ot">&lt;-</span><span class="fl">0.9</span> <span class="co"># the probability to belong to the dark diversity</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">unique</span>(medata_wide<span class="sc">$</span>Basin)) {</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>   basin_data<span class="ot">&lt;-</span>medata_wide <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Basin <span class="sc">==</span> i) <span class="co"># keep one basin </span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>   sp_matrix<span class="ot">&lt;-</span>basin_data[,<span class="dv">22</span><span class="sc">:</span><span class="fu">ncol</span>(basin_data)] <span class="co"># create species matrix</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>   sp_matrix<span class="ot">&lt;-</span>sp_matrix[,<span class="fu">colSums</span>(sp_matrix <span class="sc">!=</span> <span class="dv">0</span>) <span class="sc">&gt;</span> <span class="dv">0</span>] <span class="co"># Remove species with that have no ocurrance in the basin</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>   dd<span class="ot">&lt;-</span><span class="fu">DarkDiv</span>(sp_matrix,<span class="at">method =</span> <span class="st">&quot;Hypergeometric&quot;</span>) <span class="co"># apply the dark diversity algorithm </span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>   index_list[[i]]<span class="ot">&lt;-</span>dd <span class="co"># save raw dark diversity data</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>   dd_dark<span class="ot">&lt;-</span>dd[[<span class="st">&quot;Dark&quot;</span>]] <span class="co"># get the DD probabilities, NA = species was present in the transect</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>   dd_dark<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(dd_dark) <span class="co"># convert from matrix to dataframe</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>   dd_dark[dd_dark <span class="sc">&lt;</span> threshold]<span class="ot">&lt;-</span><span class="dv">0</span> <span class="co"># Set threshold of 90% to belong to dark diversity so smaller prob = 0</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>   dd_dark[dd_dark<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span> <span class="co"># convert to 1 species which probability is &gt; threshold</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>   dd_dark<span class="ot">&lt;-</span>dd_dark <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="st">&quot;dark&quot;</span><span class="ot">=</span><span class="fu">rowSums</span>(dd_dark,<span class="at">na.rm =</span> T)) <span class="co"># count how many species are in the dark diversity</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>   dd_dark_sum<span class="ot">&lt;-</span> dd_dark <span class="sc">%&gt;%</span> <span class="fu">select</span>(dark) <span class="co"># keep only the summary column</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>   dd_pool<span class="ot">&lt;-</span>dd[[<span class="st">&quot;Pool&quot;</span>]] <span class="co"># get the DD probabilities</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>   <span class="co"># 1 = species was present in the transect, the other values are the probabilities to belong to the dark diversity</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>   dd_pool<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(dd_pool) <span class="co"># convert from matrix to dataframe</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>   dd_pool[dd_pool<span class="sc">&lt;</span> threshold]<span class="ot">&lt;-</span><span class="dv">0</span> <span class="co">#  Set threshold of 90% to belong to dark diversity so smaller prob = 0</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>   dd_pool[dd_pool<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span> <span class="co"># convert to 1 species which probability is &gt; threshold</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>   <span class="co"># now 1 is species that either present or belong to dark diversity</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>   dd_pool<span class="ot">&lt;-</span>dd_pool <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="st">&quot;total&quot;</span><span class="ot">=</span><span class="fu">rowSums</span>(dd_pool,<span class="at">na.rm =</span> T)) <span class="co"># count the number of observed and dark species </span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>   dd_pool_sum<span class="ot">&lt;-</span>dd_pool <span class="sc">%&gt;%</span> <span class="fu">select</span>(total)<span class="co"># keep only the summary column</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>   medata_dd<span class="ot">&lt;-</span>basin_data[,<span class="dv">1</span><span class="sc">:</span><span class="dv">21</span>] <span class="co"># get the basin meta data</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>   medata_dd<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(medata_dd) <span class="co"># convert back to data frame </span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>   medata_dd<span class="ot">&lt;-</span><span class="fu">bind_cols</span>(medata_dd,dd_pool_sum) <span class="co"># unite with sum of dd </span></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>   medata_dd<span class="ot">&lt;-</span><span class="fu">bind_cols</span>(medata_dd,dd_dark_sum) <span class="co"># unite with sum of species pool </span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>   medata_dd<span class="sc">$</span>observed_richness<span class="ot">&lt;-</span>medata_dd<span class="sc">$</span>total<span class="sc">-</span>medata_dd<span class="sc">$</span>dark <span class="co"># calculate the observed richness</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>   data_list[[i]]<span class="ot">&lt;-</span>medata_dd <span class="co"># save to list</span></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>dd_data<span class="ot">&lt;-</span><span class="fu">bind_rows</span>(data_list) <span class="co"># unite all basins to 1 data frame</span></span></code></pre></div>
 <p>clean environment</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list=</span><span class="fu">setdiff</span>(<span class="fu">ls</span>(),<span class="fu">c</span>(<span class="st">&quot;dd_data&quot;</span>,<span class="st">&quot;medata&quot;</span>,<span class="st">&quot;medata_wide&quot;</span>,<span class="st">&quot;index_list&quot;</span>,<span class="st">&quot;data_list&quot;</span>,<span class="st">&quot;threshold&quot;</span>)))</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list=</span><span class="fu">setdiff</span>(<span class="fu">ls</span>(),<span class="fu">c</span>(<span class="st">&quot;dd_data&quot;</span>,<span class="st">&quot;medata&quot;</span>,<span class="st">&quot;medata_wide&quot;</span>,<span class="st">&quot;index_list&quot;</span>,<span class="st">&quot;data_list&quot;</span>,<span class="st">&quot;threshold&quot;</span>)))</span></code></pre></div>
 </div>
 <div id="final-dark-diversity-data-prepartion" class="section level2">
 <h2>Final dark diversity data prepartion</h2>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># convert enforcement from factor to numeric</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>dd_data<span class="sc">$</span>enforcement<span class="ot">&lt;-</span><span class="fu">as.character</span>(dd_data<span class="sc">$</span>enforcement)</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>dd_data<span class="sc">$</span>enforcement<span class="ot">&lt;-</span><span class="fu">as.numeric</span>(dd_data<span class="sc">$</span>enforcement)</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>dd_data<span class="sc">$</span>age.reserve.yr<span class="ot">&lt;-</span><span class="fu">as.character</span>(dd_data<span class="sc">$</span>age.reserve.yr)</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>dd_data<span class="sc">$</span>age.reserve.yr<span class="ot">&lt;-</span><span class="fu">as.numeric</span>(dd_data<span class="sc">$</span>age.reserve.yr)</span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co"># convert characters variables to factors</span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a></span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>dd_data<span class="sc">$</span>Site<span class="ot">&lt;-</span><span class="fu">as.factor</span>(dd_data<span class="sc">$</span>Site)</span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>dd_data<span class="sc">$</span>Basin<span class="ot">&lt;-</span><span class="fu">as.factor</span>(dd_data<span class="sc">$</span>Basin)</span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>dd_data<span class="sc">$</span>country<span class="ot">&lt;-</span><span class="fu">as.factor</span>(dd_data<span class="sc">$</span>country)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># convert enforcement from factor to numeric</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>dd_data<span class="sc">$</span>enforcement<span class="ot">&lt;-</span><span class="fu">as.character</span>(dd_data<span class="sc">$</span>enforcement)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>dd_data<span class="sc">$</span>enforcement<span class="ot">&lt;-</span><span class="fu">as.numeric</span>(dd_data<span class="sc">$</span>enforcement)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>dd_data<span class="sc">$</span>age.reserve.yr<span class="ot">&lt;-</span><span class="fu">as.character</span>(dd_data<span class="sc">$</span>age.reserve.yr)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>dd_data<span class="sc">$</span>age.reserve.yr<span class="ot">&lt;-</span><span class="fu">as.numeric</span>(dd_data<span class="sc">$</span>age.reserve.yr)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co"># convert characters variables to factors</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>dd_data<span class="sc">$</span>Site<span class="ot">&lt;-</span><span class="fu">as.factor</span>(dd_data<span class="sc">$</span>Site)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>dd_data<span class="sc">$</span>Basin<span class="ot">&lt;-</span><span class="fu">as.factor</span>(dd_data<span class="sc">$</span>Basin)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>dd_data<span class="sc">$</span>country<span class="ot">&lt;-</span><span class="fu">as.factor</span>(dd_data<span class="sc">$</span>country)</span></code></pre></div>
 <p><em>Note</em> - for the models additional actions were taken (before
 modeling, next script):</p>
 <ol style="list-style-type: decimal">
@@ -294,22 +300,22 @@ have large differences in the actual fishing pressure</li>
 </ol>
 <div id="save-dark-diversity-medata" class="section level3">
 <h3>Save dark diversity MeData</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># save(dd_data, file = &quot;G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd.Rdata&quot;)</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co"># write.csv(dd_data,&quot;G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd.csv&quot;)</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># save(dd_data, file = &quot;G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd_lis.Rdata&quot;)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># write.csv(dd_data,&quot;G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd_lis.csv&quot;)</span></span></code></pre></div>
 </div>
 </div>
 </div>
 <div id="complexity-dark-diversity" class="section level1">
 <h1>Complexity dark diversity</h1>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;G:</span><span class="sc">\\</span><span class="st">My Drive</span><span class="sc">\\</span><span class="st">PHD</span><span class="sc">\\</span><span class="st">chapter 3 MPA dd</span><span class="sc">\\</span><span class="st">Meddata-DD</span><span class="sc">\\</span><span class="st">clean output data</span><span class="sc">\\</span><span class="st">Clean_complexity_data.Rdata&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;G:</span><span class="sc">\\</span><span class="st">My Drive</span><span class="sc">\\</span><span class="st">PHD</span><span class="sc">\\</span><span class="st">chapter 3 MPA dd</span><span class="sc">\\</span><span class="st">Meddata-DD</span><span class="sc">\\</span><span class="st">clean output data</span><span class="sc">\\</span><span class="st">Clean_complexity_data.Rdata&quot;</span>)</span></code></pre></div>
 <div id="final-data-orgenaizing" class="section level3">
 <h3>final data orgenaizing</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>comp<span class="ot">&lt;-</span>complexity_clean_data</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>comp<span class="sc">$</span>sp.length<span class="ot">&lt;-</span><span class="cn">NULL</span> <span class="co">#remove this species length column </span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>comp<span class="ot">&lt;-</span>comp <span class="sc">%&gt;%</span>  <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">29</span>)) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">amount =</span> <span class="fu">sum</span>(sp.n)) <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>() <span class="co"># unite species counts in the same transects</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>comp<span class="ot">&lt;-</span>complexity_clean_data</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>comp<span class="sc">$</span>sp.length<span class="ot">&lt;-</span><span class="cn">NULL</span> <span class="co">#remove this species length column </span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>comp<span class="ot">&lt;-</span>comp <span class="sc">%&gt;%</span>  <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">29</span>)) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">amount =</span> <span class="fu">sum</span>(sp.n)) <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>() <span class="co"># unite species counts in the same transects</span></span></code></pre></div>
 <pre><code>## `summarise()` has grouped output by &#39;date&#39;, &#39;site&#39;, &#39;protection&#39;,
 ## &#39;unique_trans_id&#39;, &#39;observer&#39;, &#39;enforcement&#39;, &#39;species_richness&#39;, &#39;mean_depth&#39;,
 ## &#39;FunRichness&#39;, &#39;FunEvenness&#39;, &#39;FunDispersion&#39;, &#39;FunOriginality&#39;, &#39;FunDistinct&#39;,
@@ -317,65 +323,65 @@ have large differences in the actual fishing pressure</li>
 ## &#39;VerRelief&#39;, &#39;Slope&#39;, &#39;FractalDim&#39;, &#39;Curvature&#39;, &#39;Neighbors_dist&#39;,
 ## &#39;Max_convexity&#39;, &#39;Max_concavity&#39;, &#39;FreeSpace&#39;, &#39;earth_movers&#39;. You can override
 ## using the `.groups` argument.</code></pre>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>comp_wide<span class="ot">&lt;-</span><span class="fu">spread</span>(comp,species,amount,<span class="at">fill =</span> <span class="dv">0</span>) <span class="co"># convert to wide format</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>comp_wide<span class="ot">&lt;-</span><span class="fu">spread</span>(comp,species,amount,<span class="at">fill =</span> <span class="dv">0</span>) <span class="co"># convert to wide format</span></span></code></pre></div>
 </div>
 <div id="dark-diversity-estimation-for-complexity-data" class="section level3">
 <h3>Dark diversity estimation for complexity data</h3>
 <p>similar process as for <code>MeData</code> but here no loop is
 needed</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>comp_sp_matrix<span class="ot">&lt;-</span>comp_wide[,<span class="dv">29</span><span class="sc">:</span><span class="fu">ncol</span>(comp_wide)]  <span class="co">#keep only species matrix</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>   </span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>c_dd<span class="ot">&lt;-</span><span class="fu">DarkDiv</span>(comp_sp_matrix,<span class="at">method =</span> <span class="st">&quot;Hypergeometric&quot;</span>) <span class="co"># apply dark diversity algorithm</span></span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a></span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>c_dd_dark<span class="ot">&lt;-</span>c_dd[[<span class="st">&quot;Dark&quot;</span>]] <span class="co"># get the DD probabilities, NA = species was present in the transect</span></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>c_dd_dark<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(c_dd_dark) <span class="co"># convert to dataframe</span></span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>   </span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>c_dd_dark[c_dd_dark<span class="sc">&lt;</span>threshold]<span class="ot">&lt;-</span><span class="dv">0</span> <span class="co"># Set threshold to belong to dark diversity so smaller prob = 0</span></span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>c_dd_dark[c_dd_dark<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span> <span class="co"># convert to 1 species which probability is &gt; threshold</span></span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a></span>
-<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>c_dd_dark<span class="ot">&lt;-</span>c_dd_dark <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="st">&quot;dark&quot;</span><span class="ot">=</span><span class="fu">rowSums</span>(c_dd_dark,<span class="at">na.rm =</span> T)) <span class="co"># count the dark diversity species</span></span>
-<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a></span>
-<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>c_dd_dark_sum<span class="ot">&lt;-</span> c_dd_dark <span class="sc">%&gt;%</span> <span class="fu">select</span>(dark) <span class="co"># keep only the summary</span></span>
-<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a></span>
-<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>c_dd_pool<span class="ot">&lt;-</span>c_dd[[<span class="st">&quot;Pool&quot;</span>]] <span class="co"># get the DD probabilities</span></span>
-<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a></span>
-<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a><span class="co"># 1 = species was present in the transect, the other values are the probabilities to belong to the dark diversity</span></span>
-<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a></span>
-<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>c_dd_pool<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(c_dd_pool) <span class="co"># convert to dataframe </span></span>
-<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>  </span>
-<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>c_dd_pool[c_dd_pool<span class="sc">&lt;</span>threshold]<span class="ot">&lt;-</span><span class="dv">0</span> <span class="co">#Set threshold to belong to dark diversity so smaller prob=0</span></span>
-<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>c_dd_pool[c_dd_pool<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span> <span class="co"># convert to 1 species which probability is &gt; threshold</span></span>
-<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a>   </span>
-<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a>c_dd_pool<span class="ot">&lt;-</span>c_dd_pool <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="st">&quot;total&quot;</span><span class="ot">=</span><span class="fu">rowSums</span>(c_dd_pool,<span class="at">na.rm =</span> T))<span class="co"># count the species in the species pool</span></span>
-<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a>c_dd_pool_sum<span class="ot">&lt;-</span>c_dd_pool <span class="sc">%&gt;%</span> <span class="fu">select</span>(total) <span class="co"># keep only the summary column</span></span>
-<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a></span>
-<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a></span>
-<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a>comp_dd<span class="ot">&lt;-</span>comp_wide[,<span class="dv">1</span><span class="sc">:</span><span class="dv">28</span>] <span class="co"># get the meta data</span></span>
-<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>comp_dd<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(comp_dd) <span class="co"># convert to dataframe </span></span>
-<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a></span>
-<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>comp_dd<span class="ot">&lt;-</span><span class="fu">bind_cols</span>(comp_dd,c_dd_pool_sum) <span class="co"># unite with dd sum</span></span>
-<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a>comp_dd<span class="ot">&lt;-</span><span class="fu">bind_cols</span>(comp_dd,c_dd_dark_sum) <span class="co"># unite with species pool sum</span></span>
-<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a></span>
-<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a>comp_dd<span class="sc">$</span>observed_richness<span class="ot">&lt;-</span>comp_dd<span class="sc">$</span>total<span class="sc">-</span>comp_dd<span class="sc">$</span>dark  <span class="co"># calculate the observed richness</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>comp_sp_matrix<span class="ot">&lt;-</span>comp_wide[,<span class="dv">29</span><span class="sc">:</span><span class="fu">ncol</span>(comp_wide)]  <span class="co">#keep only species matrix</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>c_dd<span class="ot">&lt;-</span><span class="fu">DarkDiv</span>(comp_sp_matrix,<span class="at">method =</span> <span class="st">&quot;Hypergeometric&quot;</span>) <span class="co"># apply dark diversity algorithm</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>c_dd_dark<span class="ot">&lt;-</span>c_dd[[<span class="st">&quot;Dark&quot;</span>]] <span class="co"># get the DD probabilities, NA = species was present in the transect</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>c_dd_dark<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(c_dd_dark) <span class="co"># convert to dataframe</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>c_dd_dark[c_dd_dark<span class="sc">&lt;</span>threshold]<span class="ot">&lt;-</span><span class="dv">0</span> <span class="co"># Set threshold to belong to dark diversity so smaller prob = 0</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>c_dd_dark[c_dd_dark<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span> <span class="co"># convert to 1 species which probability is &gt; threshold</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>c_dd_dark<span class="ot">&lt;-</span>c_dd_dark <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="st">&quot;dark&quot;</span><span class="ot">=</span><span class="fu">rowSums</span>(c_dd_dark,<span class="at">na.rm =</span> T)) <span class="co"># count the dark diversity species</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>c_dd_dark_sum<span class="ot">&lt;-</span> c_dd_dark <span class="sc">%&gt;%</span> <span class="fu">select</span>(dark) <span class="co"># keep only the summary</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>c_dd_pool<span class="ot">&lt;-</span>c_dd[[<span class="st">&quot;Pool&quot;</span>]] <span class="co"># get the DD probabilities</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 = species was present in the transect, the other values are the probabilities to belong to the dark diversity</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>c_dd_pool<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(c_dd_pool) <span class="co"># convert to dataframe </span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>c_dd_pool[c_dd_pool<span class="sc">&lt;</span>threshold]<span class="ot">&lt;-</span><span class="dv">0</span> <span class="co">#Set threshold to belong to dark diversity so smaller prob=0</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>c_dd_pool[c_dd_pool<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span> <span class="co"># convert to 1 species which probability is &gt; threshold</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>c_dd_pool<span class="ot">&lt;-</span>c_dd_pool <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="st">&quot;total&quot;</span><span class="ot">=</span><span class="fu">rowSums</span>(c_dd_pool,<span class="at">na.rm =</span> T))<span class="co"># count the species in the species pool</span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>c_dd_pool_sum<span class="ot">&lt;-</span>c_dd_pool <span class="sc">%&gt;%</span> <span class="fu">select</span>(total) <span class="co"># keep only the summary column</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>comp_dd<span class="ot">&lt;-</span>comp_wide[,<span class="dv">1</span><span class="sc">:</span><span class="dv">28</span>] <span class="co"># get the meta data</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>comp_dd<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(comp_dd) <span class="co"># convert to dataframe </span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>comp_dd<span class="ot">&lt;-</span><span class="fu">bind_cols</span>(comp_dd,c_dd_pool_sum) <span class="co"># unite with dd sum</span></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>comp_dd<span class="ot">&lt;-</span><span class="fu">bind_cols</span>(comp_dd,c_dd_dark_sum) <span class="co"># unite with species pool sum</span></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>comp_dd<span class="sc">$</span>observed_richness<span class="ot">&lt;-</span>comp_dd<span class="sc">$</span>total<span class="sc">-</span>comp_dd<span class="sc">$</span>dark  <span class="co"># calculate the observed richness</span></span></code></pre></div>
 </div>
 </div>
 <div id="data-prepartion-for-model" class="section level1">
 <h1>data prepartion for model</h1>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># convert enforcement to numeric variable</span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>comp_dd<span class="sc">$</span>enforcement<span class="ot">&lt;-</span><span class="fu">as.character</span>(comp_dd<span class="sc">$</span>enforcement)</span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>comp_dd<span class="sc">$</span>enforcement<span class="ot">&lt;-</span><span class="fu">as.numeric</span>(comp_dd<span class="sc">$</span>enforcement)</span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a></span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co"># convert protection to factor</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>comp_dd<span class="sc">$</span>protection<span class="ot">&lt;-</span><span class="fu">as.factor</span>(comp_dd<span class="sc">$</span>protection)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># convert enforcement to numeric variable</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>comp_dd<span class="sc">$</span>enforcement<span class="ot">&lt;-</span><span class="fu">as.character</span>(comp_dd<span class="sc">$</span>enforcement)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>comp_dd<span class="sc">$</span>enforcement<span class="ot">&lt;-</span><span class="fu">as.numeric</span>(comp_dd<span class="sc">$</span>enforcement)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co"># convert protection to factor</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>comp_dd<span class="sc">$</span>protection<span class="ot">&lt;-</span><span class="fu">as.factor</span>(comp_dd<span class="sc">$</span>protection)</span></code></pre></div>
 <p>Note - before modeling there is removal of transect with less than
 two observed species</p>
 <div id="save-data" class="section level4">
 <h4>save data</h4>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># save(comp_dd, file = &quot;G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_complexity_dd.Rdata&quot;)</span></span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a></span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co"># write.csv(comp_dd,&quot;G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_complexity_dd.csv&quot;)</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># save(comp_dd, file = &quot;G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_complexity_dd.Rdata&quot;)</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># write.csv(comp_dd,&quot;G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_complexity_dd.csv&quot;)</span></span></code></pre></div>
 </div>
 </div>
 </section>
