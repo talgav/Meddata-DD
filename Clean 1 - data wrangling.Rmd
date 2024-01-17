@@ -1,7 +1,7 @@
 ---
 title: "Clean 1 - data wrangling"
 author: "TG"
-date: "2023-11-21"
+date: "2024-1-11"
 output:
    prettydoc::html_pretty:
     theme: cayman
@@ -59,7 +59,6 @@ library(readr)
 load the original data as download from github at 15.1.2023
 
 Alternatively - load the data including Lisandro transects 
-
 
 
 ```{r}
@@ -351,8 +350,8 @@ new_name_5<- data.frame(site=c("assecret1910191","assecret1910193","assecret1910
 new_name_6<-data.frame(site = unique(medata$site[medata$country=="France"]),
                        new_site_name = "Banyuls")
 
-new_name_7<-data.frame(site = c("asinara_add","Nisia","montgri"),
-                       new_site_name = c("asinara","Kavo Gkreko","medes"))
+new_name_7<-data.frame(site = c("asinara_add","Nisia"),
+                       new_site_name = c("asinara","Kavo Gkreko"))
 
 new_name <- rbind(new_name,new_name_2,new_name_3,new_name_4,new_name_5,new_name_6,new_name_7)
 
@@ -547,10 +546,12 @@ pair_raw<-pair_raw %>% group_by(across(1:22)) %>% summarise(amount = sum(sp.n)) 
 pair_raw<-spread(pair_raw,species,amount,fill = 0) # convert to wide format
 
 pair_raw<-pair_raw %>% select(data.origin,country,Site,enforcement) %>% distinct(,.keep_all = T)
+
 ```
 
 ```{r}
 site_list<-list()
+
 ```
 
 #### Brijoni
@@ -561,6 +562,8 @@ In Croatia only Brijoni have pair of fully/partly MPA and control site
 Brijoni <- pair_raw %>% filter(Site == "brijuni")
 
 Brijoni$pair<-"Brijoni"
+
+Brijoni$Cluster<-rep(NA)
 
 site_list[[1]]<-Brijoni
 
@@ -577,6 +580,8 @@ isr<-pair_raw %>% filter(country == "Israel",Site != "habonim")
 
 isr$pair<-isr$Site
 
+isr$Cluster<-rep(NA)
+
 site_list[[2]]<-isr
 
 rm(isr)
@@ -592,6 +597,8 @@ Banyuls <- pair_raw %>% filter(Site == "Banyuls")
 
 Banyuls$pair <-"Banyuls"
 
+Banyuls$Cluster<-rep(NA)
+
 site_list[[3]]<-Banyuls
 
 rm(Banyuls)
@@ -603,7 +610,7 @@ Multiple pairs of MPAs and control sites.
 
 **Note** - there are two possible control sites for `Cabrera` MPA, I used `Dragonera` because it a bit closer and also an island  and omit `formentor` *but* we might change it later or use 2 pairs (or aggregate the two control sites...)
 
-**Note 2** - same goes for `cap_de_creus` - no pair so I ommited but we should talk to the team and see what they think.
+**Note 2** - same goes for `cap_de_creus` - no pair so I ommited but we should talk to the team and see what they think. - add Monegri as control
 
 ```{r}
 spain<-pair_raw %>% filter(country == "Spain")
@@ -615,15 +622,28 @@ spain <- spain %>% mutate(pair = case_when(
   Site == "dragonera"~ "Cabrera",
   Site == "cavalleria"~ "Cavalleria",
   Site == "illa_de_l'aire"~ "Cavalleria",
-  Site == "medes"~ "Medes"
+  Site == "medes"~ "Medes",
+  Site == "montgri"~ "Medes",
   
   ))
 
 spain<-spain %>% drop_na(pair)
 
+
+spain_2<-pair_raw %>% filter(country == "Spain",Site %in% c("montgri","cap_de_creus"))
+
+spain_2$pair = "Cap De Creus"
+
+spain<-rbind(spain,spain_2)
+
+
+spain$Cluster<-ifelse(spain$Site %in% c("montgri","cap_de_creus","medes"),"Medes-cap_de_creus",NA)
+
+
 site_list[[4]]<-spain
 
-rm(spain)
+rm(spain,spain_2)
+
 ```
 
 #### Italy
@@ -655,31 +675,26 @@ itl_2$pair = "Tavolara"
 
 itl<-rbind(itl,itl_2)
 
+itl_3<-pair_raw %>% filter(country == "Italy",Site %in% c("otranto","porto_cesareo"))
+
+itl_3$pair = "Porto Cesareo"
+
+itl<-rbind(itl,itl_3)
+
+
+cls1<-c("otranto","porto_cesareo","torre_guaceto")
+cls2<-c("tavolara","carloforte","asinara")
+
+itl$Cluster<-ifelse(itl$Site %in% cls1,"Porto Cesareo - Torre_guaceto",NA)
+
+itl$Cluster<-ifelse(itl$Site %in% cls2,"Tavolara - Asinara",itl$Cluster)
+
 site_list[[5]]<-itl
 
 ```
 
 
 Note - Combining the data later on using `left_join` will multiply the rows of `carloforte` so one time it paired with `tavolara` and  one time with `Asinara`.
-
-
-if the test works the last raw should yield `TRUE`
-
-
-```{r}
-test<- medata %>% filter(country == "Italy",data.origin != "Belmaker")
-
-
-carloforte<-test %>% filter(Site == "carloforte")
-
-
-itl_unite<-left_join(test,itl)
-
-nrow(test)+nrow(carloforte) == nrow(itl_unite) # should be TRUE
-
-rm("test","carloforte","itl_unite")
-rm(itl,itl_2)
-```
 
 
 #### Cyprus
@@ -691,10 +706,37 @@ cyprus <-pair_raw %>% filter(country == "Cyprus",
 
 cyprus$pair<-"Kavo Gkreko"
 
+cyprus$Cluster<-rep(NA)
+
 site_list[[6]]<-cyprus
 
 rm(cyprus)
 ```
+
+#### Sicily
+
+```{r}
+Sicily <-pair_raw %>% filter(country == "Italy",
+                            data.origin == "Belmaker") 
+
+Sicily_1<-Sicily %>% filter(Site %in% c("ustica","san_vito"))
+
+Sicily_1$pair = "ustica"
+
+
+Sicily_2<-Sicily %>% filter(Site %in% c("marettimo","san_vito"))
+
+Sicily_2$pair = "marettimo"
+
+Sicily<-rbind(Sicily_1,Sicily_2)
+
+Sicily$Cluster<-rep("Ustica-Marettimo")
+
+site_list[[7]]<-Sicily
+
+rm(Sicily_1,Sicily_2,Sicily)
+```
+
 
 
 ```{r}

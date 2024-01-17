@@ -1,7 +1,7 @@
 ---
 title: "Clean 5 - Maps and summary tables"
 author: "TG"
-date: "2023-12-10"
+date: "2024-01-11"
 output:
    prettydoc::html_pretty:
     theme: cayman
@@ -66,9 +66,9 @@ Tables are saved at directory folder
 ```{r}
 select <- dplyr::select
 
-load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\unique_coords.Rdata")
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\unique_coords_lis.Rdata")
 
-load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd.Rdata")
+load("G:\\My Drive\\PHD\\chapter 3 MPA dd\\Meddata-DD\\clean output data\\Clean_MeData_dd_lis.Rdata")
 ```
 
 # Part 1 - Maps
@@ -241,19 +241,26 @@ dd_data$Site<-str_to_title(dd_data$Site)
 
 ```{r}
 Transects_table <- dd_data %>%
-  group_by(country,Site, protection) %>%
+  group_by(country,Site,Basin,protection,enforcement) %>%
   summarise("Transect number" = n(),
             "Mean observed richness" = round(mean(observed_richness),1),
             "Mean dark diversity" = round(mean(dark),1)) 
 
 Transects_table$country<-as.character(Transects_table$country)  
 
-Transects_table<-Transects_table %>% arrange(country,Site,protection)
+Transects_table<-Transects_table %>% arrange(country,Site,protection,enforcement)
+
+Transects_table$enforcement[Transects_table$enforcement==0]<-"Not protected"
+Transects_table$enforcement[Transects_table$enforcement==1]<-"Minimally protected"
+Transects_table$enforcement[Transects_table$enforcement==2]<-"Partly protected"
+Transects_table$enforcement[Transects_table$enforcement==3]<-"Fully protected"
+
+
 
 # write.csv(Transects_table,paste0(dir,"\\Transects_table.csv"))
 ```
 
-
+fully, partly, or minimally protected 
 
 ## Basin table
 
